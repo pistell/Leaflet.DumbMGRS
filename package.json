@@ -1,8 +1,8 @@
 {
-  "name": "Leaflet.DumbMGRS-master",
+  "name": "leaflet-dumbmgrs",
   "version": "1.0.0",
-  "description": "An MGRS grid overlay for your leaflet application... But dumber!",
-  "main": "index.js",
+  "description": "An MGRS grid overlay plugin for your leaflet application... But dumber!",
+  "main": "./src/index.js",
   "scripts": {
     "clean": "rm dist/bundle.js",
     "start": "parcel src/index.html",
@@ -12,9 +12,19 @@
     "type": "git",
     "url": "git+https://github.com/pistell/Leaflet.DumbMGRS.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "leaflet",
+    "leaflet plugin",
+    "gis",
+    "mgrs",
+    "mgrs overlay"
+  ],
+  "author": {
+    "name": "James Pistell",
+    "email": "jamespistell@gmail.com",
+    "url": "http://jamespistell.com/"
+  },
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/pistell/Leaflet.DumbMGRS/issues"
   },
@@ -30,7 +40,6 @@
     "sass": "^1.24.0"
   },
   "dependencies": {
-    "leaflet": "^1.6.0",
-    "mgrs": "^1.0.0"
+    "leaflet": "^1.6.0"
   }
 }
