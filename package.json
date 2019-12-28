@@ -1,0 +1,32 @@
+{
+  "name": "Leaflet.DumbMGRS-master",
+  "version": "1.0.0",
+  "description": "An MGRS grid overlay for your leaflet application... But dumber!",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm dist/bundle.js",
+    "start": "parcel src/index.html",
+    "build-prod": "parcel build src/index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pistell/Leaflet.DumbMGRS.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pistell/Leaflet.DumbMGRS/issues"
+  },
+  "homepage": "https://github.com/pistell/Leaflet.DumbMGRS#readme",
+  "devDependencies": {
+    "@babel/core": "^7.7.7",
+    "@babel/preset-env": "^7.7.7",
+    "@babel/runtime": "^7.7.7",
+    "babel-preset-airbnb": "^4.4.0",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "parcel-bundler": "^1.12.4",
+    "sass": "^1.24.0"
+  }
+}
