@@ -15139,20 +15139,22 @@ _leaflet.default.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 map.addEventListener('mousemove', function (event) {
   // Display cursor coordinates in MGRS
-  cc.innerHTML = "<strong>MGRS:</strong>  <info>".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
+  cc.querySelector('.mgrsInfo').innerHTML = "".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
     lat: event.latlng.lat,
     lon: event.latlng.lng
-  }), 5, true), "</info>"); // Display cursor coordinates in Latitude/Longitude
+  }), 5, true)); // Display cursor coordinates in Latitude/Longitude
 
-  cc.innerHTML += "<br/><strong>LAT:</strong> <info>".concat(event.latlng.lat.toFixed(8), "</info>  <strong>LNG:</strong> <info>").concat(event.latlng.lng.toFixed(8), "</info>"); // Display cursor coordinates in Easting/Northing
+  cc.querySelector('.latInfo').innerHTML = "".concat(event.latlng.lat.toFixed(8));
+  cc.querySelector('.lonInfo').innerHTML = "".concat(event.latlng.lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
 
-  cc.innerHTML += "<br/><strong>EASTING:</strong><info> ".concat((0, _mgrs.LLtoUTM)({
+  cc.querySelector('.eastingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
     lat: event.latlng.lat,
     lon: event.latlng.lng
-  }).easting, "</info><strong>NORTHING:</strong><info> ").concat((0, _mgrs.LLtoUTM)({
+  }).easting);
+  cc.querySelector('.northingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
     lat: event.latlng.lat,
     lon: event.latlng.lng
-  }).northing, "</info>");
+  }).northing);
 });
 },{"./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

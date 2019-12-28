@@ -3,26 +3,72 @@ $primary-color: white;
 $bg: #204a79;
 $fontFamily: 'Roboto';
 
-strong {
-  color: $primary-color;
-  background-color: $bg;
-  font-family: $fontFamily;
-}
-
-info {
-  font-family: $fontFamily;
-}
-
 #map {
   height: 1000px;
   width: 1000px;
   cursor: crosshair;
 }
 
-.cursorCoordinates {
-  font-size: 1.5rem;
-}
-
 svg {
   overflow: visible;
+}
+
+.cursorCoordinates {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  grid-column-gap: 0px;
+  grid-row-gap: 15px;
+  width: 500px;
+  margin-top: 10px;
+  font-family: $fontFamily;
+  outline-style: outset;
+  strong {
+    font-size: 1.2rem;
+  }
+  .info {
+    font-size: 1.3rem;
+    padding-left: 10px;
+  }
+  > div {
+    outline-style: inset;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    text-align: center;
+  }
+  .div1 {
+    grid-area: 1 / 1 / 2 / 3;
+  }
+  // MGRS
+  .div2 {
+    grid-area: 1 / 3 / 2 / 13;
+  }
+  .div3 {
+    grid-area: 2 / 1 / 3 / 3;
+  }
+  // Latitude
+  .div4 {
+    grid-area: 2 / 3 / 3 / 6;
+  }
+  .div5 {
+    grid-area: 2 / 6 / 3 / 8;
+  }
+  // Longitude
+  .div6 {
+    grid-area: 2 / 8 / 3 / 11;
+  }
+  .div7 {
+    grid-area: 3 / 1 / 4 / 3;
+  }
+  // Easting
+  .div8 {
+    grid-area: 3 / 3 / 4 / 6;
+  }
+  .div9 {
+    grid-area: 3 / 6 / 4 / 8;
+  }
+  // Northing
+  .div10 {
+    grid-area: 3 / 8 / 4 / 11;
+  }
 }

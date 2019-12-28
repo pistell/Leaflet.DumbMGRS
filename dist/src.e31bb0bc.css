@@ -639,28 +639,69 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	border-right-color: #fff;
 	}
 
-strong {
-  color: white;
-  background-color: #204a79;
-  font-family: "Roboto";
-}
-
-info {
-  font-family: "Roboto";
-}
-
 #map {
   height: 1000px;
   width: 1000px;
   cursor: crosshair;
 }
 
-.cursorCoordinates {
-  font-size: 1.5rem;
-}
-
 svg {
   overflow: visible;
+}
+
+.cursorCoordinates {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  grid-column-gap: 0px;
+  grid-row-gap: 15px;
+  width: 500px;
+  margin-top: 10px;
+  font-family: "Roboto";
+  outline-style: outset;
+}
+.cursorCoordinates strong {
+  font-size: 1.2rem;
+}
+.cursorCoordinates .info {
+  font-size: 1.3rem;
+  padding-left: 10px;
+}
+.cursorCoordinates > div {
+  outline-style: inset;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  text-align: center;
+}
+.cursorCoordinates .div1 {
+  grid-area: 1/1/2/3;
+}
+.cursorCoordinates .div2 {
+  grid-area: 1/3/2/13;
+}
+.cursorCoordinates .div3 {
+  grid-area: 2/1/3/3;
+}
+.cursorCoordinates .div4 {
+  grid-area: 2/3/3/6;
+}
+.cursorCoordinates .div5 {
+  grid-area: 2/6/3/8;
+}
+.cursorCoordinates .div6 {
+  grid-area: 2/8/3/11;
+}
+.cursorCoordinates .div7 {
+  grid-area: 3/1/4/3;
+}
+.cursorCoordinates .div8 {
+  grid-area: 3/3/4/6;
+}
+.cursorCoordinates .div9 {
+  grid-area: 3/6/4/8;
+}
+.cursorCoordinates .div10 {
+  grid-area: 3/8/4/11;
 }
 
 /*# sourceMappingURL=/src.e31bb0bc.css.map */

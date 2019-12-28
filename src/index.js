@@ -44,9 +44,11 @@ L.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // *********************************************************************************** //
 map.addEventListener('mousemove', (event) => {
   // Display cursor coordinates in MGRS
-  cc.innerHTML = `<strong>MGRS:</strong>  <info>${UTMtoMGRS(LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }), 5, true)}</info>`;
+  cc.querySelector('.mgrsInfo').innerHTML = `${UTMtoMGRS(LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }), 5, true)}`;
   // Display cursor coordinates in Latitude/Longitude
-  cc.innerHTML += `<br/><strong>LAT:</strong> <info>${event.latlng.lat.toFixed(8)}</info>  <strong>LNG:</strong> <info>${event.latlng.lng.toFixed(8)}</info>`;
+  cc.querySelector('.latInfo').innerHTML = `${event.latlng.lat.toFixed(8)}`;
+  cc.querySelector('.lonInfo').innerHTML = `${event.latlng.lng.toFixed(8)}`;
   // Display cursor coordinates in Easting/Northing
-  cc.innerHTML += `<br/><strong>EASTING:</strong><info> ${LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }).easting}</info><strong>NORTHING:</strong><info> ${LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }).northing}</info>`;
+  cc.querySelector('.eastingInfo').innerHTML = `${LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }).easting}`;
+  cc.querySelector('.northingInfo').innerHTML = `${LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }).northing}`;
 });
