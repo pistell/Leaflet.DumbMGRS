@@ -1,13 +1,13 @@
 {
   "presets": [
     [
-      "airbnb",
+      "@babel/preset-env",
       {
+        "debug": true,
         "targets": {
-          "chrome": 50,
-          "ie": 11,
-          "firefox": 45
-        }
+          "ie": "11"
+        },
+        "useBuiltIns": "usage"
       }
     ]
   ]

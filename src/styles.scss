@@ -1,6 +1,18 @@
+@import '../node_modules/leaflet/dist/leaflet.css';
 $primary-color: white;
 $bg: black;
 h1 {
   color: $primary-color;
   background-color: $bg;
+}
+#map {
+  height: 1000px;
+  width: 1000px;
+  cursor: crosshair;
+}
+.cursorCoordinates {
+  font-size: 1.5rem;
+}
+svg {
+  overflow: visible;
 }
