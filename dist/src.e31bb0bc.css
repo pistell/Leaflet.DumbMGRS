@@ -639,9 +639,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	border-right-color: #fff;
 	}
 
-h1 {
+strong {
   color: white;
-  background-color: black;
+  background-color: #204a79;
+  font-family: "Roboto";
+}
+
+info {
+  font-family: "Roboto";
 }
 
 #map {

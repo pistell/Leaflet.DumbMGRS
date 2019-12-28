@@ -15102,15 +15102,19 @@ var _mgrs = require("./mgrs");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/* eslint-disable no-console */
+// Import stylesheets
+// Import Leaflet
 // Import the default marker icons from leaflet
-// LLtoUTM and UTMtoLL aren't exported in mgrs.js, fork it and export them
+// LLtoUTM and UTMtoLL aren't exported in the original mgrs.js, fork it and import them
 // https://github.com/proj4js/mgrs/issues/10
+// TODO: Remove unused imports/exports from mgrs.js
 // *********************************************************************************** //
-// * Global Vars                                                                     * //
+// * Global Vars/Leaflet setup                                                       * //
 // *********************************************************************************** //
-window.map = map;
-var cc = document.querySelector('.cursorCoordinates'); // *********************************************************************************** //
+var map = _leaflet.default.map('map').setView([40.123503280320634, -77.74869918823244], 14);
+
+var cc = document.querySelector('.cursorCoordinates');
+window.map = map; // *********************************************************************************** //
 // * Enable default images in the marker                                             * //
 // *********************************************************************************** //
 // https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-264311098
@@ -15125,8 +15129,6 @@ _leaflet.default.Marker.prototype.options.icon = DefaultIcon; // ***************
 // * Add the Leaflet map to the page                                                 * //
 // *********************************************************************************** //
 
-var map = _leaflet.default.map('map').setView([40.123503280320634, -77.74869918823244], 14);
-
 _leaflet.default.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 18,
   id: 'osm_map'
@@ -15137,20 +15139,20 @@ _leaflet.default.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 map.addEventListener('mousemove', function (event) {
   // Display cursor coordinates in MGRS
-  cc.innerHTML = "<strong>MGRS: </strong>".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
+  cc.innerHTML = "<strong>MGRS:</strong>  <info>".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
     lat: event.latlng.lat,
     lon: event.latlng.lng
-  }), 5, true)); // Display cursor coordinates in Latitude/Longitude
+  }), 5, true), "</info>"); // Display cursor coordinates in Latitude/Longitude
 
-  cc.innerHTML += "<br/><strong>LAT:  </strong>  ".concat(event.latlng.lat.toFixed(8), " <strong>LNG: </strong> ").concat(event.latlng.lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
+  cc.innerHTML += "<br/><strong>LAT:</strong> <info>".concat(event.latlng.lat.toFixed(8), "</info>  <strong>LNG:</strong> <info>").concat(event.latlng.lng.toFixed(8), "</info>"); // Display cursor coordinates in Easting/Northing
 
-  cc.innerHTML += "<br/><strong>EASTING:  </strong>  ".concat((0, _mgrs.LLtoUTM)({
+  cc.innerHTML += "<br/><strong>EASTING:</strong><info> ".concat((0, _mgrs.LLtoUTM)({
     lat: event.latlng.lat,
     lon: event.latlng.lng
-  }).easting, " <strong>NORTHING: </strong> ").concat((0, _mgrs.LLtoUTM)({
+  }).easting, "</info><strong>NORTHING:</strong><info> ").concat((0, _mgrs.LLtoUTM)({
     lat: event.latlng.lat,
     lon: event.latlng.lng
-  }).northing);
+  }).northing, "</info>");
 });
 },{"./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
