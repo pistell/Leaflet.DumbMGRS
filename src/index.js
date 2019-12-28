@@ -99,7 +99,6 @@ function Grid1000() {
     };
     this.map = map;
     this.layerGroup1000m = new L.LayerGroup([]);
-
     return this;
   };
 
@@ -306,8 +305,6 @@ function Grid1000() {
           case 'right':
             if (element[1] && element[1].lon >= eastingDict[this.bounds.zoneNumber].left) {
               const eastingLine = new L.Polyline([element], this.lineOptions);
-              // const pixelPosition = map.latLngToLayerPoint({ lat: eastingLine.lat, lng: eastingLine.lng });
-              // console.log(eastingLine);
               this.layerGroup1000m.addLayer(eastingLine);
             }
             break;
@@ -316,16 +313,23 @@ function Grid1000() {
         }
       }
     });
-    // All the Polylines are now in this group, we can add it to the map
 
+    // This was supposed to reduce the points on the map instead it did nothing
+    // const reducePoints = this.layerGroup1000m.eachLayer((layer) => {
+    //   layer.getLatLngs().forEach((j) => {
+    //     const pixelPosition0 = new L.point(map.latLngToLayerPoint(j[0]));
+    //     const pixelPosition1 = new L.point(map.latLngToLayerPoint(j[1]));
+    //     return L.LineUtil.simplify([pixelPosition0, pixelPosition1], 40).map((point) => {
+    //       const mynewpoint = map.layerPointToLatLng([point.x, point.y]);
+    //       const mynewline = new L.Polyline([mynewpoint], this.lineOptions);
+    //       return mynewline;
+    //     });
+    //   });
+    // });
+    // reducePoints.addTo(map);
+    // All the Polylines are now in this group, we can add it to the map
     this.layerGroup1000m.addTo(this.map);
-    this.layerGroup1000m.eachLayer((layer) => {
-      const pixelPosition = map.latLngToLayerPoint(layer.getLatLngs()[0][0]);
-      layer.getLatLngs().forEach((j) => {
-        const element = j.join();
-        console.log(element);
-      });
-    });
+
     // Set layer count and map zoom data only once on DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
@@ -594,11 +598,14 @@ function Grid100k() {
   this.determineGrids = function () {
     gz.viz.forEach((u) => {
       setTimeout(() => {
+        //! You might be on to something right here.
+        //! since the map is currently displaying a left, right and MIDDLE grid, the middle one is skipped over
+        //! This loop gets the topLeft/topRight/bottomRight of every single visible GZD since it is calling the "gz" variable from the GZD class
+        //! iterate through all of them and then you'll have a semi-working product that you can document for help
         const topLeft = new L.LatLng(u.top, u.left);
         const topRight = new L.LatLng(u.top, u.right);
         const bottomRight = new L.LatLng(u.bottom, u.right);
-        // console.log(topLeft.toBounds(100000).getCenter());
-        // console.log(new L.latLngBounds(map.getBounds()).pad(0.1));
+        // console.log(topLeft);
       }, 500);
     });
     // Do not add 1000 meter grids if the zoom level is <= 12
