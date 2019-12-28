@@ -39,3 +39,5 @@ node dist/bundle.js
 ## Credits
 
 Made with [createapp.dev](https://createapp.dev/)
+
+[Leaflet publishing guide](https://github.com/Leaflet/Leaflet/blob/master/PLUGIN-GUIDE.md)

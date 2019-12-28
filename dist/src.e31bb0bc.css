@@ -649,7 +649,16 @@ svg {
   overflow: visible;
 }
 
-.cursorCoordinates {
+.mapData {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr;
+  grid-column-gap: 15px;
+  grid-row-gap: 0px;
+  width: 1015px;
+}
+.mapData .cursorCoordinates {
+  grid-area: 1/1/2/2;
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -660,48 +669,86 @@ svg {
   font-family: "Roboto";
   outline-style: outset;
 }
-.cursorCoordinates strong {
+.mapData .cursorCoordinates strong {
   font-size: 1.2rem;
 }
-.cursorCoordinates .info {
+.mapData .cursorCoordinates .info {
   font-size: 1.3rem;
   padding-left: 10px;
 }
-.cursorCoordinates > div {
+.mapData .cursorCoordinates > div {
   outline-style: inset;
   padding-top: 10px;
   padding-bottom: 10px;
   text-align: center;
 }
-.cursorCoordinates .div1 {
+.mapData .cursorCoordinates .div1 {
   grid-area: 1/1/2/3;
 }
-.cursorCoordinates .div2 {
+.mapData .cursorCoordinates .div2 {
   grid-area: 1/3/2/13;
 }
-.cursorCoordinates .div3 {
+.mapData .cursorCoordinates .div3 {
   grid-area: 2/1/3/3;
 }
-.cursorCoordinates .div4 {
+.mapData .cursorCoordinates .div4 {
   grid-area: 2/3/3/6;
 }
-.cursorCoordinates .div5 {
+.mapData .cursorCoordinates .div5 {
   grid-area: 2/6/3/8;
 }
-.cursorCoordinates .div6 {
+.mapData .cursorCoordinates .div6 {
   grid-area: 2/8/3/11;
 }
-.cursorCoordinates .div7 {
+.mapData .cursorCoordinates .div7 {
   grid-area: 3/1/4/3;
 }
-.cursorCoordinates .div8 {
+.mapData .cursorCoordinates .div8 {
   grid-area: 3/3/4/6;
 }
-.cursorCoordinates .div9 {
+.mapData .cursorCoordinates .div9 {
   grid-area: 3/6/4/8;
 }
-.cursorCoordinates .div10 {
+.mapData .cursorCoordinates .div10 {
   grid-area: 3/8/4/11;
+}
+.mapData .numberOfLayers {
+  grid-area: 1/2/2/3;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  grid-column-gap: 0px;
+  grid-row-gap: 15px;
+  width: 500px;
+  margin-top: 10px;
+  font-family: "Roboto";
+  outline-style: outset;
+  height: fit-content;
+}
+.mapData .numberOfLayers strong {
+  font-size: 1.2rem;
+}
+.mapData .numberOfLayers .info {
+  font-size: 1.3rem;
+  padding-left: 10px;
+}
+.mapData .numberOfLayers > div {
+  outline-style: inset;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  text-align: center;
+}
+.mapData .numberOfLayers .div1 {
+  grid-area: 1/1/2/5;
+}
+.mapData .numberOfLayers .div2 {
+  grid-area: 1/5/2/6;
+}
+.mapData .numberOfLayers .div3 {
+  grid-area: 2/1/3/5;
+}
+.mapData .numberOfLayers .div4 {
+  grid-area: 2/5/3/6;
 }
 
 /*# sourceMappingURL=/src.e31bb0bc.css.map */
