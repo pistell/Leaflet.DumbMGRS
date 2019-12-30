@@ -591,6 +591,7 @@ function Grid100k() {
     };
     this.map = map;
     this.layerGroup100k = new L.LayerGroup([]);
+    //! I am wondering if we set the grid interval to 1mil, 100k, 1000m then we could keep all the grid functionality within 1 function/class
     this.gridInterval = 100000;
     return this;
   };

@@ -16257,7 +16257,8 @@ function Grid100k() {
       lineJoin: 'miter-clip'
     };
     this.map = map;
-    this.layerGroup100k = new _leaflet.default.LayerGroup([]);
+    this.layerGroup100k = new _leaflet.default.LayerGroup([]); //! I am wondering if we set the grid interval to 1mil, 100k, 1000m then we could keep all the grid functionality within 1 function/class
+
     this.gridInterval = 100000;
     return this;
   };
@@ -16613,7 +16614,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62828" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53683" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
