@@ -16266,20 +16266,63 @@ function Grid100k() {
   this.determineGrids = function () {
     var _this5 = this;
 
-    gz.viz.forEach(function (u) {
-      setTimeout(function () {
-        //! You might be on to something right here.
-        //! since the map is currently displaying a left, right and MIDDLE grid, the middle one is skipped over
-        //! This loop gets the topLeft/topRight/bottomRight of every single visible GZD since it is calling the "gz" variable from the GZD class
-        //! iterate through all of them and then you'll have a semi-working product that you can document for help
-        var topLeft = new _leaflet.default.LatLng(u.top, u.left);
-        var topRight = new _leaflet.default.LatLng(u.top, u.right);
-        var bottomRight = new _leaflet.default.LatLng(u.bottom, u.right); // console.log(topLeft);
-      }, 500);
-    }); // Do not add 1000 meter grids if the zoom level is <= 12
+    this.constructor();
+    var empty = [];
+    gz.viz.forEach(function (visibleGrid) {
+      //! You might be on to something right here.
+      //! since the map is currently displaying a left, right and MIDDLE grid, the middle one is skipped over
+      //! This loop gets the topLeft/topRight/bottomRight of every single visible GZD since it is calling the "gz" variable from the GZD class
+      //! iterate through all of them and then you'll have a semi-working product that you can document for help
+      // const topLeft = new L.LatLng(u.top, u.left);
+      // const topRight = new L.LatLng(u.top, u.right);
+      // const bottomRight = new L.LatLng(u.bottom, u.right);
+      var bottomLeft = new _leaflet.default.LatLng(visibleGrid.bottom, visibleGrid.left);
+      var visibleGridObject = {
+        tl: {
+          ll: new _leaflet.default.LatLng(visibleGrid.top, visibleGrid.left),
+          utm: (0, _mgrs.LLtoUTM)({
+            lat: visibleGrid.top,
+            lon: visibleGrid.left
+          })
+        },
+        tr: {
+          ll: new _leaflet.default.LatLng(visibleGrid.top, visibleGrid.right),
+          utm: (0, _mgrs.LLtoUTM)({
+            lat: visibleGrid.top,
+            lon: visibleGrid.right
+          })
+        },
+        br: {
+          ll: new _leaflet.default.LatLng(visibleGrid.bottom, visibleGrid.right),
+          utm: (0, _mgrs.LLtoUTM)({
+            lat: visibleGrid.bottom,
+            lon: visibleGrid.right
+          })
+        },
+        bl: {
+          ll: new _leaflet.default.LatLng(visibleGrid.bottom, visibleGrid.left),
+          utm: (0, _mgrs.LLtoUTM)({
+            lat: visibleGrid.bottom,
+            lon: visibleGrid.left
+          })
+        }
+      };
+      empty.push(visibleGrid);
+    }); // Object key-value map reversal https://www.freecodecamp.org/news/15-useful-javascript-examples-of-map-reduce-and-filter-74cbbb5e0a1f/
+
+    var countries = Object.keys(empty).reduce(function (acc, k) {
+      var country = empty[k].id;
+      acc[country] = acc[country] || [];
+
+      if (country === country) {
+        acc[country].push(empty[k]);
+      }
+
+      return acc;
+    }, {});
+    console.log(countries); // Do not add 1000 meter grids if the zoom level is <= 12
     // if (map.getZoom() <= 12) { return; }
 
-    this.constructor();
     var NEBounds = (0, _mgrs.LLtoUTM)({
       lat: this.constructor().north,
       lon: this.constructor().east

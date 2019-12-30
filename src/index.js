@@ -457,8 +457,6 @@ class GZD extends L.LayerGroup {
 
   buildGZD(params) {
     this.params = params;
-
-
     // Adjust coordinates for special GZDs around Norway and Svalbard
     const exceptionZones = `${this.params.id}${this.params.letterID}`;
     switch (exceptionZones) {
@@ -597,21 +595,52 @@ function Grid100k() {
   };
 
   this.determineGrids = function () {
-    gz.viz.forEach((u) => {
-      setTimeout(() => {
-        //! You might be on to something right here.
-        //! since the map is currently displaying a left, right and MIDDLE grid, the middle one is skipped over
-        //! This loop gets the topLeft/topRight/bottomRight of every single visible GZD since it is calling the "gz" variable from the GZD class
-        //! iterate through all of them and then you'll have a semi-working product that you can document for help
-        const topLeft = new L.LatLng(u.top, u.left);
-        const topRight = new L.LatLng(u.top, u.right);
-        const bottomRight = new L.LatLng(u.bottom, u.right);
-        // console.log(topLeft);
-      }, 500);
+    this.constructor();
+    const empty = [];
+    gz.viz.forEach((visibleGrid) => {
+      //! You might be on to something right here.
+      //! since the map is currently displaying a left, right and MIDDLE grid, the middle one is skipped over
+      //! This loop gets the topLeft/topRight/bottomRight of every single visible GZD since it is calling the "gz" variable from the GZD class
+      //! iterate through all of them and then you'll have a semi-working product that you can document for help
+      // const topLeft = new L.LatLng(u.top, u.left);
+      // const topRight = new L.LatLng(u.top, u.right);
+      // const bottomRight = new L.LatLng(u.bottom, u.right);
+      const bottomLeft = new L.LatLng(visibleGrid.bottom, visibleGrid.left);
+      const visibleGridObject = {
+        tl: {
+          ll: new L.LatLng(visibleGrid.top, visibleGrid.left),
+          utm: LLtoUTM({ lat: visibleGrid.top, lon: visibleGrid.left }),
+        },
+        tr: {
+          ll: new L.LatLng(visibleGrid.top, visibleGrid.right),
+          utm: LLtoUTM({ lat: visibleGrid.top, lon: visibleGrid.right }),
+        },
+        br: {
+          ll: new L.LatLng(visibleGrid.bottom, visibleGrid.right),
+          utm: LLtoUTM({ lat: visibleGrid.bottom, lon: visibleGrid.right }),
+        },
+        bl: {
+          ll: new L.LatLng(visibleGrid.bottom, visibleGrid.left),
+          utm: LLtoUTM({ lat: visibleGrid.bottom, lon: visibleGrid.left }),
+        },
+      };
+      empty.push(visibleGrid);
     });
+    // Object key-value map reversal https://www.freecodecamp.org/news/15-useful-javascript-examples-of-map-reduce-and-filter-74cbbb5e0a1f/
+    const countries = Object.keys(empty).reduce((acc, k) => {
+      const country = empty[k].id;
+      acc[country] = acc[country] || [];
+      if (country === country) {
+        acc[country].push(empty[k]);
+      }
+
+      return acc;
+    }, {});
+    console.log(countries);
+
     // Do not add 1000 meter grids if the zoom level is <= 12
     // if (map.getZoom() <= 12) { return; }
-    this.constructor();
+
     const NEBounds = LLtoUTM({ lat: this.constructor().north, lon: this.constructor().east });
     const NWBounds = LLtoUTM({ lat: this.constructor().north, lon: this.constructor().west });
     const SEBounds = LLtoUTM({ lat: this.constructor().south, lon: this.constructor().east });
@@ -629,6 +658,7 @@ function Grid100k() {
       // Clear out the arrays so the right side can generate grids
       this.eastingArray = [];
       this.northingArray = [];
+
       setTimeout(() => resolve(this.right(NEBounds)), 10);
     }));
   };
