@@ -732,16 +732,16 @@ function getPaddingOnZoomLevel100k() {
 //       // Since there are no GZDs that are splitting the map bounds, we only need to run one "side"
 //       return this.right(NEBounds, noAdjacentGZD = true);
 //     }
-//     const leftPromise = new Promise((resolve) => {
-//       // console.log(NWBounds);
-//       resolve(this.left(NWBounds));
-//     });
-//     Promise.all([leftPromise]).then(() => new Promise((resolve) => {
-//       // Clear out the arrays so the right side can generate grids
-//       this.eastingArray = [];
-//       this.northingArray = [];
-//       setTimeout(() => resolve(this.right(NEBounds)), 10);
-//     }));
+// const leftPromise = new Promise((resolve) => {
+//   // console.log(NWBounds);
+//   resolve(this.left(NWBounds));
+// });
+// Promise.all([leftPromise]).then(() => new Promise((resolve) => {
+//   // Clear out the arrays so the right side can generate grids
+//   this.eastingArray = [];
+//   this.northingArray = [];
+//   setTimeout(() => resolve(this.right(NEBounds)), 10);
+// }));
 //   };
 
 

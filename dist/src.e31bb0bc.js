@@ -117,7 +117,129 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"../node_modules/leaflet/dist/images/marker-icon.png":[function(require,module,exports) {
+})({"../node_modules/@babel/runtime/helpers/defineProperty.js":[function(require,module,exports) {
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+module.exports = _defineProperty;
+},{}],"../node_modules/@babel/runtime/helpers/classCallCheck.js":[function(require,module,exports) {
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+module.exports = _classCallCheck;
+},{}],"../node_modules/@babel/runtime/helpers/createClass.js":[function(require,module,exports) {
+function _defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) descriptor.writable = true;
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function _createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+  if (staticProps) _defineProperties(Constructor, staticProps);
+  return Constructor;
+}
+
+module.exports = _createClass;
+},{}],"../node_modules/@babel/runtime/helpers/typeof.js":[function(require,module,exports) {
+function _typeof(obj) {
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    module.exports = _typeof = function _typeof(obj) {
+      return typeof obj;
+    };
+  } else {
+    module.exports = _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+  }
+
+  return _typeof(obj);
+}
+
+module.exports = _typeof;
+},{}],"../node_modules/@babel/runtime/helpers/assertThisInitialized.js":[function(require,module,exports) {
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+module.exports = _assertThisInitialized;
+},{}],"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js":[function(require,module,exports) {
+var _typeof = require("../helpers/typeof");
+
+var assertThisInitialized = require("./assertThisInitialized");
+
+function _possibleConstructorReturn(self, call) {
+  if (call && (_typeof(call) === "object" || typeof call === "function")) {
+    return call;
+  }
+
+  return assertThisInitialized(self);
+}
+
+module.exports = _possibleConstructorReturn;
+},{"../helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","./assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js"}],"../node_modules/@babel/runtime/helpers/getPrototypeOf.js":[function(require,module,exports) {
+function _getPrototypeOf(o) {
+  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+module.exports = _getPrototypeOf;
+},{}],"../node_modules/@babel/runtime/helpers/setPrototypeOf.js":[function(require,module,exports) {
+function _setPrototypeOf(o, p) {
+  module.exports = _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+module.exports = _setPrototypeOf;
+},{}],"../node_modules/@babel/runtime/helpers/inherits.js":[function(require,module,exports) {
+var setPrototypeOf = require("./setPrototypeOf");
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) setPrototypeOf(subClass, superClass);
+}
+
+module.exports = _inherits;
+},{"./setPrototypeOf":"../node_modules/@babel/runtime/helpers/setPrototypeOf.js"}],"../node_modules/leaflet/dist/images/marker-icon.png":[function(require,module,exports) {
 module.exports="/marker-icon.28bcaf97.png";
 },{}],"../node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
@@ -14283,7 +14405,63 @@ window.L = exports;
 
 },{}],"../node_modules/leaflet/dist/images/marker-shadow.png":[function(require,module,exports) {
 module.exports="/marker-shadow.4ea910b7.png";
-},{}],"mgrs.js":[function(require,module,exports) {
+},{}],"../node_modules/@babel/runtime/helpers/arrayWithHoles.js":[function(require,module,exports) {
+function _arrayWithHoles(arr) {
+  if (Array.isArray(arr)) return arr;
+}
+
+module.exports = _arrayWithHoles;
+},{}],"../node_modules/@babel/runtime/helpers/iterableToArrayLimit.js":[function(require,module,exports) {
+function _iterableToArrayLimit(arr, i) {
+  if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
+    return;
+  }
+
+  var _arr = [];
+  var _n = true;
+  var _d = false;
+  var _e = undefined;
+
+  try {
+    for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+      _arr.push(_s.value);
+
+      if (i && _arr.length === i) break;
+    }
+  } catch (err) {
+    _d = true;
+    _e = err;
+  } finally {
+    try {
+      if (!_n && _i["return"] != null) _i["return"]();
+    } finally {
+      if (_d) throw _e;
+    }
+  }
+
+  return _arr;
+}
+
+module.exports = _iterableToArrayLimit;
+},{}],"../node_modules/@babel/runtime/helpers/nonIterableRest.js":[function(require,module,exports) {
+function _nonIterableRest() {
+  throw new TypeError("Invalid attempt to destructure non-iterable instance");
+}
+
+module.exports = _nonIterableRest;
+},{}],"../node_modules/@babel/runtime/helpers/slicedToArray.js":[function(require,module,exports) {
+var arrayWithHoles = require("./arrayWithHoles");
+
+var iterableToArrayLimit = require("./iterableToArrayLimit");
+
+var nonIterableRest = require("./nonIterableRest");
+
+function _slicedToArray(arr, i) {
+  return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
+}
+
+module.exports = _slicedToArray;
+},{"./arrayWithHoles":"../node_modules/@babel/runtime/helpers/arrayWithHoles.js","./iterableToArrayLimit":"../node_modules/@babel/runtime/helpers/iterableToArrayLimit.js","./nonIterableRest":"../node_modules/@babel/runtime/helpers/nonIterableRest.js"}],"mgrs.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -14301,13 +14479,9 @@ exports.decode = decode;
 exports.encode = encode;
 exports.UTMtoMGRS = UTMtoMGRS;
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+var _slicedToArray2 = _interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));
 
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
    * UTM zones are grouped, and assigned to one of a group of 6
@@ -14363,7 +14537,7 @@ function forward(ll, accuracy) {
     throw new TypeError('forward received an array of strings, but it only accepts an array of numbers.');
   }
 
-  var _ll = _slicedToArray(ll, 2),
+  var _ll = (0, _slicedToArray2.default)(ll, 2),
       lon = _ll[0],
       lat = _ll[1];
 
@@ -15087,7 +15261,7 @@ function getMinNorthing(zoneLetter) {
 
   throw new TypeError("Invalid zone letter: ".concat(zoneLetter));
 }
-},{}],"gzdObject.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js"}],"gzdObject.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -15511,6 +15685,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
+
 var _leaflet = _interopRequireDefault(require("leaflet"));
 
 var _mgrs = require("./mgrs");
@@ -15520,12 +15698,6 @@ var _gzdObject = require("./gzdObject");
 var _index = require("./index");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 function getPaddingOnZoomLevel100k() {
   if (_index.map.getZoom() >= 17) {
@@ -15561,8 +15733,7 @@ var Gen =
 /*#__PURE__*/
 function () {
   function Gen() {
-    _classCallCheck(this, Gen);
-
+    (0, _classCallCheck2.default)(this, Gen);
     this.north = new _leaflet.default.latLngBounds(_index.map.getBounds()).pad(getPaddingOnZoomLevel100k()).getNorth();
     this.south = new _leaflet.default.latLngBounds(_index.map.getBounds()).pad(getPaddingOnZoomLevel100k()).getSouth();
     this.east = new _leaflet.default.latLngBounds(_index.map.getBounds()).pad(getPaddingOnZoomLevel100k()).getEast();
@@ -15585,11 +15756,11 @@ function () {
     this.map = _index.map;
     this.layerGroup100k = new _leaflet.default.LayerGroup([]);
     this.gridInterval = 100000;
-    this.testrow = [];
     return this.getVizGrids();
-  }
+  } // Returns the visible grids on the map and their bounds
 
-  _createClass(Gen, [{
+
+  (0, _createClass2.default)(Gen, [{
     key: "getVizGrids",
     value: function getVizGrids() {
       var _this = this;
@@ -15605,19 +15776,23 @@ function () {
         acc[grid] = acc[grid] || [];
         acc[grid].push(_this.empty[k]);
         return acc;
-      }, {}); // return this.uniqueVisibleGrids;
-
-      return this.ga(this.uniqueVisibleGrids);
+      }, {});
+      return this.generateGrids(this.uniqueVisibleGrids);
     }
   }, {
-    key: "ga",
-    value: function ga(data) {
+    key: "generateGrids",
+    value: function generateGrids(data) {
       var _this2 = this;
 
       this.data = data;
       Object.values(this.data).forEach(function (grid) {
         grid.flatMap(function (x) {
-          if (_this2.west < x.left && _this2.east > x.right) {
+          // this.west < x.left && this.east > x.right //(fancy way of getting middle grid)
+          //! this works if you manually replace the GZD IDs (eg '17', '18', and '19)
+          //! The problem is I can't get this to iterate over the map. I have tried generator functions but its not working
+          //! We have what seems to be a working formula, it just needs to iterate
+          //! this is a big improvement, GZD 18T/S is returning 124 layers on the map, this is an improvement from when we were generating like 680
+          if (x.id === '18') {
             var neLeft = (0, _mgrs.LLtoUTM)({
               lat: x.top - 0.000001,
               lon: x.right - 0.000000001
@@ -15640,8 +15815,7 @@ function () {
                   easting: leftEastingIterator,
                   zoneNumber: seLeft.zoneNumber,
                   zoneLetter: seLeft.zoneLetter
-                }); // console.log(this.eastingArray);
-
+                });
               }
 
               leftEastingIterator += 1;
@@ -15661,7 +15835,16 @@ function () {
             }
           }
         });
-      });
+      }); //! If we are not using generators, then remove the runtime-regenerator plugin
+      // function* iterableObj() {
+      //   yield 'this';
+      //   yield 'is';
+      //   yield 'iterable';
+      // }
+      // for (const val of iterableObj()) {
+      //   console.log(val);
+      // }
+
       Object.entries(this.northingArray).forEach(function (e) {
         var bottomNorthing = e[1];
 
@@ -15677,15 +15860,15 @@ function () {
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter
           }));
-        });
+        }); // dividing the length by 2 prevents lines from overlapping...idk
 
         for (var index = 0; index < emptyBottomRowArr.length / 2; index++) {
           var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
           var right = _this2.data[bottomRow[0][0].zoneNumber][0].right;
-          var left = _this2.data[bottomRow[0][0].zoneNumber][0].left;
+          var left = _this2.data[bottomRow[0][0].zoneNumber][0].left; // getUnique() will remove duplicate grid coordinates
 
           if (getUnique(element, 'lat')[1] && element[1].lon <= right - 0.000000001) {
-            var northingLine = new _leaflet.default.Polyline([element], _this2.lineOptions); // console.count(element); //90
+            var northingLine = new _leaflet.default.Polyline([element], _this2.lineOptions);
 
             _this2.layerGroup100k.addLayer(northingLine); // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
             // Convert the Polyline element to a LatLng so we can use the distanceTo() method
@@ -15762,130 +15945,26 @@ function () {
 
         for (var index = 0; index < emptyBottomRowArr.length / 2; index++) {
           var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
-          var top = _this2.data[bottomRow[0][0].zoneNumber][0].top;
-          var bottom = _this2.data[bottomRow[0][0].zoneNumber][0].bottom; // console.log(this.data[bottomRow[0][0].zoneNumber]);
 
-          var jew0 = getUnique(element, 'lon')[0];
-          var jew = getUnique(element, 'lon')[1];
-
-          if (getUnique(element, 'lon')[0] && element[1].lat <= bottom - 0.000000001) {
+          if (element[1] && element[1].lat <= _this2.south) {
             var eastingLine = new _leaflet.default.Polyline([element], _this2.lineOptions);
 
             _this2.layerGroup100k.addLayer(eastingLine);
-
-            console.log(element[1].lat, bottom, _this2.data[bottomRow[0][0].zoneNumber][1].bottom);
-          } // if (getUnique(element, 'lon')[0] && element[1].lat >= this.data[bottomRow[0][0].zoneNumber][1].bottom) {
-          //   const eastingLine = new L.Polyline([element], this.lineOptions);
-          //   this.layerGroup100k.addLayer(eastingLine);
-          // }
-
+          }
         }
       });
       this.layerGroup100k.addTo(_index.map);
-    } // center(data) {
-    // const neLeft = LLtoUTM({ lat: data.top - 0.000001, lon: data.right - 0.000000001 });
-    // const seLeft = LLtoUTM({ lat: data.bottom, lon: data.right - 0.000000001 });
-    // const swLeft = LLtoUTM({ lat: data.bottom, lon: data.left });
-    // let leftEastingIterator = swLeft.easting;
-    // let leftNorthingIterator = swLeft.northing;
-    // //* Left Side Easting */
-    // while (leftEastingIterator <= seLeft.easting) {
-    //   if (leftEastingIterator % this.gridInterval === 0) {
-    //     // this.endCoordNorthing does not change on the easting
-    //     this.eastingArray.push({
-    //       easting: leftEastingIterator,
-    //       zoneNumber: seLeft.zoneNumber,
-    //       zoneLetter: seLeft.zoneLetter,
-    //     });
-    //     // console.log(this.eastingArray);
-    //   }
-    //   leftEastingIterator += 1;
-    // }
-    // //* * Left Side Northing */
-    // while (leftNorthingIterator <= neLeft.northing) {
-    //   if (leftNorthingIterator % this.gridInterval === 0) {
-    //     this.northingArray.push({
-    //       northing: leftNorthingIterator,
-    //       zoneNumber: neLeft.zoneNumber,
-    //       zoneLetter: neLeft.zoneLetter,
-    //     });
-    //     // const jew = UTMtoLL({
-    //     //   northing: leftNorthingIterator,
-    //     //   easting: neLeft.easting,
-    //     //   zoneNumber: neLeft.zoneNumber,
-    //     //   zoneLetter: neLeft.zoneLetter,
-    //     // });
-    //     // L.marker(jew).addTo(map);
-    //   }
-    //   leftNorthingIterator += 1;
-    // }
-    //   return this.generateSplitGrids(data);
-    // }
-    // generateSplitGrids(data) {
-    //   let bottomRow = [];
-    //   Object.entries(this.eastingArray).forEach((e) => {
-    //     const emptyBottomRowArr = [];
-    //     const bottomNorthing = e[1];
-    //     bottomRow = this.northingArray.map((j) => [j, bottomNorthing]);
-    //     bottomRow.forEach((k) => {
-    //       emptyBottomRowArr.push(UTMtoLL({
-    //         northing: k[0].northing,
-    //         easting: k[1].easting,
-    //         zoneNumber: k[0].zoneNumber,
-    //         zoneLetter: k[0].zoneLetter,
-    //       }));
-    //     });
-    //   //  return this.pd(bottomRow);
-    //   });
-    //   return this.pd(bottomRow);
-    // }
-    // pd(br) {
-    //   const empty1 = [];
-    //   const empty2 = [];
-    //   function merge_array(array1, array2) {
-    //     const result_array = [];
-    //     const arr = array1.concat(array2);
-    //     let len = arr.length;
-    //     const assoc = {};
-    //     while (len--) {
-    //       const item = arr[len];
-    //       if (!assoc[item]) {
-    //         result_array.unshift(item);
-    //         assoc[item] = true;
-    //       }
-    //     }
-    //     return result_array;
-    //   }
-    //   function getDistinctArray(arr) {
-    //     return [...new Set(arr)];
-    //   }
-    //   for (let index = 0; index < br.length; index++) {
-    //     const element = [br[index], br[index + 1]];
-    //     if (element[1]) {
-    //       const line1 = UTMtoLL({
-    //         northing: element[0][0].northing,
-    //         easting: element[0][1].easting,
-    //         zoneNumber: element[0][0].zoneNumber,
-    //         zoneLetter: element[0][0].zoneLetter,
-    //       });
-    //       empty1.push(line1);
-    //       const line2 = UTMtoLL({
-    //         northing: element[1][0].northing,
-    //         easting: element[1][1].easting,
-    //         zoneNumber: element[1][0].zoneNumber,
-    //         zoneLetter: element[1][0].zoneLetter,
-    //       });
-    //       empty2.push(line2);
-    //       // const eastingLine = new L.Polyline([line1, line2], this.lineOptions).addTo(map);
-    //       // this.layerGroup100k.addLayer(eastingLine);
-    //       L.marker(line2).addTo(map);
-    //       new L.Polyline([merge_array(empty2, empty1)[0]], this.lineOptions).addTo(map);
-    //     }
-    //   }
-    // }
-
+      return this.clean();
+    }
+  }, {
+    key: "clean",
+    value: function clean() {
+      // dump the array vals and prepare for next grid
+      console.log('cleaning ');
+      this.eastingArray = [];
+      this.northingArray = [];
+    }
   }]);
-
   return Gen;
 }();
 
@@ -16393,13 +16472,25 @@ function Grid100k() {
 
 var _default = Grid100k;
 exports.default = _default;
-},{"leaflet":"../node_modules/leaflet/dist/leaflet-src.js","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js","./index":"index.js"}],"index.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js","./index":"index.js"}],"index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.map = exports.gz = void 0;
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
+
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
+
+var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
+
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
 require("./styles.scss");
 
@@ -16417,29 +16508,9 @@ var _test = _interopRequireDefault(require("./test2"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 // *********************************************************************************** //
 // * Global Vars/Leaflet setup                                                       * //
@@ -16901,22 +16972,21 @@ map.addEventListener('moveend', function () {
 var GZD =
 /*#__PURE__*/
 function (_L$LayerGroup) {
-  _inherits(GZD, _L$LayerGroup);
+  (0, _inherits2.default)(GZD, _L$LayerGroup);
 
   function GZD(northObj, eastObj) {
     var _this3;
 
-    _classCallCheck(this, GZD);
-
-    _this3 = _possibleConstructorReturn(this, _getPrototypeOf(GZD).call(this));
+    (0, _classCallCheck2.default)(this, GZD);
+    _this3 = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(GZD).call(this));
     _this3.northObj = northObj;
     _this3.eastObj = eastObj;
     _this3.viz = [];
-    return _possibleConstructorReturn(_this3, _this3.getInBoundsGZDs());
+    return (0, _possibleConstructorReturn2.default)(_this3, _this3.getInBoundsGZDs());
   } // Find all the Grid Zone Designators that are in your view
 
 
-  _createClass(GZD, [{
+  (0, _createClass2.default)(GZD, [{
     key: "getInBoundsGZDs",
     value: function getInBoundsGZDs() {
       var _this4 = this;
@@ -17114,7 +17184,6 @@ function (_L$LayerGroup) {
       this.getInBoundsGZDs();
     }
   }]);
-
   return GZD;
 }(_leaflet.default.LayerGroup);
 
@@ -17283,16 +17352,16 @@ function getPaddingOnZoomLevel100k() {
 //       // Since there are no GZDs that are splitting the map bounds, we only need to run one "side"
 //       return this.right(NEBounds, noAdjacentGZD = true);
 //     }
-//     const leftPromise = new Promise((resolve) => {
-//       // console.log(NWBounds);
-//       resolve(this.left(NWBounds));
-//     });
-//     Promise.all([leftPromise]).then(() => new Promise((resolve) => {
-//       // Clear out the arrays so the right side can generate grids
-//       this.eastingArray = [];
-//       this.northingArray = [];
-//       setTimeout(() => resolve(this.right(NEBounds)), 10);
-//     }));
+// const leftPromise = new Promise((resolve) => {
+//   // console.log(NWBounds);
+//   resolve(this.left(NWBounds));
+// });
+// Promise.all([leftPromise]).then(() => new Promise((resolve) => {
+//   // Clear out the arrays so the right side can generate grids
+//   this.eastingArray = [];
+//   this.northingArray = [];
+//   setTimeout(() => resolve(this.right(NEBounds)), 10);
+// }));
 //   };
 //   this.left = function (NWBounds) {
 //     const neLeft = LLtoUTM({ lat: this.north, lon: eastingDict[NWBounds.zoneNumber].right - 0.000000001 });
@@ -17496,7 +17565,7 @@ function getPaddingOnZoomLevel100k() {
 
 
 var generate100kGrids = new _test.default(new _leaflet.default.latLngBounds(map.getBounds().pad(getPaddingOnZoomLevel100k()))); // generate100kGrids.determineGrids();
-},{"./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js","./test2":"test2.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js","./test2":"test2.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
