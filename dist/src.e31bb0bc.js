@@ -15985,15 +15985,17 @@ function () {
           if (element[1] && element[1].lon >= _gzdObject.eastingDict[bottomRow[index][1].zoneNumber].left) {
             // const fuck0 = map.latLngToLayerPoint(element[0]);
             // const fuck1 = map.latLngToLayerPoint(element[1]);
-            var nigger = _index.map.latLngToLayerPoint(emptyBottomRowArr[index]);
+            var myline = _index.map.latLngToLayerPoint(emptyBottomRowArr[index]);
 
-            var nigger2 = _index.map.latLngToLayerPoint(emptyBottomRowArr[index + 1]);
+            var myline2 = _index.map.latLngToLayerPoint(emptyBottomRowArr[index + 1]);
 
-            var ff = _leaflet.default.LineUtil.simplify([nigger]);
+            var bb = _leaflet.default.latLng(element[1]); // L.latLngBounds(element[0], element[1])
+            // console.log(L.latLngBounds(element[0], element[1]).getNorth());
 
-            _this3.testempty.push(JSON.stringify(element)); // const eastingLine = new L.Polyline([element], lo);
-            // this.layerGroup100k.addLayer(eastingLine);
 
+            console.log(_leaflet.default.CRS.unproject(myline));
+
+            _this3.testempty.push(JSON.stringify(element));
           } // if (element[1] && element[1].lat <= this.south) {
           //   const eastingLine = new L.Polyline([element], {
           //     color: 'blue',
@@ -16012,11 +16014,11 @@ function () {
         }
       }); // testempty is 1905 arrays
 
-      var jew = removeDup(this.testempty);
-      var eastingLine = new _leaflet.default.Polyline([jew], {
+      var newEastlingLine = removeDup(this.testempty);
+      var eastingLine = new _leaflet.default.Polyline([newEastlingLine], {
         color: 'blue',
         weight: 1,
-        opacity: 0.125,
+        opacity: 0.9,
         interactive: false,
         fill: false,
         noClip: true,
@@ -16026,7 +16028,6 @@ function () {
         className: 'bluegoo'
       });
       this.layerGroup100k.addLayer(eastingLine);
-      this.layerGroup100k.addTo(_index.map);
       return this.clean();
     }
   }, {
@@ -16034,8 +16035,10 @@ function () {
     value: function clean() {
       // dump the array vals and prepare for next grid
       console.log('cleaning ');
+      this.layerGroup100k.addTo(_index.map);
       this.eastingArray = [];
       this.northingArray = [];
+      this.testempty = [];
     }
   }]);
   return Gen;

@@ -225,15 +225,16 @@ class Gen {
         if (element[1] && element[1].lon >= eastingDict[bottomRow[index][1].zoneNumber].left) {
           // const fuck0 = map.latLngToLayerPoint(element[0]);
           // const fuck1 = map.latLngToLayerPoint(element[1]);
-          const nigger = map.latLngToLayerPoint(emptyBottomRowArr[index]);
-          const nigger2 = map.latLngToLayerPoint(emptyBottomRowArr[index + 1]);
-          const ff = L.LineUtil.simplify([nigger]);
 
+          const myline = map.latLngToLayerPoint(emptyBottomRowArr[index]);
+          const myline2 = map.latLngToLayerPoint(emptyBottomRowArr[index + 1]);
+          const bb = L.latLng(element[1]);
+          // L.latLngBounds(element[0], element[1])
+          // console.log(L.latLngBounds(element[0], element[1]).getNorth());
+
+          console.log(L.CRS.unproject(myline));
 
           this.testempty.push(JSON.stringify(element));
-
-          // const eastingLine = new L.Polyline([element], lo);
-          // this.layerGroup100k.addLayer(eastingLine);
         }
 
 
@@ -255,12 +256,12 @@ class Gen {
     });
 
     // testempty is 1905 arrays
-    const jew = removeDup(this.testempty);
+    const newEastlingLine = removeDup(this.testempty);
 
-    const eastingLine = new L.Polyline([jew], {
+    const eastingLine = new L.Polyline([newEastlingLine], {
       color: 'blue',
       weight: 1,
-      opacity: 0.125,
+      opacity: 0.9,
       interactive: false,
       fill: false,
       noClip: true,
@@ -269,17 +270,20 @@ class Gen {
       lineJoin: 'miter-clip',
       className: 'bluegoo',
     });
-    this.layerGroup100k.addLayer(eastingLine);
 
-    this.layerGroup100k.addTo(map);
+    this.layerGroup100k.addLayer(eastingLine);
     return this.clean();
   }
 
   clean() {
     // dump the array vals and prepare for next grid
     console.log('cleaning ');
+
+
+    this.layerGroup100k.addTo(map);
     this.eastingArray = [];
     this.northingArray = [];
+    this.testempty = [];
   }
 }
 
