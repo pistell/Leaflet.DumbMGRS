@@ -1,3 +1,4 @@
+// Not too much important stuff in here. This is kind of a scratch pad of me figuring things out
 import L from 'leaflet';
 import * as turf from '@turf/turf';
 import {

@@ -1,3 +1,4 @@
+// This is an old file I worked on for the 100k grids. Not sure if this is even useful
 function getPaddingOnZoomLevel100k() {
   if (map.getZoom() >= 17) {
     return 3;
