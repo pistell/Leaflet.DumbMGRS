@@ -9,6 +9,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 // LLtoUTM and UTMtoLL aren't exported in the original mgrs.js, fork it and import them
 // https://github.com/proj4js/mgrs/issues/10
 // TODO: Remove unused imports/exports from mgrs.js
+import { bearingToAngle } from '@turf/turf';
 import {
   forward, getLetterDesignator, inverse, toPoint, get100kSetForZone, get100kID, LLtoUTM, UTMtoLL, decode, encode, UTMtoMGRS,
 } from './mgrs';
@@ -63,309 +64,6 @@ map.addEventListener('mousemove', (event) => {
   cc.querySelector('.northingInfo').innerHTML = `${LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }).northing}`;
 });
 
-
-// *********************************************************************************** //
-// * Leaflet DumbMGRS Plugin - 1000 Meter Grids                                      * //
-// *********************************************************************************** //
-// If there is a high zoom level, we need to add more padding so the grids generate throughout the whole screen
-function getPaddingOnZoomLevel() {
-  if (map.getZoom() >= 17) {
-    return 3;
-  }
-  if (map.getZoom() < 17 && map.getZoom() >= 15) {
-    return 1;
-  }
-  if (map.getZoom() <= 14 && map.getZoom() >= 12) {
-    return 0.15;
-  }
-  return 0.1;
-}
-//! You might benefit from simplifying these lines https://leafletjs.com/reference-1.6.0.html#lineutil
-function Grid1000() {
-  this.constructor = function () {
-    this.north = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getNorth();
-    this.south = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getSouth();
-    this.east = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getEast();
-    this.west = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getWest();
-    this.eastingArray = [];
-    this.northingArray = [];
-    this.lineOptions = {
-      color: 'blue',
-      weight: 4,
-      opacity: 0.5,
-      interactive: false,
-      fill: false,
-      noClip: true,
-      smoothFactor: 4,
-      lineCap: 'butt',
-      lineJoin: 'miter-clip',
-    };
-    this.map = map;
-    this.layerGroup1000m = new L.LayerGroup([]);
-    return this;
-  };
-
-  this.determineGrids = function () {
-    // Do not add 1000 meter grids if the zoom level is <= 12
-    if (map.getZoom() <= 12) { return; }
-    this.constructor();
-    const NEBounds = LLtoUTM({ lat: this.north, lon: this.east });
-    const NWBounds = LLtoUTM({ lat: this.constructor().north, lon: this.constructor().west });
-    const SEBounds = LLtoUTM({ lat: this.constructor().south, lon: this.constructor().east });
-    const SWBounds = LLtoUTM({ lat: this.constructor().south, lon: this.constructor().west });
-    let noAdjacentGZD = false;
-    if (NEBounds.zoneNumber === NWBounds.zoneNumber || SEBounds.zoneNumber === SWBounds.zoneNumber) {
-      console.log('The current map view does not contain multiple Grid Zone Designators');
-      // Since there are no GZDs that are splitting the map bounds, we only need to run one "side"
-      return this.right(NEBounds, noAdjacentGZD = true);
-    }
-    const leftPromise = new Promise((resolve) => {
-      resolve(this.left(NWBounds));
-    });
-    Promise.all([leftPromise]).then(() => new Promise((resolve) => {
-      // Clear out the arrays so the right side can generate grids
-      this.eastingArray = [];
-      this.northingArray = [];
-      setTimeout(() => resolve(this.right(NEBounds)), 10);
-    }));
-  };
-
-  this.left = function (NWBounds) {
-    const neLeft = LLtoUTM({ lat: this.north, lon: eastingDict[NWBounds.zoneNumber].right - 0.000000001 });
-    const seLeft = LLtoUTM({ lat: this.south, lon: eastingDict[NWBounds.zoneNumber].right - 0.000000001 });
-    const swLeft = LLtoUTM({ lat: this.south, lon: this.west });
-
-    let leftEastingIterator = swLeft.easting;
-    let leftNorthingIterator = swLeft.northing;
-
-    //* Left Side Easting */
-    while (leftEastingIterator <= seLeft.easting) {
-      if (leftEastingIterator % 1000 === 0) {
-        // this.endCoordNorthing does not change on the easting
-        this.eastingArray.push({
-          easting: leftEastingIterator,
-          zoneNumber: seLeft.zoneNumber,
-          zoneLetter: seLeft.zoneLetter,
-        });
-      }
-      leftEastingIterator += 1;
-    }
-
-    //* * Left Side Northing */
-    while (leftNorthingIterator <= neLeft.northing) {
-      if (leftNorthingIterator % 1000 === 0) {
-        this.northingArray.push({
-          northing: leftNorthingIterator,
-          zoneNumber: neLeft.zoneNumber,
-          zoneLetter: neLeft.zoneLetter,
-        });
-      }
-      leftNorthingIterator += 1;
-    }
-
-    return this.generateSplitGrids('left', NWBounds);
-  };
-
-  this.right = function (NEBounds, noAdjacentGZD = false) {
-    let swRight;
-    if (noAdjacentGZD) {
-      swRight = LLtoUTM({ lat: this.south, lon: this.west });
-    } else {
-      swRight = LLtoUTM({ lat: this.south, lon: eastingDict[NEBounds.zoneNumber].left });
-    }
-
-    const neRight = LLtoUTM({ lat: this.north, lon: this.east });
-    const seRight = LLtoUTM({ lat: this.south, lon: this.east });
-    let rightEastingIterator = swRight.easting;
-    let rightNorthingIterator = swRight.northing;
-
-    //* Right Side Easting */
-    while (rightEastingIterator <= seRight.easting) {
-      if (rightEastingIterator % 1000 === 0) {
-        this.eastingArray.push({
-          easting: rightEastingIterator,
-          zoneNumber: seRight.zoneNumber,
-          zoneLetter: seRight.zoneLetter,
-        });
-      }
-      rightEastingIterator += 1;
-    }
-    // https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
-    // Good info on how to remove duplicates
-
-    //* Right Side Northing */
-    while (rightNorthingIterator <= neRight.northing) {
-      if (rightNorthingIterator % 1000 === 0) {
-        this.northingArray.push({
-          northing: rightNorthingIterator,
-          zoneNumber: neRight.zoneNumber,
-          zoneLetter: neRight.zoneLetter,
-        });
-      }
-      rightNorthingIterator += 1;
-    }
-    return this.generateSplitGrids('right', NEBounds);
-  };
-
-
-  this.generateSplitGrids = function (direction, bounds) {
-    this.direction = direction;
-    this.bounds = bounds;
-    // const layerGroup1000m = new L.LayerGroup([]);
-    Object.entries(this.northingArray).forEach((e) => {
-      const bottomNorthing = e[1];
-      const bottomRow = this.eastingArray.map((j) => [j, bottomNorthing]);
-      const emptyBottomRowArr = [];
-
-      bottomRow.forEach((k) => {
-        emptyBottomRowArr.push(UTMtoLL({
-          northing: k[1].northing,
-          easting: k[0].easting,
-          zoneNumber: k[0].zoneNumber,
-          zoneLetter: k[0].zoneLetter,
-        }));
-      });
-
-      for (let index = 0; index < emptyBottomRowArr.length; index++) {
-        const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
-        switch (this.direction) {
-          case 'left':
-            // element[1] ensures that each element in the loop has 2 arrays. If there is only 1 array then it's the "odd-man-out" so we disregard it
-            // element[1].lon <= eastingDict[NWBounds.zoneNumber].right - 0.000000001 ensures that the lines will not go over the GZD boundaries
-            if (element[1] && element[1].lon <= eastingDict[this.bounds.zoneNumber].right - 0.000000001) {
-              const northingLine = new L.Polyline([element], this.lineOptions);
-              this.layerGroup1000m.addLayer(northingLine);
-              // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
-              // Convert the Polyline element to a LatLng so we can use the distanceTo() method
-              const finalNorthingLine = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
-              // If any Polylines are less than 1000 meters away from the GZD, we can then start connecting them
-              if (finalNorthingLine.distanceTo({ lat: element[1].lat, lng: eastingDict[this.bounds.zoneNumber].right - 0.000000001 }) < 1000) {
-                const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLine.lat, lon: eastingDict[this.bounds.zoneNumber].right - 0.000000001 });
-
-                const extendedLine = UTMtoLL({
-                  northing: Math.round(gridLineEndpoint.northing / 1000) * 1000,
-                  easting: gridLineEndpoint.easting,
-                  zoneNumber: gridLineEndpoint.zoneNumber,
-                  zoneLetter: gridLineEndpoint.zoneLetter,
-                });
-
-                const northingLinetoGZD = new L.Polyline([extendedLine, finalNorthingLine], this.lineOptions);
-                this.layerGroup1000m.addLayer(northingLinetoGZD);
-              }
-            }
-            break;
-          case 'right':
-            if (element[1] && element[0].lon >= eastingDict[this.bounds.zoneNumber].left) {
-              const northingLine = new L.Polyline([element], this.lineOptions);
-              this.layerGroup1000m.addLayer(northingLine);
-              // Since element[0] starts on the left, we use that to test if the polyline is extending over the GZD bounds
-              const finalNorthingLine = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
-              // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
-              // Convert the Polyline element to a LatLng so we can use the distanceTo() method
-              if (finalNorthingLine.distanceTo({ lat: element[0].lat, lng: eastingDict[this.bounds.zoneNumber].left }) < 1000) {
-                const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLine.lat, lon: eastingDict[this.bounds.zoneNumber].left });
-                const extendedLine = UTMtoLL({
-                  northing: Math.round(gridLineEndpoint.northing / 1000) * 1000,
-                  easting: gridLineEndpoint.easting,
-                  zoneNumber: gridLineEndpoint.zoneNumber,
-                  zoneLetter: gridLineEndpoint.zoneLetter,
-                });
-                const northingLinetoGZD = new L.Polyline([extendedLine, finalNorthingLine], this.lineOptions);
-                this.layerGroup1000m.addLayer(northingLinetoGZD);
-              }
-            }
-            break;
-          default:
-            break;
-        }
-      }
-    });
-
-    Object.entries(this.eastingArray).forEach((e) => {
-      const bottomNorthing = e[1];
-      const bottomRow = this.northingArray.map((j) => [j, bottomNorthing]);
-      const emptyBottomRowArr = [];
-
-      bottomRow.forEach((k) => {
-        emptyBottomRowArr.push(UTMtoLL({
-          northing: k[0].northing,
-          easting: k[1].easting,
-          zoneNumber: k[0].zoneNumber,
-          zoneLetter: k[0].zoneLetter,
-        }));
-      });
-
-      for (let index = 0; index < emptyBottomRowArr.length; index++) {
-        const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
-
-        switch (this.direction) {
-          case 'left':
-            if (element[1] && element[1].lon <= eastingDict[this.bounds.zoneNumber].right - 0.000000001) {
-              const eastingLine = new L.Polyline([element], this.lineOptions);
-              this.layerGroup1000m.addLayer(eastingLine);
-            }
-            break;
-          case 'right':
-            if (element[1] && element[1].lon >= eastingDict[this.bounds.zoneNumber].left) {
-              const eastingLine = new L.Polyline([element], this.lineOptions);
-              this.layerGroup1000m.addLayer(eastingLine);
-            }
-            break;
-          default:
-            break;
-        }
-      }
-    });
-
-    // This was supposed to reduce the points on the map instead it did nothing
-    // const reducePoints = this.layerGroup1000m.eachLayer((layer) => {
-    //   layer.getLatLngs().forEach((j) => {
-    //     const pixelPosition0 = new L.point(map.latLngToLayerPoint(j[0]));
-    //     const pixelPosition1 = new L.point(map.latLngToLayerPoint(j[1]));
-    //     return L.LineUtil.simplify([pixelPosition0, pixelPosition1], 40).map((point) => {
-    //       const mynewpoint = map.layerPointToLatLng([point.x, point.y]);
-    //       const mynewline = new L.Polyline([mynewpoint], this.lineOptions);
-    //       return mynewline;
-    //     });
-    //   });
-    // });
-    // reducePoints.addTo(map);
-    // All the Polylines are now in this group, we can add it to the map
-    this.layerGroup1000m.addTo(this.map);
-
-    // Set layer count and map zoom data only once on DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
-        document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
-      }, 300);
-    }, { once: true });
-
-    return this;
-  };
-
-  this.clean = function () {
-    if (this.layerGroup1000m) {
-      this.map.removeLayer(this.layerGroup1000m);
-    }
-  };
-}
-
-const generate1000meterGrids = new Grid1000(new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
-generate1000meterGrids.determineGrids();
-
-map.addEventListener('moveend', () => {
-  if (map.getZoom() >= 12) {
-    generate1000meterGrids.clean();
-    generate1000meterGrids.determineGrids();
-  }
-  generate100kGrids.clean();
-  generate100kGrids.determineGrids();
-  setTimeout(() => {
-    document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
-    document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
-  }, 300);
-}, { once: true });
 
 // *********************************************************************************** //
 // * Leaflet DumbMGRS Plugin - Grid Zone Designators                                 * //
@@ -555,6 +253,272 @@ class GZD extends L.LayerGroup {
 
 export const gz = new GZD(eastingDict, northingDict);
 gz.addTo(map);
+
+
+// *********************************************************************************** //
+// * Leaflet DumbMGRS Plugin - 1000 Meter Grids                                      * //
+// *********************************************************************************** //
+// If there is a high zoom level, we need to add more padding so the grids generate throughout the whole screen
+function getPaddingOnZoomLevel() {
+  if (map.getZoom() >= 17) {
+    return 3;
+  }
+  if (map.getZoom() < 17 && map.getZoom() >= 15) {
+    return 1;
+  }
+  if (map.getZoom() <= 14 && map.getZoom() >= 12) {
+    return 0.15;
+  }
+  return 0.1;
+}
+function getUnique(arr, comp) {
+  return arr
+    .map((e) => e[comp])
+    .map((e, i, final) => final.indexOf(e) === i && i) // store the keys of the unique objects
+    .filter((e) => arr[e]).map((e) => arr[e]); // eliminate the dead keys & store unique objects
+}
+function removeDup(arr) {
+  const result = [];
+  arr.forEach((item, index) => {
+    if (arr.indexOf(item) === index) {
+      result.push(JSON.parse(item));
+    }
+  });
+  return result;
+}
+//! You might benefit from simplifying these lines https://leafletjs.com/reference-1.6.0.html#lineutil
+function Grid1000() {
+  this.constructor = function () {
+    this.north = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getNorth();
+    this.south = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getSouth();
+    this.east = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getEast();
+    this.west = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getWest();
+    this.eastingArray = [];
+    this.northingArray = [];
+    this.lineOptions = {
+      color: 'black',
+      weight: 4,
+      opacity: 0.5,
+      interactive: false,
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+    };
+    this.map = map;
+    this.layerGroup1000m = new L.LayerGroup([]);
+    this.gridInterval = 100000;
+    this.empty = [];
+    this.uniqueVisibleGrids = {};
+    this.layerGroup100k = new L.LayerGroup([]);
+    this.testempty = [];
+    return this;
+  };
+
+
+  this.clean = function () {
+    if (this.layerGroup1000m) {
+      this.map.removeLayer(this.layerGroup1000m);
+    }
+    if (this.layerGroup100k) {
+      this.map.removeLayer(this.layerGroup100k);
+    }
+    this.layerGroup100k.addTo(map);
+    this.eastingArray = [];
+    this.northingArray = [];
+    this.testempty = [];
+  };
+
+
+  // Returns the visible grids on the map and their bounds
+  this.getVizGrids = function () {
+    this.constructor();
+    this.empty.length = 0;
+    gz.viz.forEach((visibleGrid) => {
+      this.empty.push(visibleGrid);
+    });
+    this.uniqueVisibleGrids = Object.keys(this.empty).reduce((acc, k) => {
+      const grid = this.empty[k].id;
+      acc[grid] = acc[grid] || [];
+      acc[grid].push(this.empty[k]);
+      return acc;
+    }, {});
+    return this.prepGrids(this.uniqueVisibleGrids);
+  };
+
+  this.prepGrids = function (uniqueVisibleGrids) {
+    this.uniqueVisibleGrids = uniqueVisibleGrids;
+
+    const visibleGridsIterator = new Map(Object.entries(this.uniqueVisibleGrids));
+
+    // Not sure how useful this promise is. It works fine with just a forEach loop
+    const delay = (ms) => new Promise(
+      (resolve) => setTimeout(resolve, ms),
+    );
+
+    visibleGridsIterator.forEach((k) => {
+      delay(20)
+        .then(() => {
+          this.generateGrids(k);
+          return delay(3000);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    });
+  };
+
+  this.generateGrids = function (data) {
+    this.data = data;
+    Object.values(this.data).forEach((x) => {
+      if (x.id) {
+        const neLeft = LLtoUTM({ lat: x.top - 0.000001, lon: x.right - 0.000000001 });
+        const seLeft = LLtoUTM({ lat: x.bottom, lon: x.right - 0.000000001 });
+        const swLeft = LLtoUTM({ lat: x.bottom, lon: x.left });
+        let leftEastingIterator = swLeft.easting;
+        let leftNorthingIterator = swLeft.northing;
+
+        //* Left Side Easting */
+        while (leftEastingIterator <= seLeft.easting) {
+          if (leftEastingIterator % this.gridInterval === 0) {
+            // this.endCoordNorthing does not change on the easting
+            this.eastingArray.push({
+              easting: leftEastingIterator,
+              zoneNumber: seLeft.zoneNumber,
+              zoneLetter: seLeft.zoneLetter,
+            });
+            // console.log(this.eastingArray);
+          }
+          leftEastingIterator += 1;
+        }
+
+        //* * Left Side Northing */
+        while (leftNorthingIterator <= neLeft.northing) {
+          if (leftNorthingIterator % this.gridInterval === 0) {
+            this.northingArray.push({
+              northing: leftNorthingIterator,
+              zoneNumber: neLeft.zoneNumber,
+              zoneLetter: neLeft.zoneLetter,
+            });
+            // console.log(this.northingArray);
+          }
+          leftNorthingIterator += 1;
+        }
+      }
+    });
+
+
+    Object.entries(this.northingArray).forEach((e) => {
+      const bottomNorthing = e[1];
+      const bottomRow = this.eastingArray.map((j) => [j, bottomNorthing]);
+      const emptyBottomRowArr = [];
+
+      bottomRow.forEach((k) => {
+        emptyBottomRowArr.push(UTMtoLL({
+          northing: k[1].northing,
+          easting: k[0].easting,
+          zoneNumber: k[0].zoneNumber,
+          zoneLetter: k[0].zoneLetter,
+        }));
+      });
+      // dividing the length by 2 prevents lines from overlapping...idk
+      for (let index = 0; index < emptyBottomRowArr.length / 2; index++) {
+        const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
+        const { right } = this.data[0];
+        const { left } = this.data[0];
+        // getUnique() will remove duplicate grid coordinates
+        if (getUnique(element, 'lat')[1] && element[1].lon <= right - 0.000000001) {
+          const northingLine = new L.Polyline([element], this.lineOptions);
+          this.layerGroup100k.addLayer(northingLine);
+          // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
+          // Convert the Polyline element to a LatLng so we can use the distanceTo() method
+          const finalNorthingLine = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
+          // If any Polylines are less than 1000 meters away from the GZD, we can then start connecting them
+          if (finalNorthingLine.distanceTo({ lat: element[1].lat, lng: right - 0.000000001 }) < this.gridInterval) {
+            const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLine.lat, lon: right - 0.000000001 });
+            const extendedLine = UTMtoLL({
+              northing: Math.round(gridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
+              easting: gridLineEndpoint.easting,
+              zoneNumber: gridLineEndpoint.zoneNumber,
+              zoneLetter: gridLineEndpoint.zoneLetter,
+            });
+            const northingLinetoGZD = new L.Polyline([extendedLine, finalNorthingLine], this.lineOptions);
+            this.layerGroup100k.addLayer(northingLinetoGZD);
+          }
+
+          const finalNorthingLine2 = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+          if (finalNorthingLine2.distanceTo({ lat: element[0].lat, lng: left }) < this.gridInterval) {
+            const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLine2.lat, lon: left });
+            const extendedLine = UTMtoLL({
+              northing: Math.round(gridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
+              easting: gridLineEndpoint.easting,
+              zoneNumber: gridLineEndpoint.zoneNumber,
+              zoneLetter: gridLineEndpoint.zoneLetter,
+            });
+            const northingLinetoGZD = new L.Polyline([extendedLine, finalNorthingLine2], this.lineOptions);
+            this.layerGroup100k.addLayer(northingLinetoGZD);
+          }
+        }
+      }
+    });
+
+    Object.entries(this.eastingArray).forEach((e) => {
+      const bottomNorthing = e[1];
+      const bottomRow = this.northingArray.map((j) => [j, bottomNorthing]);
+      const emptyBottomRowArr = [];
+
+      bottomRow.forEach((k) => {
+        emptyBottomRowArr.push(UTMtoLL({
+          northing: k[0].northing,
+          easting: k[1].easting,
+          zoneNumber: k[0].zoneNumber,
+          zoneLetter: k[0].zoneLetter,
+        }));
+      });
+
+      for (let index = 0; index < emptyBottomRowArr.length; index++) {
+        const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
+
+
+        if (element[1] && element[1].lat >= this.south) {
+          const eastingLine = new L.Polyline([element], {
+            color: 'blue',
+            weight: 3,
+            opacity: 0.5,
+            interactive: false,
+            fill: false,
+            noClip: true,
+            smoothFactor: 4,
+            lineCap: 'butt',
+            lineJoin: 'miter-clip',
+          });
+          this.layerGroup100k.addLayer(eastingLine);
+        }
+      }
+    });
+
+
+    return this.clean();
+  };
+}
+const generate1000meterGrids = new Grid1000(new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
+console.log(generate1000meterGrids.getVizGrids());
+// generate1000meterGrids.determineGrids();
+
+map.addEventListener('moveend', () => {
+  // if (map.getZoom() >= 6) {
+  generate1000meterGrids.clean();
+  generate1000meterGrids.getVizGrids();
+  // }
+
+  // generate100kGrids.clean();
+  // generate100kGrids.determineGrids();
+  setTimeout(() => {
+    document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
+    document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
+  }, 300);
+}, { once: true });
 
 
 // //! 100k

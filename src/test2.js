@@ -226,15 +226,21 @@ class Gen {
           // const fuck0 = map.latLngToLayerPoint(element[0]);
           // const fuck1 = map.latLngToLayerPoint(element[1]);
 
-          const myline = map.latLngToLayerPoint(emptyBottomRowArr[index]);
-          const myline2 = map.latLngToLayerPoint(emptyBottomRowArr[index + 1]);
-          const bb = L.latLng(element[1]);
-          // L.latLngBounds(element[0], element[1])
-          // console.log(L.latLngBounds(element[0], element[1]).getNorth());
 
-          console.log(L.CRS.unproject(myline));
+          // this.testempty.push(JSON.stringify(element));
 
-          this.testempty.push(JSON.stringify(element));
+
+          if (emptyBottomRowArr[index + 2]) {
+            const myline = new L.point(map.latLngToLayerPoint(emptyBottomRowArr[index]));
+            const myline2 = new L.point(map.latLngToLayerPoint(emptyBottomRowArr[index + 1]));
+            const myline3 = new L.point(map.latLngToLayerPoint(emptyBottomRowArr[index + 2]));
+            if (L.LineUtil.closestPointOnSegment(myline, myline2, myline3).distanceTo(myline) < 870) {
+              const finalNorthingLine2 = new L.latLng({ lat: northingDict[bottomRow[index][1].zoneLetter].bottom, lng: element[1].lon });
+              if (finalNorthingLine2.distanceTo(element[1]) < 1000000) {
+                this.testempty.push(JSON.stringify(element));
+              }
+            }
+          }
         }
 
 
@@ -258,9 +264,10 @@ class Gen {
     // testempty is 1905 arrays
     const newEastlingLine = removeDup(this.testempty);
 
+
     const eastingLine = new L.Polyline([newEastlingLine], {
       color: 'blue',
-      weight: 1,
+      weight: 4,
       opacity: 0.9,
       interactive: false,
       fill: false,
@@ -272,6 +279,8 @@ class Gen {
     });
 
     this.layerGroup100k.addLayer(eastingLine);
+
+
     return this.clean();
   }
 
@@ -288,8 +297,8 @@ class Gen {
 }
 
 setTimeout(() => {
-  const p = new Gen();
-  window.p = p;
+  // const p = new Gen();
+  // window.p = p;
 }, 300);
 window.getUnique = getUnique;
 window.Gen = Gen;
@@ -306,7 +315,7 @@ function Grid100k() {
     this.northingArray = [];
     this.lineOptions = {
       color: 'orange',
-      weight: 4,
+      weight: 5,
       opacity: 0.5,
       interactive: false,
       fill: false,
