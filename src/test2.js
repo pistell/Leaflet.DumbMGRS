@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import * as turf from '@turf/turf';
 import {
   forward, getLetterDesignator, inverse, toPoint, get100kSetForZone, get100kID, LLtoUTM, UTMtoLL, decode, encode, UTMtoMGRS,
 } from './mgrs';
@@ -6,18 +7,20 @@ import { northingDict, eastingDict } from './gzdObject';
 import { gz } from './index';
 import { map } from './index';
 
-
 function getPaddingOnZoomLevel100k() {
   if (map.getZoom() >= 17) {
+    console.log('high zoom');
     return 3;
   }
   if (map.getZoom() < 17 && map.getZoom() >= 15) {
+    console.log('med zoom');
     return 1;
   }
   if (map.getZoom() <= 14 && map.getZoom() >= 12) {
+    console.log('low zoom');
     return 0.15;
   }
-  return 0.2;
+  return 0.2; // 0.2 seems perfect for zoomlevel 7
 }
 
 
@@ -27,6 +30,17 @@ function getUnique(arr, comp) {
     .map((e) => e[comp])
     .map((e, i, final) => final.indexOf(e) === i && i) // store the keys of the unique objects
     .filter((e) => arr[e]).map((e) => arr[e]); // eliminate the dead keys & store unique objects
+}
+
+// https://stackoverflow.com/questions/54757902/remove-duplicates-in-an-array-using-foreach
+function removeDup(arr) {
+  const result = [];
+  arr.forEach((item, index) => {
+    if (arr.indexOf(item) === index) {
+      result.push(JSON.parse(item));
+    }
+  });
+  return result;
 }
 
 
@@ -54,6 +68,7 @@ class Gen {
     this.map = map;
     this.layerGroup100k = new L.LayerGroup([]);
     this.gridInterval = 100000;
+    this.testempty = [];
     return this.getVizGrids();
   }
 
@@ -69,63 +84,70 @@ class Gen {
       acc[grid].push(this.empty[k]);
       return acc;
     }, {});
-    return this.generateGrids(this.uniqueVisibleGrids);
+    return this.prepGrids(this.uniqueVisibleGrids);
+  }
+
+  prepGrids(uniqueVisibleGrids) {
+    this.uniqueVisibleGrids = uniqueVisibleGrids;
+
+    const visibleGridsIterator = new Map(Object.entries(this.uniqueVisibleGrids));
+
+    // Not sure how useful this promise is. It works fine with just a forEach loop
+    const delay = (ms) => new Promise(
+      (resolve) => setTimeout(resolve, ms),
+    );
+
+    visibleGridsIterator.forEach((k) => {
+      delay(20)
+        .then(() => {
+          this.generateGrids(k);
+          return delay(3000);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    });
   }
 
   generateGrids(data) {
     this.data = data;
+    Object.values(this.data).forEach((x) => {
+      if (x.id) {
+        const neLeft = LLtoUTM({ lat: x.top - 0.000001, lon: x.right - 0.000000001 });
+        const seLeft = LLtoUTM({ lat: x.bottom, lon: x.right - 0.000000001 });
+        const swLeft = LLtoUTM({ lat: x.bottom, lon: x.left });
+        let leftEastingIterator = swLeft.easting;
+        let leftNorthingIterator = swLeft.northing;
 
-    Object.values(this.data).forEach((grid) => {
-      grid.flatMap((x) => {
-        // this.west < x.left && this.east > x.right //(fancy way of getting middle grid)
-        //! this works if you manually replace the GZD IDs (eg '17', '18', and '19)
-        //! The problem is I can't get this to iterate over the map. I have tried generator functions but its not working
-        //! We have what seems to be a working formula, it just needs to iterate
-        //! this is a big improvement, GZD 18T/S is returning 124 layers on the map, this is an improvement from when we were generating like 680
-        if (x.id === '18') {
-          const neLeft = LLtoUTM({ lat: x.top - 0.000001, lon: x.right - 0.000000001 });
-          const seLeft = LLtoUTM({ lat: x.bottom, lon: x.right - 0.000000001 });
-          const swLeft = LLtoUTM({ lat: x.bottom, lon: x.left });
-          let leftEastingIterator = swLeft.easting;
-          let leftNorthingIterator = swLeft.northing;
-
-          //* Left Side Easting */
-          while (leftEastingIterator <= seLeft.easting) {
-            if (leftEastingIterator % this.gridInterval === 0) {
-              // this.endCoordNorthing does not change on the easting
-              this.eastingArray.push({
-                easting: leftEastingIterator,
-                zoneNumber: seLeft.zoneNumber,
-                zoneLetter: seLeft.zoneLetter,
-              });
-            }
-            leftEastingIterator += 1;
+        //* Left Side Easting */
+        while (leftEastingIterator <= seLeft.easting) {
+          if (leftEastingIterator % this.gridInterval === 0) {
+            // this.endCoordNorthing does not change on the easting
+            this.eastingArray.push({
+              easting: leftEastingIterator,
+              zoneNumber: seLeft.zoneNumber,
+              zoneLetter: seLeft.zoneLetter,
+            });
+            // console.log(this.eastingArray);
           }
-
-          //* * Left Side Northing */
-          while (leftNorthingIterator <= neLeft.northing) {
-            if (leftNorthingIterator % this.gridInterval === 0) {
-              this.northingArray.push({
-                northing: leftNorthingIterator,
-                zoneNumber: neLeft.zoneNumber,
-                zoneLetter: neLeft.zoneLetter,
-              });
-            }
-            leftNorthingIterator += 1;
-          }
+          leftEastingIterator += 1;
         }
-      });
+
+        //* * Left Side Northing */
+        while (leftNorthingIterator <= neLeft.northing) {
+          if (leftNorthingIterator % this.gridInterval === 0) {
+            this.northingArray.push({
+              northing: leftNorthingIterator,
+              zoneNumber: neLeft.zoneNumber,
+              zoneLetter: neLeft.zoneLetter,
+            });
+            // console.log(this.northingArray);
+          }
+          leftNorthingIterator += 1;
+        }
+      }
     });
 
-    //! If we are not using generators, then remove the runtime-regenerator plugin
-    // function* iterableObj() {
-    //   yield 'this';
-    //   yield 'is';
-    //   yield 'iterable';
-    // }
-    // for (const val of iterableObj()) {
-    //   console.log(val);
-    // }
 
     Object.entries(this.northingArray).forEach((e) => {
       const bottomNorthing = e[1];
@@ -143,8 +165,8 @@ class Gen {
       // dividing the length by 2 prevents lines from overlapping...idk
       for (let index = 0; index < emptyBottomRowArr.length / 2; index++) {
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
-        const { right } = this.data[bottomRow[0][0].zoneNumber][0];
-        const { left } = this.data[bottomRow[0][0].zoneNumber][0];
+        const { right } = this.data[0];
+        const { left } = this.data[0];
         // getUnique() will remove duplicate grid coordinates
         if (getUnique(element, 'lat')[1] && element[1].lon <= right - 0.000000001) {
           const northingLine = new L.Polyline([element], this.lineOptions);
@@ -195,14 +217,59 @@ class Gen {
         }));
       });
 
-      for (let index = 0; index < emptyBottomRowArr.length / 2; index++) {
+      for (let index = 0; index < emptyBottomRowArr.length; index++) {
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
-        if (element[1] && element[1].lat <= this.south) {
-          const eastingLine = new L.Polyline([element], this.lineOptions);
-          this.layerGroup100k.addLayer(eastingLine);
+
+        // returning 3320 children
+        // childcount is now 1420 with testempty
+        if (element[1] && element[1].lon >= eastingDict[bottomRow[index][1].zoneNumber].left) {
+          // const fuck0 = map.latLngToLayerPoint(element[0]);
+          // const fuck1 = map.latLngToLayerPoint(element[1]);
+          const nigger = map.latLngToLayerPoint(emptyBottomRowArr[index]);
+          const nigger2 = map.latLngToLayerPoint(emptyBottomRowArr[index + 1]);
+          const ff = L.LineUtil.simplify([nigger]);
+
+
+          this.testempty.push(JSON.stringify(element));
+
+          // const eastingLine = new L.Polyline([element], lo);
+          // this.layerGroup100k.addLayer(eastingLine);
         }
+
+
+        // if (element[1] && element[1].lat <= this.south) {
+        //   const eastingLine = new L.Polyline([element], {
+        //     color: 'blue',
+        //     weight: 4,
+        //     opacity: 0.5,
+        //     interactive: false,
+        //     fill: false,
+        //     noClip: true,
+        //     smoothFactor: 4,
+        //     lineCap: 'butt',
+        //     lineJoin: 'miter-clip',
+        //   });
+        //   this.layerGroup100k.addLayer(eastingLine);
+        // }
       }
     });
+
+    // testempty is 1905 arrays
+    const jew = removeDup(this.testempty);
+
+    const eastingLine = new L.Polyline([jew], {
+      color: 'blue',
+      weight: 1,
+      opacity: 0.125,
+      interactive: false,
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+      className: 'bluegoo',
+    });
+    this.layerGroup100k.addLayer(eastingLine);
 
     this.layerGroup100k.addTo(map);
     return this.clean();
@@ -218,10 +285,10 @@ class Gen {
 
 setTimeout(() => {
   const p = new Gen();
-  // console.log(p);
+  window.p = p;
 }, 300);
-
-
+window.getUnique = getUnique;
+window.Gen = Gen;
 //! 100k
 
 
@@ -234,7 +301,7 @@ function Grid100k() {
     this.eastingArray = [];
     this.northingArray = [];
     this.lineOptions = {
-      color: 'green',
+      color: 'orange',
       weight: 4,
       opacity: 0.5,
       interactive: false,
@@ -368,7 +435,7 @@ function Grid100k() {
           }
         });
       });
-    }, 3000);
+    }, 300);
 
 
     // Do not add 1000 meter grids if the zoom level is <= 12
@@ -553,6 +620,8 @@ function Grid100k() {
 
     Object.entries(this.eastingArray).forEach((e) => {
       const bottomNorthing = e[1];
+
+
       const bottomRow = this.northingArray.map((j) => [j, bottomNorthing]);
       const emptyBottomRowArr = [];
 
@@ -578,7 +647,6 @@ function Grid100k() {
           case 'right':
             if (element[1] && element[1].lon >= eastingDict[this.bounds.zoneNumber].left) {
               const eastingLine = new L.Polyline([element], this.lineOptions);
-
               this.layerGroup100k.addLayer(eastingLine);
             }
             break;
