@@ -15727,7 +15727,7 @@ var between6GZDs = [42.285437007491545, -75.04211425781251]; // This coordinate 
 
 var between3GZDsNoEasting = [51.84935276370605, -86.27563476562501];
 
-var map = _leaflet.default.map('map').setView(between3GZDsNoEasting, 7);
+var map = _leaflet.default.map('map').setView(between6GZDs, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16185,73 +16185,71 @@ function Grid100K() {
           zoneNumber: k[0].zoneNumber,
           zoneLetter: k[0].zoneLetter
         }));
-      }); // dividing the length by 2 prevents lines from overlapping...idk
+      }); // "emptyBottomRowArr.length - 1" prevents lines from overlapping...idk
 
-      for (var index = 0; index < emptyBottomRowArr.length / 2; index++) {
-        var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
+      for (var index = 0; index < emptyBottomRowArr.length - 1; index++) {
         var right = _this5.data[0].right;
-        var left = _this5.data[0].left; // getUnique() will remove duplicate grid coordinates.. I think?
-        // getUnique() might be useless. You could just replace it with element[1]
+        var left = _this5.data[0].left;
+        var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
 
-        if (getUnique(element, 'lat')[1] && element[1].lon <= right - 0.000000001) {
+        if (element[1] && element[1].lon <= right + 0.000000001) {
           var northingLine = new _leaflet.default.Polyline([element], _this5.lineOptions); // Checks to make sure the northingLine does not go past the left GZD boundary
 
           if (northingLine.getBounds().getWest() >= left) {
             _this5.layerGroup100k.addLayer(northingLine);
-          } // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
+          } // This will "connect" the 100k grid to the GZD. This is useful because not all 100k grids are 100k meters across
           // Convert the Polyline element to a LatLng so we can use the distanceTo() method
 
 
-          var finalNorthingLine = new _leaflet.default.latLng({
+          var connectingNorthingLineEast = new _leaflet.default.latLng({
             lat: element[1].lat,
             lng: element[1].lon
-          }); // If any Polylines are less than 150000 meters away from the GZD, we can then start connecting them
+          }); // If any Polylines are less than 100000 meters away from the GZD, we can then start connecting them
 
-          if (finalNorthingLine.distanceTo({
+          if (connectingNorthingLineEast.distanceTo({
             lat: element[1].lat,
-            lng: right - 0.000000001
-          }) < _this5.gridInterval * 1.5) {
+            lng: right + 0.000000001
+          }) <= _this5.gridInterval) {
             var gridLineEndpoint = (0, _mgrs.LLtoUTM)({
-              lat: finalNorthingLine.lat,
-              lon: right - 0.000000001
+              lat: connectingNorthingLineEast.lat,
+              lon: right + 0.000000001
             });
-            var extendedLine = (0, _mgrs.UTMtoLL)({
+            var extendedLineEast = (0, _mgrs.UTMtoLL)({
               northing: Math.round(gridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
               easting: gridLineEndpoint.easting,
               zoneNumber: gridLineEndpoint.zoneNumber,
               zoneLetter: gridLineEndpoint.zoneLetter
             });
-            var northingLinetoGZD = new _leaflet.default.Polyline([extendedLine, finalNorthingLine], _this5.lineOptions); // If you want to see what this does just comment the line out below
-
-            _this5.layerGroup100k.addLayer(northingLinetoGZD);
+            var connectingNorthingLinetoGZD = new _leaflet.default.Polyline([extendedLineEast, connectingNorthingLineEast], _this5.lineOptions);
+            return _this5.layerGroup100k.addLayer(connectingNorthingLinetoGZD);
           }
 
-          var finalNorthingLine2 = new _leaflet.default.latLng({
+          var connectingNorthingLineWest = new _leaflet.default.latLng({
             lat: element[0].lat,
             lng: element[0].lon
           });
 
-          if (finalNorthingLine2.distanceTo({
+          if (connectingNorthingLineWest.distanceTo({
             lat: element[0].lat,
             lng: left
-          }) < _this5.gridInterval - 1000) {
+          }) <= _this5.gridInterval - 1000) {
             var _gridLineEndpoint = (0, _mgrs.LLtoUTM)({
-              lat: finalNorthingLine2.lat,
+              lat: connectingNorthingLineWest.lat,
               lon: left
             });
 
-            var _extendedLine = (0, _mgrs.UTMtoLL)({
+            var extendedLineWest = (0, _mgrs.UTMtoLL)({
               northing: Math.round(_gridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
               easting: _gridLineEndpoint.easting,
               zoneNumber: _gridLineEndpoint.zoneNumber,
               zoneLetter: _gridLineEndpoint.zoneLetter
             });
 
-            var _northingLinetoGZD = new _leaflet.default.Polyline([_extendedLine, finalNorthingLine2], _this5.lineOptions); // Checks to make sure the northingLinetoGZD does not go past the left GZD boundary
+            var _connectingNorthingLinetoGZD = new _leaflet.default.Polyline([extendedLineWest, connectingNorthingLineWest], _this5.lineOptions); // Checks to make sure the connectingNorthingLinetoGZD does not go past the left GZD boundary
 
 
-            if (_northingLinetoGZD.getBounds().getWest() >= left) {
-              _this5.layerGroup100k.addLayer(_northingLinetoGZD);
+            if (_connectingNorthingLinetoGZD.getBounds().getWest() >= left) {
+              _this5.layerGroup100k.addLayer(_connectingNorthingLinetoGZD);
             }
           }
         }
@@ -16296,26 +16294,26 @@ function Grid100K() {
 
           _this5.layerGroup100k.addLayer(eastingLine);
 
-          var finalNorthingLine = new _leaflet.default.latLng({
+          var connectingEastingLine = new _leaflet.default.latLng({
             lat: element[0].lat,
             lng: element[0].lon
-          }); // If any Polylines are less than 150000 meters away from the GZD, we can then start connecting them
+          }); // If any Polylines are less than 100000 meters away from the GZD, we can then start connecting them
 
-          if (finalNorthingLine.distanceTo({
+          if (connectingEastingLine.distanceTo({
             lat: bottom,
             lng: element[1].lon
           }) < _this5.gridInterval) {
             var gridLineEndpoint = (0, _mgrs.LLtoUTM)({
               lat: bottom,
-              lon: finalNorthingLine.lng
+              lon: connectingEastingLine.lng
             });
-            var extendedLine = (0, _mgrs.UTMtoLL)({
+            var extendedLineSouth = (0, _mgrs.UTMtoLL)({
               northing: Math.round(gridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
               easting: gridLineEndpoint.easting,
               zoneNumber: gridLineEndpoint.zoneNumber,
               zoneLetter: gridLineEndpoint.zoneLetter
             });
-            var northingLinetoGZD = new _leaflet.default.Polyline([extendedLine, finalNorthingLine], {
+            var connectingEastingLinetoGZD = new _leaflet.default.Polyline([extendedLineSouth, connectingEastingLine], {
               color: 'green',
               weight: 3,
               opacity: 0.85,
@@ -16327,7 +16325,7 @@ function Grid100K() {
               lineJoin: 'miter-clip'
             });
 
-            _this5.layerGroup100k.addLayer(northingLinetoGZD);
+            _this5.layerGroup100k.addLayer(connectingEastingLinetoGZD);
           }
         }
       }
