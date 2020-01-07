@@ -16210,15 +16210,15 @@ function Grid100K() {
             lat: element[1].lat,
             lng: right + 0.000000001
           }) <= _this5.gridInterval) {
-            var gridLineEndpoint = (0, _mgrs.LLtoUTM)({
+            var northingGridLineEndpointEast = (0, _mgrs.LLtoUTM)({
               lat: connectingNorthingLineEast.lat,
               lon: right + 0.000000001
             });
             var extendedLineEast = (0, _mgrs.UTMtoLL)({
-              northing: Math.round(gridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
-              easting: gridLineEndpoint.easting,
-              zoneNumber: gridLineEndpoint.zoneNumber,
-              zoneLetter: gridLineEndpoint.zoneLetter
+              northing: Math.round(northingGridLineEndpointEast.northing / _this5.gridInterval) * _this5.gridInterval,
+              easting: northingGridLineEndpointEast.easting,
+              zoneNumber: northingGridLineEndpointEast.zoneNumber,
+              zoneLetter: northingGridLineEndpointEast.zoneLetter
             });
             var connectingNorthingLinetoGZD = new _leaflet.default.Polyline([extendedLineEast, connectingNorthingLineEast], _this5.lineOptions);
             return _this5.layerGroup100k.addLayer(connectingNorthingLinetoGZD);
@@ -16233,16 +16233,15 @@ function Grid100K() {
             lat: element[0].lat,
             lng: left
           }) <= _this5.gridInterval - 1000) {
-            var _gridLineEndpoint = (0, _mgrs.LLtoUTM)({
+            var northingGridLineEndpointWest = (0, _mgrs.LLtoUTM)({
               lat: connectingNorthingLineWest.lat,
               lon: left
             });
-
             var extendedLineWest = (0, _mgrs.UTMtoLL)({
-              northing: Math.round(_gridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
-              easting: _gridLineEndpoint.easting,
-              zoneNumber: _gridLineEndpoint.zoneNumber,
-              zoneLetter: _gridLineEndpoint.zoneLetter
+              northing: Math.round(northingGridLineEndpointWest.northing / _this5.gridInterval) * _this5.gridInterval,
+              easting: northingGridLineEndpointWest.easting,
+              zoneNumber: northingGridLineEndpointWest.zoneNumber,
+              zoneLetter: northingGridLineEndpointWest.zoneLetter
             });
 
             var _connectingNorthingLinetoGZD = new _leaflet.default.Polyline([extendedLineWest, connectingNorthingLineWest], _this5.lineOptions); // Checks to make sure the connectingNorthingLinetoGZD does not go past the left GZD boundary
@@ -16277,22 +16276,14 @@ function Grid100K() {
         var right = _this5.data[0].right;
         var left = _this5.data[0].left;
         var bottom = _this5.data[0].bottom;
-        var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]]; // If element[1] exists and if element[1]'s latitude is less than the souther boundary run this block
+        var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]]; // If element[1] exists and if element[1]'s latitude is less than the left boundary and greater than the right boundary
 
         if (element[1] && element[1].lon >= left && element[1].lon <= right) {
-          var eastingLine = new _leaflet.default.Polyline([element], {
-            color: 'blue',
-            weight: 3,
-            opacity: 0.5,
-            interactive: false,
-            fill: false,
-            noClip: true,
-            smoothFactor: 4,
-            lineCap: 'butt',
-            lineJoin: 'miter-clip'
-          });
+          var eastingLine = new _leaflet.default.Polyline([element], _this5.lineOptions);
 
-          _this5.layerGroup100k.addLayer(eastingLine);
+          if (eastingLine.getBounds().getSouth() >= _this5.south) {
+            _this5.layerGroup100k.addLayer(eastingLine);
+          }
 
           var connectingEastingLine = new _leaflet.default.latLng({
             lat: element[0].lat,
@@ -16301,29 +16292,20 @@ function Grid100K() {
 
           if (connectingEastingLine.distanceTo({
             lat: bottom,
-            lng: element[1].lon
+            lng: element[0].lon
           }) < _this5.gridInterval) {
-            var gridLineEndpoint = (0, _mgrs.LLtoUTM)({
+            var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
               lat: bottom,
               lon: connectingEastingLine.lng
             });
             var extendedLineSouth = (0, _mgrs.UTMtoLL)({
-              northing: Math.round(gridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
-              easting: gridLineEndpoint.easting,
-              zoneNumber: gridLineEndpoint.zoneNumber,
-              zoneLetter: gridLineEndpoint.zoneLetter
+              northing: Math.round(eastingGridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
+              // round the easting so it lines up with the bottom grid.
+              easting: Math.round(eastingGridLineEndpoint.easting / _this5.gridInterval) * _this5.gridInterval,
+              zoneNumber: eastingGridLineEndpoint.zoneNumber,
+              zoneLetter: eastingGridLineEndpoint.zoneLetter
             });
-            var connectingEastingLinetoGZD = new _leaflet.default.Polyline([extendedLineSouth, connectingEastingLine], {
-              color: 'green',
-              weight: 3,
-              opacity: 0.85,
-              interactive: false,
-              fill: false,
-              noClip: true,
-              smoothFactor: 4,
-              lineCap: 'butt',
-              lineJoin: 'miter-clip'
-            });
+            var connectingEastingLinetoGZD = new _leaflet.default.Polyline([connectingEastingLine, extendedLineSouth], _this5.lineOptions);
 
             _this5.layerGroup100k.addLayer(connectingEastingLinetoGZD);
           }
