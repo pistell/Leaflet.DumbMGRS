@@ -15719,12 +15719,13 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 // * Global Vars/Leaflet setup                                                       * //
 // *********************************************************************************** //
 // This coordinate has no Grid Zone Designator boundaries within view
-var noVisibleGZDs = [40.123503280320634, -77.74869918823244]; // This coordinate has 4 Grid Zone Designator boundaries within view
+var noVisibleGZDs = [40.123503280320634, -77.74869918823244]; // This coordinate has 4 visible Grid Zone Designator boundaries within view
 
-var between4GZDs = [40.001780202770966, -78.0005693435669];
-var zoomLevel8NoGZDs = [42.285437007491545, -75.04211425781251];
+var between4GZDs = [40.001780202770966, -78.0005693435669]; // This coordinate has 6 visible Grid Zone Designator boundaries at zoom level 7
 
-var map = _leaflet.default.map('map').setView(zoomLevel8NoGZDs, 7);
+var between6GZDs = [42.285437007491545, -75.04211425781251];
+
+var map = _leaflet.default.map('map').setView(between6GZDs, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16347,7 +16348,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64029" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58628" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

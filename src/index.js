@@ -18,10 +18,11 @@ import { northingDict, eastingDict } from './gzdObject';
 // *********************************************************************************** //
 // This coordinate has no Grid Zone Designator boundaries within view
 const noVisibleGZDs = [40.123503280320634, -77.74869918823244];
-// This coordinate has 4 Grid Zone Designator boundaries within view
+// This coordinate has 4 visible Grid Zone Designator boundaries within view
 const between4GZDs = [40.001780202770966, -78.0005693435669];
-const zoomLevel8NoGZDs = [42.285437007491545, -75.04211425781251];
-const map = L.map('map').setView(zoomLevel8NoGZDs, 7);
+// This coordinate has 6 visible Grid Zone Designator boundaries at zoom level 7
+const between6GZDs = [42.285437007491545, -75.04211425781251];
+const map = L.map('map').setView(between6GZDs, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 
