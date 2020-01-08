@@ -16023,7 +16023,15 @@ function getPaddingOnZoomLevel() {
   }
 
   return 0.1;
-}
+} //! Issues:
+//! Grids fail to draw completely in high northern areas (eg- Northern Canada)
+//! Grids fail at the equator (sometimes failing miserably)
+//! Grids fail around Antarctica
+//! Grids fail around Iceland
+//! Grids fail on GZD 31U (This is one of those "special" case grid zones)
+//! Grids fail between GZD 31V and 32V (another special case zone)
+//! Basically anything above Latitude 64 throws tons of errors, the northingLine Polyline keeps protruding past it's Grid Zone boundaries. This isn't noticeable at latitudes below Iceland but it gets worse as you pan up northwards
+
 
 function Grid100K() {
   // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
