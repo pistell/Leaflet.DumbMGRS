@@ -418,7 +418,7 @@ function Grid100K() {
       });
 
       // "emptyBottomRowArr.length - 1" prevents lines from overlapping...idk
-      for (let index = 0; index < emptyBottomRowArr.length - 1; index++) {
+      for (let index = 0; index < emptyBottomRowArr.length / 2; index += 1) {
         const { right } = this.data[0];
         const { left } = this.data[0];
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
@@ -427,14 +427,16 @@ function Grid100K() {
           const northingLine = new L.Polyline([element], this.lineOptions);
           // Checks to make sure the northingLine does not go past the left GZD boundary
           if (northingLine.getBounds().getWest() >= left) {
-            this.layerGroup100k.addLayer(northingLine);
+            if (element[1].lon - element[0].lon >= 1) {
+              this.layerGroup100k.addLayer(northingLine);
+            }
           }
 
           // This will "connect" the 100k grid to the GZD. This is useful because not all 100k grids are 100k meters across
           // Convert the Polyline element to a LatLng so we can use the distanceTo() method
           const connectingNorthingLineEast = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
           // If any Polylines are less than 100000 meters away from the GZD, we can then start connecting them
-          if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: right + 0.000000001 }) <= this.gridInterval) {
+          if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: right + 0.000000001 }) <= this.gridInterval * 1.5) {
             const northingGridLineEndpointEast = LLtoUTM({ lat: connectingNorthingLineEast.lat, lon: right + 0.000000001 });
             const extendedLineEast = UTMtoLL({
               northing: Math.round(northingGridLineEndpointEast.northing / this.gridInterval) * this.gridInterval,
@@ -443,7 +445,12 @@ function Grid100K() {
               zoneLetter: northingGridLineEndpointEast.zoneLetter,
             });
             const connectingNorthingLinetoGZD = new L.Polyline([extendedLineEast, connectingNorthingLineEast], this.lineOptions);
-            return this.layerGroup100k.addLayer(connectingNorthingLinetoGZD);
+            this.layerGroup100k.addLayer(connectingNorthingLinetoGZD);
+            // if (extendedLineEast.lon - connectingNorthingLineEast.lng >= 0) {
+            //   if (extendedLineEast.lat - connectingNorthingLineEast.lat >= -0.0277) {
+            //     console.log(extendedLineEast.lat - connectingNorthingLineEast.lat);
+            //   }
+            // }
           }
 
           const connectingNorthingLineWest = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
@@ -480,7 +487,7 @@ function Grid100K() {
         }));
       });
 
-      for (let index = 0; index < emptyBottomRowArr.length; index++) {
+      for (let index = 0; index < emptyBottomRowArr.length; index += 1) {
         const { right } = this.data[0];
         const { left } = this.data[0];
         const { bottom } = this.data[0];
@@ -491,24 +498,27 @@ function Grid100K() {
           const eastingLine = new L.Polyline([element], this.lineOptions);
 
           if (eastingLine.getBounds().getSouth() >= this.south) {
-            this.layerGroup100k.addLayer(eastingLine);
-          }
+            //! BUG: This works but the lines will draw over each other resulting in redundant polylines.
+            if (eastingLine.getLatLngs()[0][0].distanceTo(eastingLine.getLatLngs()[0][1]) <= this.gridInterval * 2) {
+              this.layerGroup100k.addLayer(eastingLine);
+            }
 
-          const connectingEastingLine = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
-          // If any Polylines are less than 100000 meters away from the GZD, we can then start connecting them
-          if (connectingEastingLine.distanceTo({ lat: bottom, lng: element[0].lon }) < this.gridInterval) {
-            const eastingGridLineEndpoint = LLtoUTM({ lat: bottom, lon: connectingEastingLine.lng });
-            const extendedLineSouth = UTMtoLL({
-              northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
-              // round the easting so it lines up with the bottom grid.
-              easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
-              zoneNumber: eastingGridLineEndpoint.zoneNumber,
-              zoneLetter: eastingGridLineEndpoint.zoneLetter,
-            });
+            const connectingEastingLine = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+            // If any Polylines are less than 100000 meters away from the GZD, we can then start connecting them
+            if (connectingEastingLine.distanceTo({ lat: bottom, lng: element[0].lon }) <= this.gridInterval) {
+              const eastingGridLineEndpoint = LLtoUTM({ lat: bottom, lon: connectingEastingLine.lng });
+              const extendedLineSouth = UTMtoLL({
+                northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
+                // round the easting so it lines up with the bottom grid.
+                easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
+                zoneNumber: eastingGridLineEndpoint.zoneNumber,
+                zoneLetter: eastingGridLineEndpoint.zoneLetter,
+              });
 
-            const connectingEastingLinetoGZD = new L.Polyline([connectingEastingLine, extendedLineSouth], this.lineOptions);
+              const connectingEastingLinetoGZD = new L.Polyline([connectingEastingLine, extendedLineSouth], this.lineOptions);
 
-            this.layerGroup100k.addLayer(connectingEastingLinetoGZD);
+              this.layerGroup100k.addLayer(connectingEastingLinetoGZD);
+            }
           }
         }
       }
@@ -532,11 +542,9 @@ function Grid100K() {
       //     map.removeLayer(layer);
       //   }
       // });
-      setTimeout(() => {
-        console.log('run regen');
-        this.layerGroup100k.clearLayers();
-        return this.getVizGrids();
-      }, 200);
+
+      this.layerGroup100k.clearLayers();
+      return this.getVizGrids();
     }
   };
 }
@@ -547,10 +555,10 @@ generate1000meterGrids.getVizGrids();
 
 map.addEventListener('moveend', () => {
   // Clear the grids off the map
-  // generate1000meterGrids.regenerate();
-  generate1000meterGrids.clean();
+  generate1000meterGrids.regenerate();
+  // generate1000meterGrids.clean();
   // Run it again
-  generate1000meterGrids.getVizGrids();
+  // generate1000meterGrids.getVizGrids();
 
   setTimeout(() => {
     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
