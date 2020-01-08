@@ -15716,7 +15716,7 @@ function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (O
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 // *********************************************************************************** //
-// * Global Vars/Leaflet setup                                                       * //
+// * Global Vars/Leaflet setup/Predefined coordinates                                * //
 // *********************************************************************************** //
 // This coordinate has 3 visible Grid Zone Designator boundaries at zoom level 7 with no northing GZD
 var ontarioCA = [51.84935276370605, -86.27563476562501]; // ? 262 child elements
@@ -16005,7 +16005,7 @@ function (_L$LayerGroup) {
 var gz = new GZD(_gzdObject.eastingDict, _gzdObject.northingDict);
 exports.gz = gz;
 gz.addTo(map); // *********************************************************************************** //
-// * Leaflet DumbMGRS Plugin - 100k Grids (this does not work)                       * //
+// * Leaflet DumbMGRS Plugin - 100k Grids (this sorta works?)                        * //
 // *********************************************************************************** //
 // If there is a high zoom level, we need to add more padding so the grids generate throughout the whole screen
 
@@ -16023,24 +16023,10 @@ function getPaddingOnZoomLevel() {
   }
 
   return 0.1;
-} // https://stackoverflow.com/questions/2218999/remove-duplicates-from-an-array-of-objects-in-javascript
-
-
-function getUnique(arr, comp) {
-  return arr.map(function (e) {
-    return e[comp];
-  }).map(function (e, i, final) {
-    return final.indexOf(e) === i && i;
-  }) // store the keys of the unique objects
-  .filter(function (e) {
-    return arr[e];
-  }).map(function (e) {
-    return arr[e];
-  }); // eliminate the dead keys & store unique objects
-} // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
-
+}
 
 function Grid100K() {
+  // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
   this.constructor = function () {
     // Get the North/South/East/West visible bounds and add padding
     this.north = new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()).getNorth();
@@ -16061,29 +16047,7 @@ function Grid100K() {
       lineCap: 'butt',
       lineJoin: 'miter-clip'
     };
-    this.lineOptions2 = {
-      color: 'blue',
-      weight: 6,
-      opacity: 0.5,
-      interactive: false,
-      fill: false,
-      noClip: true,
-      smoothFactor: 4,
-      lineCap: 'butt',
-      lineJoin: 'miter-clip'
-    };
-    this.lineOptions3 = {
-      color: 'green',
-      weight: 3,
-      opacity: 0.5,
-      interactive: false,
-      fill: false,
-      noClip: true,
-      smoothFactor: 4,
-      lineCap: 'butt',
-      lineJoin: 'miter-clip'
-    };
-    this.map = map; // gridInterval set at 100k, ideally this should be adjustable so I can use it for the 1000 meter grids
+    this.map = map; // gridInterval set at 100k meters, ideally this should be adjustable so I can use it for the 1000 meter grids
 
     this.gridInterval = 100000; // dumb name, but this temporarily holds the visible grids so I can iterate over them
 
@@ -16131,10 +16095,10 @@ function Grid100K() {
       });
     };
 
-    visibleGridsIterator.forEach(function (k) {
+    visibleGridsIterator.forEach(function (grid) {
       delay(20).then(function () {
         // This is where all the grids are generated.
-        _this4.generateGrids(k);
+        _this4.generateGrids(grid);
 
         return delay(3000);
       }).catch(function (err) {
@@ -16174,8 +16138,7 @@ function Grid100K() {
               easting: leftEastingIterator,
               zoneNumber: seLeft.zoneNumber,
               zoneLetter: seLeft.zoneLetter
-            }); // console.log(this.eastingArray);
-
+            });
           }
 
           leftEastingIterator += 1;
@@ -16188,14 +16151,13 @@ function Grid100K() {
               northing: leftNorthingIterator,
               zoneNumber: neLeft.zoneNumber,
               zoneLetter: neLeft.zoneLetter
-            }); // console.log(this.northingArray);
-
+            });
           }
 
           leftNorthingIterator += 1;
         }
       }
-    }); // Build the northing grids now
+    }); // Build the northing grid lines
 
     Object.entries(this.northingArray).forEach(function (na) {
       var bottomNorthing = na[1];
@@ -16212,15 +16174,17 @@ function Grid100K() {
           zoneNumber: k[0].zoneNumber,
           zoneLetter: k[0].zoneLetter
         }));
-      }); // "emptyBottomRowArr.length / 2" prevents lines from overlapping...idk
+      }); // "emptyBottomRowArr.length / 2" prevents SOME lines from overlapping...idk
+      // Removing the "/ 2" will cause the map to draw more polylines
 
       var _loop = function _loop(index) {
         var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
 
         if (element[1]) {
-          var northingLine = new _leaflet.default.Polyline([element], _this5.lineOptions);
+          var northingLine = new _leaflet.default.Polyline([element], _this5.lineOptions); // 0.25 is just some arbitrary padding I put on
 
           if (northingLine.getBounds().getEast() <= _this5.east + 0.25) {
+            // This will prevent double lines from being drawn on the map
             if (northingLine.getLatLngs()[0][0].distanceTo(northingLine.getLatLngs()[0][1]) <= _this5.gridInterval) {
               if (northingLine.getBounds().getWest() >= _this5.west - 0.25) {
                 _this5.layerGroup100k.addLayer(northingLine);
@@ -16252,6 +16216,7 @@ function Grid100K() {
                 var connectingNorthingLineWestToGZD = new _leaflet.default.Polyline([connectingNorthingLineWest, extendedLineSouth], _this5.lineOptions); // This ensures the connecting west line does not go past the GZD boundary
 
                 if (connectingNorthingLineWestToGZD.getBounds().getWest() > w.left) {
+                  // To see how the connecting lines work, just comment this out
                   return _this5.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
                 }
               }
@@ -16287,7 +16252,7 @@ function Grid100K() {
       for (var index = 0; index < emptyBottomRowArr.length / 2; index += 1) {
         _loop(index);
       }
-    }); // Build the easting grids (I am coloring them blue for easy distinction)
+    }); // Build the easting grid lines
 
     Object.entries(this.eastingArray).forEach(function (ea) {
       var bottomNorthing = ea[1];
@@ -16316,6 +16281,8 @@ function Grid100K() {
 
           if (eastingLine.getBounds().getSouth() >= _this5.south) {
             //! BUG: This works but the lines will draw over each other resulting in redundant polylines.
+            //! There has to be a better way to simplify these lines
+            // I do not know why dividing the gridInterval by 2 works, but it does
             if (eastingLine.getLatLngs()[0][0].distanceTo(eastingLine.getLatLngs()[0][1]) >= _this5.gridInterval / 2) {
               if (eastingLine.getBounds().getNorth() <= _this5.north + 1) {
                 //! this is fucking stupid
@@ -16361,8 +16328,7 @@ function Grid100K() {
                 lat: t.top,
                 lng: element[1].lon
               }) <= _this5.gridInterval) {
-                // const fff = new Number(Math.trunc(connectingEastingLineSouth.distanceTo({ lat: e.top, lng: element[1].lon }))).toLocaleString();
-                // console.log(fff);
+                // console.log(new Number(Math.trunc(connectingEastingLineSouth.distanceTo({ lat: e.top, lng: element[1].lon }))).toLocaleString());
                 var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
                   lat: t.top,
                   lon: connectingEastingLineSouth.lng
@@ -16398,11 +16364,6 @@ function Grid100K() {
 
   this.regenerate = function () {
     if (this.layerGroup100k) {
-      // this.layerGroup100k.eachLayer((layer) => {
-      //   if (this.layerGroup100k.hasLayer(layer)) {
-      //     map.removeLayer(layer);
-      //   }
-      // });
       this.layerGroup100k.clearLayers();
       return this.getVizGrids();
     }
