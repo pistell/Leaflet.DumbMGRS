@@ -45,8 +45,8 @@ I am trying to generate 3 types of grids
 
 3. A 1000M grid - 1000m by 1000m grid. I have a working version of this in the grid1000meters.js file. These grids should not be shown unless the user is at a specific zoom level.
 
-## Credits
+## Other Stuff
 
-Made with [createapp.dev](https://createapp.dev/)
+Readme created with [createapp.dev](https://createapp.dev/)
 
 [Leaflet publishing guide](https://github.com/Leaflet/Leaflet/blob/master/PLUGIN-GUIDE.md)
