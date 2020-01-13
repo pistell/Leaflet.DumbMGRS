@@ -25,7 +25,9 @@ const southPA = [40.001780202770966, -78.0005693435669]; // ? 616 child elements
 // For some reason the Florida map view generates a ton of child elements
 const southFL = [27.381523191705053, -82.82592773437501]; // ? 2235 child elements
 const honduras = [14.83861155338482, -87.45117187500001]; // ? 1272 child elements
-const map = L.map('map').setView(honduras, 7);
+const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
+const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
+const map = L.map('map').setView(southNY, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 
@@ -144,15 +146,6 @@ class GZD extends L.LayerGroup {
           right,
           id,
         });
-        // This is where the 100k grids gets it's data from
-        this.viz.push({
-          top,
-          bottom,
-          letterID,
-          left,
-          right,
-          id,
-        });
       }
     });
   }
@@ -192,6 +185,15 @@ class GZD extends L.LayerGroup {
       default:
         break;
     }
+    // This is where the 100k grids gets it's data from
+    this.viz.push({
+      top: this.params.top,
+      bottom: this.params.bottom,
+      letterID: this.params.letterID,
+      left: this.params.left,
+      right: this.params.right,
+      id: this.params.id,
+    });
 
     const topLeft = new L.LatLng(this.params.top, this.params.left);
     const topRight = new L.LatLng(this.params.top, this.params.right);
@@ -292,7 +294,7 @@ function Grid100K() {
     // The eastingArray and northingArray will hold the latlngs for our grids
     this.eastingArray = [];
     this.northingArray = [];
-    this.lineOptions = {
+    this.lineStyle = {
       color: 'black',
       weight: 4,
       opacity: 0.5,
@@ -366,6 +368,7 @@ function Grid100K() {
         const neLeft = LLtoUTM({ lat: x.top - 0.000001, lon: x.right - 0.000000001 });
         const seLeft = LLtoUTM({ lat: x.bottom, lon: x.right - 0.000000001 });
         const swLeft = LLtoUTM({ lat: x.bottom, lon: x.left });
+
         let leftEastingIterator = swLeft.easting;
         let leftNorthingIterator = swLeft.northing;
 
@@ -419,7 +422,9 @@ function Grid100K() {
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
 
         if (element[1]) {
-          const northingLine = new L.Polyline([element], this.lineOptions);
+          // element[0] is LEFT
+          // element[1] is RIGHT
+          const northingLine = new L.Polyline([element], this.lineStyle);
           // 0.25 is just some arbitrary padding I put on
           if (northingLine.getBounds().getEast() <= this.east + 0.25) {
             // This will prevent double lines from being drawn on the map
@@ -442,7 +447,7 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter,
                 });
-                const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineSouth], this.lineOptions);
+                const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineSouth], this.lineStyle);
                 // This ensures the connecting west line does not go past the GZD boundary
                 if (connectingNorthingLineWestToGZD.getBounds().getWest() > w.left) {
                   // To see how the connecting lines work, just comment this out
@@ -462,7 +467,11 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter,
                 });
-                const connectingNorthingLineEastToGZD = new L.Polyline([connectingNorthingLineEast, extendedLineSouth], this.lineOptions);
+                const connectingNorthingLineEastToGZD = new L.Polyline([connectingNorthingLineEast, extendedLineSouth], this.lineStyle);
+                // if (connectingNorthingLineEastToGZD.getBounds().getEast() < e.right) {
+                //   To see how the connecting lines work, just comment this out
+                //   return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
+                // }
                 return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
               }
             });
@@ -493,7 +502,7 @@ function Grid100K() {
 
         // If element[1] exists and if element[1]'s latitude is less than the left boundary and greater than the right boundary (plus padding)
         if (element[1] && element[1].lon >= left - 0.01 && element[1].lon <= right + 0.01) {
-          const eastingLine = new L.Polyline([element], this.lineOptions);
+          const eastingLine = new L.Polyline([element], this.lineStyle);
 
           if (eastingLine.getBounds().getSouth() >= this.south) {
             //! BUG: This works but the lines will draw over each other resulting in redundant polylines.
@@ -522,7 +531,7 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter,
                 });
-                const connectingEastingLineNorthToGZD = new L.Polyline([connectingEastingLineNorth, extendedLineSouth], this.lineOptions);
+                const connectingEastingLineNorthToGZD = new L.Polyline([connectingEastingLineNorth, extendedLineSouth], this.lineStyle);
                 return this.layerGroup100k.addLayer(connectingEastingLineNorthToGZD);
               }
             });
@@ -539,7 +548,7 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter,
                 });
-                const connectingEastingLineSouthToGZD = new L.Polyline([connectingEastingLineSouth, extendedLineSouth], this.lineOptions);
+                const connectingEastingLineSouthToGZD = new L.Polyline([connectingEastingLineSouth, extendedLineSouth], this.lineStyle);
                 return this.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
               }
             });

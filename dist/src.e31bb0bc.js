@@ -15732,7 +15732,11 @@ var southFL = [27.381523191705053, -82.82592773437501]; // ? 2235 child elements
 
 var honduras = [14.83861155338482, -87.45117187500001]; // ? 1272 child elements
 
-var map = _leaflet.default.map('map').setView(honduras, 7);
+var norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
+
+var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
+
+var map = _leaflet.default.map('map').setView(southNY, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -15876,16 +15880,6 @@ function (_L$LayerGroup) {
             left: left,
             right: right,
             id: id
-          }); // This is where the 100k grids gets it's data from
-
-
-          _this2.viz.push({
-            top: top,
-            bottom: bottom,
-            letterID: letterID,
-            left: left,
-            right: right,
-            id: id
           });
         }
       });
@@ -15935,8 +15929,17 @@ function (_L$LayerGroup) {
 
         default:
           break;
-      }
+      } // This is where the 100k grids gets it's data from
 
+
+      this.viz.push({
+        top: this.params.top,
+        bottom: this.params.bottom,
+        letterID: this.params.letterID,
+        left: this.params.left,
+        right: this.params.right,
+        id: this.params.id
+      });
       var topLeft = new _leaflet.default.LatLng(this.params.top, this.params.left);
       var topRight = new _leaflet.default.LatLng(this.params.top, this.params.right);
       var bottomRight = new _leaflet.default.LatLng(this.params.bottom, this.params.right); // const bottomLeft = new L.LatLng(this.params.bottom, this.params.left);
@@ -16044,7 +16047,7 @@ function Grid100K() {
 
     this.eastingArray = [];
     this.northingArray = [];
-    this.lineOptions = {
+    this.lineStyle = {
       color: 'black',
       weight: 4,
       opacity: 0.5,
@@ -16189,7 +16192,9 @@ function Grid100K() {
         var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
 
         if (element[1]) {
-          var northingLine = new _leaflet.default.Polyline([element], _this5.lineOptions); // 0.25 is just some arbitrary padding I put on
+          // element[0] is LEFT
+          // element[1] is RIGHT
+          var northingLine = new _leaflet.default.Polyline([element], _this5.lineStyle); // 0.25 is just some arbitrary padding I put on
 
           if (northingLine.getBounds().getEast() <= _this5.east + 0.25) {
             // This will prevent double lines from being drawn on the map
@@ -16221,7 +16226,7 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter
                 });
-                var connectingNorthingLineWestToGZD = new _leaflet.default.Polyline([connectingNorthingLineWest, extendedLineSouth], _this5.lineOptions); // This ensures the connecting west line does not go past the GZD boundary
+                var connectingNorthingLineWestToGZD = new _leaflet.default.Polyline([connectingNorthingLineWest, extendedLineSouth], _this5.lineStyle); // This ensures the connecting west line does not go past the GZD boundary
 
                 if (connectingNorthingLineWestToGZD.getBounds().getWest() > w.left) {
                   // To see how the connecting lines work, just comment this out
@@ -16249,7 +16254,11 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter
                 });
-                var connectingNorthingLineEastToGZD = new _leaflet.default.Polyline([connectingNorthingLineEast, extendedLineSouth], _this5.lineOptions);
+                var connectingNorthingLineEastToGZD = new _leaflet.default.Polyline([connectingNorthingLineEast, extendedLineSouth], _this5.lineStyle); // if (connectingNorthingLineEastToGZD.getBounds().getEast() < e.right) {
+                //   To see how the connecting lines work, just comment this out
+                //   return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
+                // }
+
                 return _this5.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
               }
             });
@@ -16285,7 +16294,7 @@ function Grid100K() {
         var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]]; // If element[1] exists and if element[1]'s latitude is less than the left boundary and greater than the right boundary (plus padding)
 
         if (element[1] && element[1].lon >= left - 0.01 && element[1].lon <= right + 0.01) {
-          var eastingLine = new _leaflet.default.Polyline([element], _this5.lineOptions);
+          var eastingLine = new _leaflet.default.Polyline([element], _this5.lineStyle);
 
           if (eastingLine.getBounds().getSouth() >= _this5.south) {
             //! BUG: This works but the lines will draw over each other resulting in redundant polylines.
@@ -16323,7 +16332,7 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter
                 });
-                var connectingEastingLineNorthToGZD = new _leaflet.default.Polyline([connectingEastingLineNorth, extendedLineSouth], _this5.lineOptions);
+                var connectingEastingLineNorthToGZD = new _leaflet.default.Polyline([connectingEastingLineNorth, extendedLineSouth], _this5.lineStyle);
                 return _this5.layerGroup100k.addLayer(connectingEastingLineNorthToGZD);
               }
             });
@@ -16348,7 +16357,7 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter
                 });
-                var connectingEastingLineSouthToGZD = new _leaflet.default.Polyline([connectingEastingLineSouth, extendedLineSouth], _this5.lineOptions);
+                var connectingEastingLineSouthToGZD = new _leaflet.default.Polyline([connectingEastingLineSouth, extendedLineSouth], _this5.lineStyle);
                 return _this5.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
               }
             });
@@ -16423,7 +16432,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58628" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58318" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
