@@ -15736,7 +15736,7 @@ var norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 
 var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
-var map = _leaflet.default.map('map').setView(southNY, 7);
+var map = _leaflet.default.map('map').setView(ontarioCA, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16058,6 +16058,28 @@ function Grid100K() {
       lineCap: 'butt',
       lineJoin: 'miter-clip'
     };
+    this.greenLine = {
+      color: 'green',
+      weight: 8,
+      opacity: 0.25,
+      interactive: false,
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip'
+    };
+    this.orangeLine = {
+      color: 'orange',
+      weight: 8,
+      opacity: 0.5,
+      interactive: false,
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip'
+    };
     this.map = map; // gridInterval set at 100k meters, ideally this should be adjustable so I can use it for the 1000 meter grids
 
     this.gridInterval = 100000; // dumb name, but this temporarily holds the visible grids so I can iterate over them
@@ -16189,19 +16211,19 @@ function Grid100K() {
       // Removing the "/ 2" will cause the map to draw more polylines
 
       var _loop = function _loop(index) {
+        var right = _this5.data[0].right;
+        var left = _this5.data[0].left;
         var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
 
         if (element[1]) {
           // element[0] is LEFT
           // element[1] is RIGHT
-          var northingLine = new _leaflet.default.Polyline([element], _this5.lineStyle); // 0.25 is just some arbitrary padding I put on
+          var northingLine = new _leaflet.default.Polyline([element], _this5.lineStyle);
 
-          if (northingLine.getBounds().getEast() <= _this5.east + 0.25) {
+          if (northingLine.getBounds().getEast() <= right && northingLine.getBounds().getWest() >= left) {
             // This will prevent double lines from being drawn on the map
             if (northingLine.getLatLngs()[0][0].distanceTo(northingLine.getLatLngs()[0][1]) <= _this5.gridInterval) {
-              if (northingLine.getBounds().getWest() >= _this5.west - 0.25) {
-                _this5.layerGroup100k.addLayer(northingLine);
-              }
+              _this5.layerGroup100k.addLayer(northingLine);
             } // This will "connect" the 100k grid to the GZD. This is useful because not all 100k grids are 100k meters across
             // Convert the Polyline element to a LatLng so we can use the distanceTo() method
 
@@ -16254,8 +16276,10 @@ function Grid100K() {
                   zoneNumber: eastingGridLineEndpoint.zoneNumber,
                   zoneLetter: eastingGridLineEndpoint.zoneLetter
                 });
-                var connectingNorthingLineEastToGZD = new _leaflet.default.Polyline([connectingNorthingLineEast, extendedLineSouth], _this5.lineStyle); // if (connectingNorthingLineEastToGZD.getBounds().getEast() < e.right) {
-                //   To see how the connecting lines work, just comment this out
+                var connectingNorthingLineEastToGZD = new _leaflet.default.Polyline([connectingNorthingLineEast, extendedLineSouth], _this5.lineStyle); // e.top / 100 is some arbitrary padding BS I added.
+                // example: if e.top = 39, then e.top / 100 is 0.39
+                // if (connectingNorthingLineEastToGZD.getBounds().getEast() <= e.right + (e.top / 100)) {
+                //   // To see how the connecting lines work, just comment this out
                 //   return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
                 // }
 

@@ -27,7 +27,7 @@ const southFL = [27.381523191705053, -82.82592773437501]; // ? 2235 child elemen
 const honduras = [14.83861155338482, -87.45117187500001]; // ? 1272 child elements
 const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
-const map = L.map('map').setView(southNY, 7);
+const map = L.map('map').setView(ontarioCA, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 
@@ -305,6 +305,28 @@ function Grid100K() {
       lineCap: 'butt',
       lineJoin: 'miter-clip',
     };
+    this.greenLine = {
+      color: 'green',
+      weight: 8,
+      opacity: 0.25,
+      interactive: false,
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+    };
+    this.orangeLine = {
+      color: 'orange',
+      weight: 8,
+      opacity: 0.5,
+      interactive: false,
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+    };
     this.map = map;
     // gridInterval set at 100k meters, ideally this should be adjustable so I can use it for the 1000 meter grids
     this.gridInterval = 100000;
@@ -419,19 +441,19 @@ function Grid100K() {
       // "emptyBottomRowArr.length / 2" prevents SOME lines from overlapping...idk
       // Removing the "/ 2" will cause the map to draw more polylines
       for (let index = 0; index < emptyBottomRowArr.length / 2; index += 1) {
+        const { right } = this.data[0];
+        const { left } = this.data[0];
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
 
         if (element[1]) {
           // element[0] is LEFT
           // element[1] is RIGHT
           const northingLine = new L.Polyline([element], this.lineStyle);
-          // 0.25 is just some arbitrary padding I put on
-          if (northingLine.getBounds().getEast() <= this.east + 0.25) {
+
+          if (northingLine.getBounds().getEast() <= right && northingLine.getBounds().getWest() >= left) {
             // This will prevent double lines from being drawn on the map
             if (northingLine.getLatLngs()[0][0].distanceTo(northingLine.getLatLngs()[0][1]) <= this.gridInterval) {
-              if (northingLine.getBounds().getWest() >= this.west - 0.25) {
-                this.layerGroup100k.addLayer(northingLine);
-              }
+              this.layerGroup100k.addLayer(northingLine);
             }
 
             // This will "connect" the 100k grid to the GZD. This is useful because not all 100k grids are 100k meters across
@@ -458,7 +480,7 @@ function Grid100K() {
 
             const connectingNorthingLineEast = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
             Object.values(this.data).forEach((e) => {
-            // Multiply gridInterval by 1.5 because some 100k grids are not square shaped and are "fatter" on the bottom
+              // Multiply gridInterval by 1.5 because some 100k grids are not square shaped and are "fatter" on the bottom
               if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: e.right }) <= this.gridInterval * 1.5) {
                 const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineEast.lat, lon: e.right });
                 const extendedLineSouth = UTMtoLL({
@@ -468,8 +490,10 @@ function Grid100K() {
                   zoneLetter: eastingGridLineEndpoint.zoneLetter,
                 });
                 const connectingNorthingLineEastToGZD = new L.Polyline([connectingNorthingLineEast, extendedLineSouth], this.lineStyle);
-                // if (connectingNorthingLineEastToGZD.getBounds().getEast() < e.right) {
-                //   To see how the connecting lines work, just comment this out
+                // e.top / 100 is some arbitrary padding BS I added.
+                // example: if e.top = 39, then e.top / 100 is 0.39
+                // if (connectingNorthingLineEastToGZD.getBounds().getEast() <= e.right + (e.top / 100)) {
+                //   // To see how the connecting lines work, just comment this out
                 //   return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
                 // }
                 return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
