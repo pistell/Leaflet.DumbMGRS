@@ -27,7 +27,7 @@ const southFL = [27.381523191705053, -82.82592773437501]; // ? 2235 child elemen
 const honduras = [14.83861155338482, -87.45117187500001]; // ? 1272 child elements
 const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
-const map = L.map('map').setView(ontarioCA, 7);
+const map = L.map('map').setView(southFL, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 
@@ -441,19 +441,19 @@ function Grid100K() {
       // "emptyBottomRowArr.length / 2" prevents SOME lines from overlapping...idk
       // Removing the "/ 2" will cause the map to draw more polylines
       for (let index = 0; index < emptyBottomRowArr.length / 2; index += 1) {
-        const { right } = this.data[0];
-        const { left } = this.data[0];
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
 
         if (element[1]) {
-          // element[0] is LEFT
-          // element[1] is RIGHT
           const northingLine = new L.Polyline([element], this.lineStyle);
-
-          if (northingLine.getBounds().getEast() <= right && northingLine.getBounds().getWest() >= left) {
+          // If the east boundary of the northingLine is less than the right longitude of the GZD, etc...
+          if (northingLine.getBounds().getEast() <= this.east + 0.25) {
             // This will prevent double lines from being drawn on the map
+            // northingLine.getLatLngs()[0][0] = element[0] (left)
+            // northingLine.getLatLngs()[0][1] = element[1] (right)
             if (northingLine.getLatLngs()[0][0].distanceTo(northingLine.getLatLngs()[0][1]) <= this.gridInterval) {
-              this.layerGroup100k.addLayer(northingLine);
+              if (northingLine.getBounds().getWest() >= this.west - 0.25) {
+                this.layerGroup100k.addLayer(northingLine);
+              }
             }
 
             // This will "connect" the 100k grid to the GZD. This is useful because not all 100k grids are 100k meters across
@@ -471,10 +471,14 @@ function Grid100K() {
                 });
                 const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineSouth], this.lineStyle);
                 // This ensures the connecting west line does not go past the GZD boundary
-                if (connectingNorthingLineWestToGZD.getBounds().getWest() > w.left) {
+                if (connectingNorthingLineWestToGZD.getBounds().getWest() >= w.left) {
                   // To see how the connecting lines work, just comment this out
                   return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
                 }
+                // Alternative version
+                // if (!connectingNorthingLineWestToGZD.getBounds().overlaps(northingLine.getBounds())) {
+                //   return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
+                // }
               }
             });
 

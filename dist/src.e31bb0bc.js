@@ -15736,7 +15736,7 @@ var norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 
 var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
-var map = _leaflet.default.map('map').setView(ontarioCA, 7);
+var map = _leaflet.default.map('map').setView(southFL, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16211,19 +16211,19 @@ function Grid100K() {
       // Removing the "/ 2" will cause the map to draw more polylines
 
       var _loop = function _loop(index) {
-        var right = _this5.data[0].right;
-        var left = _this5.data[0].left;
         var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
 
         if (element[1]) {
-          // element[0] is LEFT
-          // element[1] is RIGHT
-          var northingLine = new _leaflet.default.Polyline([element], _this5.lineStyle);
+          var northingLine = new _leaflet.default.Polyline([element], _this5.lineStyle); // If the east boundary of the northingLine is less than the right longitude of the GZD, etc...
 
-          if (northingLine.getBounds().getEast() <= right && northingLine.getBounds().getWest() >= left) {
+          if (northingLine.getBounds().getEast() <= _this5.east + 0.25) {
             // This will prevent double lines from being drawn on the map
+            // northingLine.getLatLngs()[0][0] = element[0] (left)
+            // northingLine.getLatLngs()[0][1] = element[1] (right)
             if (northingLine.getLatLngs()[0][0].distanceTo(northingLine.getLatLngs()[0][1]) <= _this5.gridInterval) {
-              _this5.layerGroup100k.addLayer(northingLine);
+              if (northingLine.getBounds().getWest() >= _this5.west - 0.25) {
+                _this5.layerGroup100k.addLayer(northingLine);
+              }
             } // This will "connect" the 100k grid to the GZD. This is useful because not all 100k grids are 100k meters across
             // Convert the Polyline element to a LatLng so we can use the distanceTo() method
 
@@ -16250,10 +16250,14 @@ function Grid100K() {
                 });
                 var connectingNorthingLineWestToGZD = new _leaflet.default.Polyline([connectingNorthingLineWest, extendedLineSouth], _this5.lineStyle); // This ensures the connecting west line does not go past the GZD boundary
 
-                if (connectingNorthingLineWestToGZD.getBounds().getWest() > w.left) {
+                if (connectingNorthingLineWestToGZD.getBounds().getWest() >= w.left) {
                   // To see how the connecting lines work, just comment this out
                   return _this5.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
-                }
+                } // Alternative version
+                // if (!connectingNorthingLineWestToGZD.getBounds().overlaps(northingLine.getBounds())) {
+                //   return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
+                // }
+
               }
             });
             var connectingNorthingLineEast = new _leaflet.default.latLng({
