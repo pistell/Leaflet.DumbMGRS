@@ -579,17 +579,28 @@ const generate1000meterGrids = new Grid100K(new L.latLngBounds(map.getBounds()).
 // Run the class on page load
 generate1000meterGrids.getVizGrids();
 
+
+// *********************************************************************************** //
+// * Event Listeners                                                                 * //
+// *********************************************************************************** //
 map.addEventListener('moveend', () => {
   generate1000meterGrids.regenerate();
   // Clear the grids off the map
   // generate1000meterGrids.clean();
   // Run it again
   // generate1000meterGrids.getVizGrids();
-
   setTimeout(() => {
     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
     document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
   }, 300);
 }, { once: true });
+
+// Add the layer data when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
+    document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
+  }, 300);
+});
 
 export { map };

@@ -16390,7 +16390,10 @@ function Grid100K() {
 
 var generate1000meterGrids = new Grid100K(new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel())); // Run the class on page load
 
-generate1000meterGrids.getVizGrids();
+generate1000meterGrids.getVizGrids(); // *********************************************************************************** //
+// * Event Listeners                                                                 * //
+// *********************************************************************************** //
+
 map.addEventListener('moveend', function () {
   generate1000meterGrids.regenerate(); // Clear the grids off the map
   // generate1000meterGrids.clean();
@@ -16403,6 +16406,13 @@ map.addEventListener('moveend', function () {
   }, 300);
 }, {
   once: true
+}); // Add the layer data when the page loads
+
+document.addEventListener('DOMContentLoaded', function () {
+  setTimeout(function () {
+    document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
+    document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
+  }, 300);
 });
 },{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
