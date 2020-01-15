@@ -373,30 +373,46 @@ function Grid100K() {
     // Not sure how useful this promise is. It works fine with just a forEach loop
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    visibleGridsIterator.forEach((grid) => {
-      delay(20)
-        .then(() => {
-          // This is where all the grids are generated.
-          this.generateGrids(grid);
-          return delay(3000);
-        })
-        .catch((err) => {
-          console.error(err);
-        });
+    // console.log(visibleGridsIterator.values().next());
+    delay(20).then(() => {
+      this.generateGrids(visibleGridsIterator.values().next().value);
+      return delay(3000);
+    }).catch((err) => {
+      console.log(err);
     });
+
+    // visibleGridsIterator.forEach((grid) => {
+    //   console.log(grid);
+    //   delay(20)
+    //     .then(() => {
+    //       // This is where all the grids are generated.
+    //       this.generateGrids(grid);
+    //       return delay(3000);
+    //     })
+    //     .catch((err) => {
+    //       console.error(err);
+    //     });
+    // });
   };
 
   this.generateGrids = function (data) {
     this.data = data;
+    const emptyNorthingArray = [];
+    function highestAndLowest(numbers) {
+      numbers = numbers.split(' ');
+      return `${Math.max.apply(null, numbers)} ${Math.min.apply(null, numbers)}`;
+    }
     Object.values(this.data).forEach((x) => {
       // Get the corners of the visible grids and convert them from latlon to UTM
       const neLeft = LLtoUTM({ lat: x.top - 0.000001, lon: x.right - 0.000000001 });
+      emptyNorthingArray.push(neLeft.northing);
+
       const seLeft = LLtoUTM({ lat: x.bottom, lon: x.right - 0.000000001 });
       const swLeft = LLtoUTM({ lat: x.bottom, lon: x.left });
 
 
       let leftEastingIterator = swLeft.easting;
-      let leftNorthingIterator = swLeft.northing;
+      const leftNorthingIterator = swLeft.northing;
 
       //* Left Side Easting */
       while (leftEastingIterator <= seLeft.easting) {
@@ -404,26 +420,72 @@ function Grid100K() {
         // eg- "easting: 5200015" is a bad match
         // eg- "easting: 5200000" is a good match
         if (leftEastingIterator % this.gridInterval === 0) {
-          this.eastingArray.push({
-            easting: leftEastingIterator,
-            zoneNumber: seLeft.zoneNumber,
-            zoneLetter: seLeft.zoneLetter,
-          });
+          for (let index = 0; index < this.data.length; index += 1) {
+            const element1 = this.data[index];
+            const element2 = this.data[index + 1];
+            if (element2) {
+              if (element1.letterID > element2.letterID) {
+                this.eastingArray.push({
+                  easting: leftEastingIterator,
+                  zoneNumber: element1.id,
+                  zoneLetter: element1.letterID,
+                });
+              }
+            }
+          }
+
+
+          // this.eastingArray.push({
+          //   easting: leftEastingIterator,
+          //   zoneNumber: seLeft.zoneNumber,
+          //   zoneLetter: seLeft.zoneLetter,
+          // });
         }
         leftEastingIterator += 1;
       }
 
-      //* * Left Side Northing */
-      while (leftNorthingIterator <= neLeft.northing) {
-        if (leftNorthingIterator % this.gridInterval === 0) {
-          this.northingArray.push({
-            northing: leftNorthingIterator,
-            zoneNumber: neLeft.zoneNumber,
-            zoneLetter: neLeft.zoneLetter,
-          });
+
+      if (emptyNorthingArray.length > 1) {
+        const max = Math.max.apply(null, emptyNorthingArray);
+        const min = Math.min.apply(null, emptyNorthingArray);
+        let iterator = min;
+        while (iterator <= max) {
+          if (iterator % this.gridInterval === 0) {
+            this.northingArray.push({
+              northing: iterator,
+              zoneNumber: this.data[0].id,
+              zoneLetter: this.data[0].letterID,
+            });
+          }
+          iterator += 1;
         }
-        leftNorthingIterator += 1;
       }
+      //* * Left Side Northing */
+      // while (leftNorthingIterator <= neLeft.northing) {
+      //   if (leftNorthingIterator % this.gridInterval === 0) {
+      //     for (let index = 0; index < this.data.length; index += 1) {
+      //       const element1 = this.data[index];
+      //       const element2 = this.data[index + 1];
+      //       if (element2) {
+      //         if (element1.letterID) {
+      //           this.northingArray.push({
+      //             northing: leftNorthingIterator,
+      //             zoneNumber: element1.id,
+      //             zoneLetter: element1.letterID,
+      //           });
+      //         }
+      //       }
+      //     }
+
+
+      //     // this.northingArray.push({
+      //     //   northing: leftNorthingIterator,
+      //     //   zoneNumber: neLeft.zoneNumber,
+      //     //   zoneLetter: neLeft.zoneLetter,
+      //     // });
+      //   }
+      //   leftNorthingIterator += 1;
+      // }
     });
 
     // Build the northing grid lines
@@ -433,24 +495,34 @@ function Grid100K() {
       const emptyBottomRowArr = [];
 
       bottomRow.forEach((k) => {
-        emptyBottomRowArr.push(UTMtoLL({
-          northing: k[1].northing,
-          easting: k[0].easting,
-          zoneNumber: k[0].zoneNumber,
-          zoneLetter: k[0].zoneLetter,
-        }));
+        if (k[0].zoneLetter === k[1].zoneLetter) {
+          // console.log(k[1]);
+          emptyBottomRowArr.push(UTMtoLL({
+            northing: k[1].northing,
+            easting: k[0].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter,
+          }));
+        }
+
+
+        // emptyBottomRowArr.push(UTMtoLL({
+        //   northing: k[1].northing,
+        //   easting: k[0].easting,
+        //   zoneNumber: k[0].zoneNumber,
+        //   zoneLetter: k[0].zoneLetter,
+        // }));
       });
 
       // Log each visible GZD
       //! Would be interesting if I could just run this per GZD
-      console.log(`North: ${this.data[0].id}${this.data[0].letterID}, South: ${this.data[1].id}${this.data[1].letterID}`);
+      // console.log(`North: ${this.data[0].id}${this.data[0].letterID}, South: ${this.data[1].id}${this.data[1].letterID}`);
 
       // "emptyBottomRowArr.length / 2" prevents SOME lines from overlapping...idk
       // Removing the "/ 2" will cause the map to draw more polylines
       for (let index = 0; index < emptyBottomRowArr.length / 2; index += 1) {
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
-
 
         if (element[1]) {
           const northingLine = new L.Polyline([element], this.lineStyle);
@@ -523,17 +595,27 @@ function Grid100K() {
 
     // Build the easting grid lines
     Object.entries(this.eastingArray).forEach((ea) => {
+      // console.log(ea[1]);
       const bottomNorthing = ea[1];
       const bottomRow = this.northingArray.map((j) => [j, bottomNorthing]);
       const emptyBottomRowArr = [];
 
       bottomRow.forEach((k) => {
-        emptyBottomRowArr.push(UTMtoLL({
-          northing: k[0].northing,
-          easting: k[1].easting,
-          zoneNumber: k[0].zoneNumber,
-          zoneLetter: k[0].zoneLetter,
-        }));
+        if (k[0].zoneLetter === k[1].zoneLetter) {
+          // console.log(k);
+          emptyBottomRowArr.push(UTMtoLL({
+            northing: k[0].northing,
+            easting: k[1].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter,
+          }));
+        }
+        // emptyBottomRowArr.push(UTMtoLL({
+        //   northing: k[0].northing,
+        //   easting: k[1].easting,
+        //   zoneNumber: k[0].zoneNumber,
+        //   zoneLetter: k[0].zoneLetter,
+        // }));
       });
 
       for (let index = 0; index < emptyBottomRowArr.length; index += 1) {
@@ -543,7 +625,7 @@ function Grid100K() {
 
         // If element[1] exists and if element[1]'s latitude is less than the left boundary and greater than the right boundary (plus padding)
         if (element[1] && element[1].lon >= left - 0.01 && element[1].lon <= right + 0.01) {
-          const eastingLine = new L.Polyline([element], this.lineStyle);
+          const eastingLine = new L.Polyline([element], this.greenLine);
 
           if (eastingLine.getBounds().getSouth() >= this.south) {
             //! BUG: This works but the lines will draw over each other resulting in redundant polylines.

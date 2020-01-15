@@ -16131,30 +16131,47 @@ function Grid100K() {
       return new Promise(function (resolve) {
         return setTimeout(resolve, ms);
       });
-    };
+    }; // console.log(visibleGridsIterator.values().next());
 
-    visibleGridsIterator.forEach(function (grid) {
-      delay(20).then(function () {
-        // This is where all the grids are generated.
-        _this4.generateGrids(grid);
 
-        return delay(3000);
-      }).catch(function (err) {
-        console.error(err);
-      });
-    });
+    delay(20).then(function () {
+      _this4.generateGrids(visibleGridsIterator.values().next().value);
+
+      return delay(3000);
+    }).catch(function (err) {
+      console.log(err);
+    }); // visibleGridsIterator.forEach((grid) => {
+    //   console.log(grid);
+    //   delay(20)
+    //     .then(() => {
+    //       // This is where all the grids are generated.
+    //       this.generateGrids(grid);
+    //       return delay(3000);
+    //     })
+    //     .catch((err) => {
+    //       console.error(err);
+    //     });
+    // });
   };
 
   this.generateGrids = function (data) {
     var _this5 = this;
 
     this.data = data;
+    var emptyNorthingArray = [];
+
+    function highestAndLowest(numbers) {
+      numbers = numbers.split(' ');
+      return "".concat(Math.max.apply(null, numbers), " ").concat(Math.min.apply(null, numbers));
+    }
+
     Object.values(this.data).forEach(function (x) {
       // Get the corners of the visible grids and convert them from latlon to UTM
       var neLeft = (0, _mgrs.LLtoUTM)({
         lat: x.top - 0.000001,
         lon: x.right - 0.000000001
       });
+      emptyNorthingArray.push(neLeft.northing);
       var seLeft = (0, _mgrs.LLtoUTM)({
         lat: x.bottom,
         lon: x.right - 0.000000001
@@ -16171,28 +16188,71 @@ function Grid100K() {
         // eg- "easting: 5200015" is a bad match
         // eg- "easting: 5200000" is a good match
         if (leftEastingIterator % _this5.gridInterval === 0) {
-          _this5.eastingArray.push({
-            easting: leftEastingIterator,
-            zoneNumber: seLeft.zoneNumber,
-            zoneLetter: seLeft.zoneLetter
-          });
+          for (var index = 0; index < _this5.data.length; index += 1) {
+            var element1 = _this5.data[index];
+            var element2 = _this5.data[index + 1];
+
+            if (element2) {
+              if (element1.letterID > element2.letterID) {
+                _this5.eastingArray.push({
+                  easting: leftEastingIterator,
+                  zoneNumber: element1.id,
+                  zoneLetter: element1.letterID
+                });
+              }
+            }
+          } // this.eastingArray.push({
+          //   easting: leftEastingIterator,
+          //   zoneNumber: seLeft.zoneNumber,
+          //   zoneLetter: seLeft.zoneLetter,
+          // });
+
         }
 
         leftEastingIterator += 1;
-      } //* * Left Side Northing */
-
-
-      while (leftNorthingIterator <= neLeft.northing) {
-        if (leftNorthingIterator % _this5.gridInterval === 0) {
-          _this5.northingArray.push({
-            northing: leftNorthingIterator,
-            zoneNumber: neLeft.zoneNumber,
-            zoneLetter: neLeft.zoneLetter
-          });
-        }
-
-        leftNorthingIterator += 1;
       }
+
+      if (emptyNorthingArray.length > 1) {
+        var max = Math.max.apply(null, emptyNorthingArray);
+        var min = Math.min.apply(null, emptyNorthingArray);
+        var iterator = min;
+
+        while (iterator <= max) {
+          if (iterator % _this5.gridInterval === 0) {
+            _this5.northingArray.push({
+              northing: iterator,
+              zoneNumber: _this5.data[0].id,
+              zoneLetter: _this5.data[0].letterID
+            });
+          }
+
+          iterator += 1;
+        }
+      } //* * Left Side Northing */
+      // while (leftNorthingIterator <= neLeft.northing) {
+      //   if (leftNorthingIterator % this.gridInterval === 0) {
+      //     for (let index = 0; index < this.data.length; index += 1) {
+      //       const element1 = this.data[index];
+      //       const element2 = this.data[index + 1];
+      //       if (element2) {
+      //         if (element1.letterID) {
+      //           this.northingArray.push({
+      //             northing: leftNorthingIterator,
+      //             zoneNumber: element1.id,
+      //             zoneLetter: element1.letterID,
+      //           });
+      //         }
+      //       }
+      //     }
+      //     // this.northingArray.push({
+      //     //   northing: leftNorthingIterator,
+      //     //   zoneNumber: neLeft.zoneNumber,
+      //     //   zoneLetter: neLeft.zoneLetter,
+      //     // });
+      //   }
+      //   leftNorthingIterator += 1;
+      // }
+
     }); // Build the northing grid lines
 
     Object.entries(this.northingArray).forEach(function (na) {
@@ -16204,16 +16264,25 @@ function Grid100K() {
 
       var emptyBottomRowArr = [];
       bottomRow.forEach(function (k) {
-        emptyBottomRowArr.push((0, _mgrs.UTMtoLL)({
-          northing: k[1].northing,
-          easting: k[0].easting,
-          zoneNumber: k[0].zoneNumber,
-          zoneLetter: k[0].zoneLetter
-        }));
+        if (k[0].zoneLetter === k[1].zoneLetter) {
+          // console.log(k[1]);
+          emptyBottomRowArr.push((0, _mgrs.UTMtoLL)({
+            northing: k[1].northing,
+            easting: k[0].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter
+          }));
+        } // emptyBottomRowArr.push(UTMtoLL({
+        //   northing: k[1].northing,
+        //   easting: k[0].easting,
+        //   zoneNumber: k[0].zoneNumber,
+        //   zoneLetter: k[0].zoneLetter,
+        // }));
+
       }); // Log each visible GZD
       //! Would be interesting if I could just run this per GZD
-
-      console.log("North: ".concat(_this5.data[0].id).concat(_this5.data[0].letterID, ", South: ").concat(_this5.data[1].id).concat(_this5.data[1].letterID)); // "emptyBottomRowArr.length / 2" prevents SOME lines from overlapping...idk
+      // console.log(`North: ${this.data[0].id}${this.data[0].letterID}, South: ${this.data[1].id}${this.data[1].letterID}`);
+      // "emptyBottomRowArr.length / 2" prevents SOME lines from overlapping...idk
       // Removing the "/ 2" will cause the map to draw more polylines
 
       var _loop = function _loop(index) {
@@ -16307,6 +16376,7 @@ function Grid100K() {
     }); // Build the easting grid lines
 
     Object.entries(this.eastingArray).forEach(function (ea) {
+      // console.log(ea[1]);
       var bottomNorthing = ea[1];
 
       var bottomRow = _this5.northingArray.map(function (j) {
@@ -16315,12 +16385,21 @@ function Grid100K() {
 
       var emptyBottomRowArr = [];
       bottomRow.forEach(function (k) {
-        emptyBottomRowArr.push((0, _mgrs.UTMtoLL)({
-          northing: k[0].northing,
-          easting: k[1].easting,
-          zoneNumber: k[0].zoneNumber,
-          zoneLetter: k[0].zoneLetter
-        }));
+        if (k[0].zoneLetter === k[1].zoneLetter) {
+          // console.log(k);
+          emptyBottomRowArr.push((0, _mgrs.UTMtoLL)({
+            northing: k[0].northing,
+            easting: k[1].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter
+          }));
+        } // emptyBottomRowArr.push(UTMtoLL({
+        //   northing: k[0].northing,
+        //   easting: k[1].easting,
+        //   zoneNumber: k[0].zoneNumber,
+        //   zoneLetter: k[0].zoneLetter,
+        // }));
+
       });
 
       var _loop2 = function _loop2(index) {
@@ -16329,7 +16408,7 @@ function Grid100K() {
         var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]]; // If element[1] exists and if element[1]'s latitude is less than the left boundary and greater than the right boundary (plus padding)
 
         if (element[1] && element[1].lon >= left - 0.01 && element[1].lon <= right + 0.01) {
-          var eastingLine = new _leaflet.default.Polyline([element], _this5.lineStyle);
+          var eastingLine = new _leaflet.default.Polyline([element], _this5.greenLine);
 
           if (eastingLine.getBounds().getSouth() >= _this5.south) {
             //! BUG: This works but the lines will draw over each other resulting in redundant polylines.
@@ -16493,7 +16572,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58318" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51341" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
