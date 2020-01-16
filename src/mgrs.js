@@ -543,13 +543,13 @@ northing meters ${mgrsString}`);
 
   const easting = sepEasting + east100k;
   const northing = sepNorthing + north100k;
-  console.log(this);
-  console.table({
-    east100k,
-    north100k,
-    easting,
-    northing,
-  });
+  // console.log(this);
+  // console.table({
+  //   east100k,
+  //   north100k,
+  //   easting,
+  //   northing,
+  // });
   return {
     easting,
     northing,

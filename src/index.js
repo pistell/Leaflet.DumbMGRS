@@ -39,11 +39,11 @@ function mark(element) {
   const markerEasting = LLtoUTM({ lat: markerLat, lon: markerLng }).easting;
   const markerZoneletter = LLtoUTM({ lat: markerLat, lon: markerLng }).zoneLetter;
   const markerZoneNumber = LLtoUTM({ lat: markerLat, lon: markerLng }).zoneNumber;
-  const popupContent = `<h3>Lat: ${markerLat} Lng: ${markerLng}</h3>
-                        <h3>Northing: ${markerNorthing}</h3>
-                        <h3>Easting: ${markerEasting}</h3>
-                        <h3>Zone Letter: ${markerZoneletter}</h3>
-                        <h3>Zone Number: ${markerZoneNumber}</h3>`;
+  const popupContent = `<h3><u>Lat:</u> ${markerLat.toFixed(6)} <u>Lng:</u> ${markerLng.toFixed(6)}</h3>
+                        <h3><u>Northing:</u> ${markerNorthing}</h3>
+                        <h3><u>Easting:</u> ${markerEasting}</h3>
+                        <h3><u>Zone Letter:</u> ${markerZoneletter}</h3>
+                        <h3><u>Zone Number:</u> ${markerZoneNumber}</h3>`;
   marker.bindPopup(popupContent).openPopup();
   return marker.addTo(map);
 }
@@ -417,16 +417,16 @@ function Grid100K() {
       // Get the corners of the visible grids and convert them from latlon to UTM
       const neLeft = LLtoUTM({ lat: x.top - 0.00001, lon: x.right - 0.00001 });
       // emptyNorthingArray.push(neLeft.northing);
-
       const seLeft = LLtoUTM({ lat: x.bottom, lon: x.right - 0.00001 });
       const swLeft = LLtoUTM({ lat: x.bottom, lon: x.left });
+
 
       if (this.data[i + 1] && x.letterID === this.data[i].letterID) {
         const sw = LLtoUTM({ lat: x.bottom, lon: x.left + 0.0001 });
         const se = LLtoUTM({ lat: x.bottom, lon: x.right - 0.00001 });
         //! 15JAN - x.top could be this.north. This would cut down on your polylines
         const ne = LLtoUTM({ lat: x.top - 0.00001, lon: x.right - 0.00001 });
-        const nw = LLtoUTM({ lat: x.top - 0.00001, lon: x.left });
+
         // console.log(sw, ne); // 7100467 - 7991508
 
         emptyNorthingArray.push(sw, ne);
@@ -493,7 +493,8 @@ function Grid100K() {
       if (emptyNorthingArray.length > 1) {
         const min = emptyNorthingArray[0].northing;
         const max = emptyNorthingArray[1].northing;
-        let iterator = min;
+        // reducing the min by 500, this is to catch those annoying "mini" 100k grids
+        let iterator = min - 500;
         while (iterator <= max) {
           if (iterator % this.gridInterval === 0) {
             this.northingArray.push({
@@ -533,15 +534,15 @@ function Grid100K() {
       // }
     });
 
-    // Build the northing grid lines
+    //* Build the northing grid lines *//
     Object.entries(this.northingArray).forEach((na) => {
       const bottomNorthing = na[1];
+
       const bottomRow = this.eastingArray.map((j) => [j, bottomNorthing]);
       const emptyBottomRowArr = [];
 
       bottomRow.forEach((k) => {
         if (k[0].zoneLetter === k[1].zoneLetter) {
-          // console.log(k[1]);
           emptyBottomRowArr.push(UTMtoLL({
             northing: k[1].northing,
             easting: k[0].easting,
@@ -559,12 +560,14 @@ function Grid100K() {
         // }));
       });
 
+
       // Log each visible GZD
       //! Would be interesting if I could just run this per GZD
       // console.log(`North: ${this.data[0].id}${this.data[0].letterID}, South: ${this.data[1].id}${this.data[1].letterID}`);
 
       // "emptyBottomRowArr.length / 2" prevents SOME lines from overlapping...idk
       // Removing the "/ 2" will cause the map to draw more polylines
+      //! JAN15 - I removed the /2 and it worked. Try it again when all grids are firing
       for (let index = 0; index < emptyBottomRowArr.length / 2; index += 1) {
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
@@ -573,6 +576,7 @@ function Grid100K() {
           const northingLine = new L.Polyline([element], this.lineStyle);
 
           // If the east boundary of the northingLine is less than the right longitude of the GZD, etc...
+          //! 15JAN - this if statement might be useless
           if (northingLine.getBounds().getEast() <= this.east + 0.25) {
             // This will prevent double lines from being drawn on the map
             // northingLine.getLatLngs()[0][0] = element[0] (left)
@@ -587,59 +591,105 @@ function Grid100K() {
             // Convert the Polyline element to a LatLng so we can use the distanceTo() method
             const connectingNorthingLineWest = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
 
-            // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
-            Object.values(this.data).forEach((w) => {
-              if (connectingNorthingLineWest.distanceTo({ lat: element[0].lat, lng: w.left }) <= this.gridInterval) {
-                const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineWest.lat, lon: w.left });
-                const extendedLineSouth = UTMtoLL({
-                  northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
-                  // easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
-                  easting: eastingGridLineEndpoint.easting,
-                  zoneNumber: eastingGridLineEndpoint.zoneNumber,
-                  zoneLetter: eastingGridLineEndpoint.zoneLetter,
-                });
 
-                const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineSouth], this.lineStyle);
-                // This ensures the connecting west line does not go past the GZD boundary
-                if (connectingNorthingLineWestToGZD.getBounds().getWest() >= w.left) {
-                  // To see how the connecting lines work, just comment this out
-                  //! 15JAN - these are still overlapping
-                  return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
-                }
-                // Alternative version
-                // if (!connectingNorthingLineWestToGZD.getBounds().overlaps(northingLine.getBounds())) {
-                //   return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
-                // }
+            if (connectingNorthingLineWest.distanceTo({ lat: element[0].lat, lng: this.west }) <= this.gridInterval) {
+              const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineWest.lat, lon: this.west });
+              const extendedLineSouth = UTMtoLL({
+                northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
+                // easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
+                easting: eastingGridLineEndpoint.easting,
+                zoneNumber: eastingGridLineEndpoint.zoneNumber,
+                zoneLetter: eastingGridLineEndpoint.zoneLetter,
+              });
+
+              const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineSouth], this.lineStyle);
+              // This ensures the connecting west line does not go past the GZD boundary
+
+              if (connectingNorthingLineWestToGZD.getBounds().getWest() >= this.west) {
+                // To see how the connecting lines work, just comment this out
+                //! 15JAN - this if statement might be useless
+                this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
               }
-            });
+            }
+
+
+            // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
+            // Object.values(this.data).forEach((w) => {
+            //   if (connectingNorthingLineWest.distanceTo({ lat: element[0].lat, lng: w.left }) <= this.gridInterval) {
+            //     const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineWest.lat, lon: w.left });
+            //     const extendedLineSouth = UTMtoLL({
+            //       northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
+            //       // easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
+            //       easting: eastingGridLineEndpoint.easting,
+            //       zoneNumber: eastingGridLineEndpoint.zoneNumber,
+            //       zoneLetter: eastingGridLineEndpoint.zoneLetter,
+            //     });
+
+            //     const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineSouth], this.greenLine);
+            //     // This ensures the connecting west line does not go past the GZD boundary
+
+            //     if (connectingNorthingLineWestToGZD.getBounds().getWest() >= w.left) {
+            //       // To see how the connecting lines work, just comment this out
+            //       return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
+            //     }
+
+
+            //     // Alternative version
+            //     // if (!connectingNorthingLineWestToGZD.getBounds().overlaps(northingLine.getBounds())) {
+            //     //   return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
+            //     // }
+            //   }
+            // });
 
             const connectingNorthingLineEast = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
-            Object.values(this.data).forEach((e) => {
-              // Multiply gridInterval by 1.5 because some 100k grids are not square shaped and are "fatter" on the bottom
-              if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: e.right }) <= this.gridInterval) {
-                const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineEast.lat, lon: e.right });
-                const extendedLineSouth = UTMtoLL({
-                  northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
-                  easting: eastingGridLineEndpoint.easting,
-                  zoneNumber: eastingGridLineEndpoint.zoneNumber,
-                  zoneLetter: eastingGridLineEndpoint.zoneLetter,
-                });
-                const connectingNorthingLineEastToGZD = new L.Polyline([connectingNorthingLineEast, extendedLineSouth], this.lineStyle);
-                // e.top / 100 is some arbitrary padding BS I added.
-                // example: if e.top = 39, then e.top / 100 is 0.39
-                if (connectingNorthingLineEastToGZD.getBounds().getEast() <= e.right + (e.top / 100)) {
-                  // To see how the connecting lines work, just comment this out
-                  return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
-                }
-                // return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
-              }
-            });
+            if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: this.data[0].right }) <= this.gridInterval) {
+              const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineEast.lat, lon: this.data[0].right });
+              const extendedLineSouth = UTMtoLL({
+                northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
+                easting: eastingGridLineEndpoint.easting,
+                zoneNumber: eastingGridLineEndpoint.zoneNumber,
+                zoneLetter: eastingGridLineEndpoint.zoneLetter,
+              });
+              const connectingNorthingLineEastToGZD = new L.Polyline([connectingNorthingLineEast, extendedLineSouth], this.lineStyle);
+              // e.top / 100 is some arbitrary padding BS I added.
+              // example: if e.top = 39, then e.top / 100 is 0.39
+              this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
+              // if (connectingNorthingLineEastToGZD.getBounds().getEast() <= e.right + (e.top / 100)) {
+              //   // To see how the connecting lines work, just comment this out
+              //   return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
+              // }
+            }
+
+
+            // Object.values(this.data).forEach((e) => {
+            //   // Multiply gridInterval by 1.5 because some 100k grids are not square shaped and are "fatter" on the bottom
+            //   if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: e.right }) <= this.gridInterval) {
+            //     // console.count(); //24
+            //     // console.log(connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: e.right }));
+
+            //     const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineEast.lat, lon: e.right });
+            //     const extendedLineSouth = UTMtoLL({
+            //       northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
+            //       easting: eastingGridLineEndpoint.easting,
+            //       zoneNumber: eastingGridLineEndpoint.zoneNumber,
+            //       zoneLetter: eastingGridLineEndpoint.zoneLetter,
+            //     });
+            //     const connectingNorthingLineEastToGZD = new L.Polyline([connectingNorthingLineEast, extendedLineSouth], this.orangeLine);
+            //     // e.top / 100 is some arbitrary padding BS I added.
+            //     // example: if e.top = 39, then e.top / 100 is 0.39
+            //     if (connectingNorthingLineEastToGZD.getBounds().getEast() <= e.right + (e.top / 100)) {
+            //       // To see how the connecting lines work, just comment this out
+            //       return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
+            //     }
+            //     // return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
+            //   }
+            // });
           }
         }
       }
     });
 
-    // Build the easting grid lines
+    //* Build the easting grid lines *//
     Object.entries(this.eastingArray).forEach((ea) => {
       // console.log(ea[1]);
       const bottomNorthing = ea[1];
@@ -671,7 +721,7 @@ function Grid100K() {
 
         // If element[1] exists and if element[1]'s latitude is less than the left boundary and greater than the right boundary (plus padding)
         if (element[1] && element[1].lon >= left - 0.01 && element[1].lon <= right + 0.01) {
-          const eastingLine = new L.Polyline([element], this.greenLine);
+          const eastingLine = new L.Polyline([element], this.lineStyle);
 
           if (eastingLine.getBounds().getSouth() >= this.south) {
             //! BUG: This works but the lines will draw over each other resulting in redundant polylines.
@@ -688,41 +738,71 @@ function Grid100K() {
               }
             }
 
+            //! JAN15 - This should probably be renamed to connectingEastingLineSouth
             const connectingEastingLineNorth = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+            if (connectingEastingLineNorth.distanceTo({ lat: this.data[0].bottom, lng: element[0].lon }) <= this.gridInterval) {
+              // this is the southern most point
+              const eastingGridLineEndpoint = LLtoUTM({ lat: this.data[0].bottom, lon: connectingEastingLineNorth.lng });
+              const extendedLineSouth = UTMtoLL({
+                northing: eastingGridLineEndpoint.northing,
+                // round the easting so it lines up with the bottom grid.
+                easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
+                zoneNumber: eastingGridLineEndpoint.zoneNumber,
+                zoneLetter: eastingGridLineEndpoint.zoneLetter,
+              });
+              const connectingEastingLineNorthToGZD = new L.Polyline([connectingEastingLineNorth, extendedLineSouth], this.lineStyle);
+              this.layerGroup100k.addLayer(connectingEastingLineNorthToGZD);
+            }
             // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
-            Object.values(this.data).forEach((b) => {
-              // Removes the grid gap on latitudes above 64 deg (around Iceland)
-              const boostPadding = this.north > 64 ? 10000 : 0;
-              if (connectingEastingLineNorth.distanceTo({ lat: b.bottom, lng: element[0].lon }) <= this.gridInterval + boostPadding) {
-                const eastingGridLineEndpoint = LLtoUTM({ lat: b.bottom, lon: connectingEastingLineNorth.lng });
-                const extendedLineSouth = UTMtoLL({
-                  northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
-                  // round the easting so it lines up with the bottom grid.
-                  easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
-                  zoneNumber: eastingGridLineEndpoint.zoneNumber,
-                  zoneLetter: eastingGridLineEndpoint.zoneLetter,
-                });
-                const connectingEastingLineNorthToGZD = new L.Polyline([connectingEastingLineNorth, extendedLineSouth], this.lineStyle);
-                return this.layerGroup100k.addLayer(connectingEastingLineNorthToGZD);
-              }
-            });
-
+            // Object.values(this.data).forEach((b) => {
+            //   // Removes the grid gap on latitudes above 64 deg (around Iceland)
+            //   // const boostPadding = this.north > 64 ? 10000 : 0;
+            //   if (connectingEastingLineNorth.distanceTo({ lat: b.bottom, lng: element[0].lon }) <= this.gridInterval) {
+            //     const eastingGridLineEndpoint = LLtoUTM({ lat: b.bottom, lon: connectingEastingLineNorth.lng });
+            //     const extendedLineSouth = UTMtoLL({
+            //       northing: eastingGridLineEndpoint.northing,
+            //       // round the easting so it lines up with the bottom grid.
+            //       easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
+            //       zoneNumber: eastingGridLineEndpoint.zoneNumber,
+            //       zoneLetter: eastingGridLineEndpoint.zoneLetter,
+            //     });
+            //     const connectingEastingLineNorthToGZD = new L.Polyline([connectingEastingLineNorth, extendedLineSouth], this.lineStyle);
+            //     return this.layerGroup100k.addLayer(connectingEastingLineNorthToGZD);
+            //   }
+            // });
+            //! JAN15 - This should probably be renamed to connectingEastingLineNorth
             const connectingEastingLineSouth = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
-            Object.values(this.data).forEach((t) => {
-              if (connectingEastingLineSouth.distanceTo({ lat: t.top, lng: element[1].lon }) <= this.gridInterval) {
-                // console.log(new Number(Math.trunc(connectingEastingLineSouth.distanceTo({ lat: e.top, lng: element[1].lon }))).toLocaleString());
-                const eastingGridLineEndpoint = LLtoUTM({ lat: t.top, lon: connectingEastingLineSouth.lng });
-                const extendedLineSouth = UTMtoLL({
-                  northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
-                  // round the easting so it lines up with the bottom grid.
-                  easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
-                  zoneNumber: eastingGridLineEndpoint.zoneNumber,
-                  zoneLetter: eastingGridLineEndpoint.zoneLetter,
-                });
-                const connectingEastingLineSouthToGZD = new L.Polyline([connectingEastingLineSouth, extendedLineSouth], this.lineStyle);
-                return this.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
-              }
-            });
+            if (connectingEastingLineSouth.distanceTo({ lat: this.data[0].top, lng: element[1].lon }) <= this.gridInterval) {
+              // console.log(new Number(Math.trunc(connectingEastingLineSouth.distanceTo({ lat: e.top, lng: element[1].lon }))).toLocaleString());
+              const eastingGridLineEndpoint = LLtoUTM({ lat: this.data[0].top, lon: connectingEastingLineSouth.lng });
+              const extendedLineSouth = UTMtoLL({
+                northing: eastingGridLineEndpoint.northing,
+                // round the easting so it lines up with the bottom grid.
+                easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
+                zoneNumber: eastingGridLineEndpoint.zoneNumber,
+                zoneLetter: eastingGridLineEndpoint.zoneLetter,
+              });
+              const connectingEastingLineSouthToGZD = new L.Polyline([connectingEastingLineSouth, extendedLineSouth], this.orangeLine);
+              mark(connectingEastingLineSouth);
+              this.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
+            }
+
+            // Object.values(this.data).forEach((t) => {
+            //   if (connectingEastingLineSouth.distanceTo({ lat: t.top, lng: element[1].lon }) <= this.gridInterval) {
+            //     // console.log(new Number(Math.trunc(connectingEastingLineSouth.distanceTo({ lat: e.top, lng: element[1].lon }))).toLocaleString());
+            //     const eastingGridLineEndpoint = LLtoUTM({ lat: t.top, lon: connectingEastingLineSouth.lng });
+            //     const extendedLineSouth = UTMtoLL({
+            //       northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
+            //       // round the easting so it lines up with the bottom grid.
+            //       easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
+            //       zoneNumber: eastingGridLineEndpoint.zoneNumber,
+            //       zoneLetter: eastingGridLineEndpoint.zoneLetter,
+            //     });
+            //     const connectingEastingLineSouthToGZD = new L.Polyline([connectingEastingLineSouth, extendedLineSouth], this.orangeLine);
+            //     mark(connectingEastingLineSouth);
+            //     return this.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
+            //   }
+            // });
           }
         }
       }
@@ -770,7 +850,7 @@ generate1000meterGrids.getVizGrids();
 // * Event Listeners                                                                 * //
 // *********************************************************************************** //
 map.addEventListener('moveend', () => {
-  generate1000meterGrids.regenerate();
+  // generate1000meterGrids.regenerate();
   // Clear the grids off the map
   // generate1000meterGrids.clean();
   // Run it again
