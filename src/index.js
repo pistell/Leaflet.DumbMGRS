@@ -32,7 +32,20 @@ const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker
 function mark(element) {
-  return L.marker(element).addTo(map);
+  const marker = new L.marker(element);
+  const markerLat = marker.getLatLng().lat;
+  const markerLng = marker.getLatLng().lng;
+  const markerNorthing = LLtoUTM({ lat: markerLat, lon: markerLng }).northing;
+  const markerEasting = LLtoUTM({ lat: markerLat, lon: markerLng }).easting;
+  const markerZoneletter = LLtoUTM({ lat: markerLat, lon: markerLng }).zoneLetter;
+  const markerZoneNumber = LLtoUTM({ lat: markerLat, lon: markerLng }).zoneNumber;
+  const popupContent = `<h3>Lat: ${markerLat} Lng: ${markerLng}</h3>
+                        <h3>Northing: ${markerNorthing}</h3>
+                        <h3>Easting: ${markerEasting}</h3>
+                        <h3>Zone Letter: ${markerZoneletter}</h3>
+                        <h3>Zone Number: ${markerZoneNumber}</h3>`;
+  marker.bindPopup(popupContent).openPopup();
+  return marker.addTo(map);
 }
 
 // *********************************************************************************** //
@@ -44,6 +57,7 @@ const DefaultIcon = L.icon({
   shadowUrl: iconShadow,
   // icon is 25x41 pixels, so adjust anchor point
   iconAnchor: [12.5, 41],
+  popupAnchor: [0, -41],
 });
 
 // Set the default marker icon to the constants provided above
@@ -398,63 +412,94 @@ function Grid100K() {
   this.generateGrids = function (data) {
     this.data = data;
     const emptyNorthingArray = [];
-    function highestAndLowest(numbers) {
-      numbers = numbers.split(' ');
-      return `${Math.max.apply(null, numbers)} ${Math.min.apply(null, numbers)}`;
-    }
-    Object.values(this.data).forEach((x) => {
+    const emptyEastingArray = [];
+    Object.values(this.data).forEach((x, i) => {
       // Get the corners of the visible grids and convert them from latlon to UTM
-      const neLeft = LLtoUTM({ lat: x.top - 0.000001, lon: x.right - 0.000000001 });
-      emptyNorthingArray.push(neLeft.northing);
+      const neLeft = LLtoUTM({ lat: x.top - 0.00001, lon: x.right - 0.00001 });
+      // emptyNorthingArray.push(neLeft.northing);
 
-      const seLeft = LLtoUTM({ lat: x.bottom, lon: x.right - 0.000000001 });
+      const seLeft = LLtoUTM({ lat: x.bottom, lon: x.right - 0.00001 });
       const swLeft = LLtoUTM({ lat: x.bottom, lon: x.left });
 
+      if (this.data[i + 1] && x.letterID === this.data[i].letterID) {
+        const sw = LLtoUTM({ lat: x.bottom, lon: x.left + 0.0001 });
+        const se = LLtoUTM({ lat: x.bottom, lon: x.right - 0.00001 });
+        //! 15JAN - x.top could be this.north. This would cut down on your polylines
+        const ne = LLtoUTM({ lat: x.top - 0.00001, lon: x.right - 0.00001 });
+        const nw = LLtoUTM({ lat: x.top - 0.00001, lon: x.left });
+        // console.log(sw, ne); // 7100467 - 7991508
 
-      let leftEastingIterator = swLeft.easting;
-      const leftNorthingIterator = swLeft.northing;
-
-      //* Left Side Easting */
-      while (leftEastingIterator <= seLeft.easting) {
-        // This loop basically checks to make sure the grid easting is divisible by 100K
-        // eg- "easting: 5200015" is a bad match
-        // eg- "easting: 5200000" is a good match
-        if (leftEastingIterator % this.gridInterval === 0) {
-          for (let index = 0; index < this.data.length; index += 1) {
-            const element1 = this.data[index];
-            const element2 = this.data[index + 1];
-            if (element2) {
-              if (element1.letterID > element2.letterID) {
-                this.eastingArray.push({
-                  easting: leftEastingIterator,
-                  zoneNumber: element1.id,
-                  zoneLetter: element1.letterID,
-                });
-              }
-            }
-          }
-
-
-          // this.eastingArray.push({
-          //   easting: leftEastingIterator,
-          //   zoneNumber: seLeft.zoneNumber,
-          //   zoneLetter: seLeft.zoneLetter,
-          // });
-        }
-        leftEastingIterator += 1;
+        emptyNorthingArray.push(sw, ne);
+        emptyEastingArray.push(sw, se);
+      } else {
+        // const toptop = x.top >= this.north ? this.north : x.top;
+        // console.table({ XTOP: x.top, THISNORTH: this.north, TOPTOP: toptop });
+        // This return statement prevents duplicate data getting pushed to the arrays
+        return;
       }
 
 
+      const leftEastingIterator = swLeft.easting;
+      const leftNorthingIterator = swLeft.northing;
+
+
+      if (emptyEastingArray.length > 1) {
+        const min = emptyEastingArray[0].easting;
+        const max = emptyEastingArray[1].easting;
+        let iterator = min;
+        while (iterator <= max) {
+          if (iterator % this.gridInterval === 0) {
+            this.eastingArray.push({
+              easting: iterator,
+              zoneNumber: emptyEastingArray[0].zoneNumber,
+              zoneLetter: emptyEastingArray[0].zoneLetter,
+            });
+          }
+          iterator += 1;
+        }
+      }
+
+      //* Left Side Easting */
+      // while (leftEastingIterator <= seLeft.easting) {
+      //   // This loop basically checks to make sure the grid easting is divisible by 100K
+      //   // eg- "easting: 5200015" is a bad match
+      //   // eg- "easting: 5200000" is a good match
+      //   if (leftEastingIterator % this.gridInterval === 0) {
+      //     for (let index = 0; index < this.data.length; index += 1) {
+      //       const element1 = this.data[index];
+      //       const element2 = this.data[index + 1];
+      //       if (element2) {
+      //         if (element1.letterID > element2.letterID) {
+      //           this.eastingArray.push({
+      //             easting: leftEastingIterator,
+      //             zoneNumber: element1.id,
+      //             zoneLetter: element1.letterID,
+      //           });
+      //         }
+      //       }
+      //     }
+
+
+      //     // this.eastingArray.push({
+      //     //   easting: leftEastingIterator,
+      //     //   zoneNumber: seLeft.zoneNumber,
+      //     //   zoneLetter: seLeft.zoneLetter,
+      //     // });
+      //   }
+      //   leftEastingIterator += 1;
+      // }
+
+
       if (emptyNorthingArray.length > 1) {
-        const max = Math.max.apply(null, emptyNorthingArray);
-        const min = Math.min.apply(null, emptyNorthingArray);
+        const min = emptyNorthingArray[0].northing;
+        const max = emptyNorthingArray[1].northing;
         let iterator = min;
         while (iterator <= max) {
           if (iterator % this.gridInterval === 0) {
             this.northingArray.push({
               northing: iterator,
-              zoneNumber: this.data[0].id,
-              zoneLetter: this.data[0].letterID,
+              zoneNumber: emptyNorthingArray[0].zoneNumber,
+              zoneLetter: emptyNorthingArray[0].zoneLetter,
             });
           }
           iterator += 1;
@@ -544,7 +589,7 @@ function Grid100K() {
 
             // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
             Object.values(this.data).forEach((w) => {
-              if (connectingNorthingLineWest.distanceTo({ lat: element[0].lat, lng: w.left }) <= this.gridInterval * 1.5) {
+              if (connectingNorthingLineWest.distanceTo({ lat: element[0].lat, lng: w.left }) <= this.gridInterval) {
                 const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineWest.lat, lon: w.left });
                 const extendedLineSouth = UTMtoLL({
                   northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
@@ -558,6 +603,7 @@ function Grid100K() {
                 // This ensures the connecting west line does not go past the GZD boundary
                 if (connectingNorthingLineWestToGZD.getBounds().getWest() >= w.left) {
                   // To see how the connecting lines work, just comment this out
+                  //! 15JAN - these are still overlapping
                   return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
                 }
                 // Alternative version
@@ -570,7 +616,7 @@ function Grid100K() {
             const connectingNorthingLineEast = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
             Object.values(this.data).forEach((e) => {
               // Multiply gridInterval by 1.5 because some 100k grids are not square shaped and are "fatter" on the bottom
-              if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: e.right }) <= this.gridInterval * 1.5) {
+              if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: e.right }) <= this.gridInterval) {
                 const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineEast.lat, lon: e.right });
                 const extendedLineSouth = UTMtoLL({
                   northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,

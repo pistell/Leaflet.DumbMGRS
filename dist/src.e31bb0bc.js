@@ -15743,7 +15743,28 @@ var cc = document.querySelector('.cursorCoordinates');
 window.map = map; // Just a quicker way to add a marker
 
 function mark(element) {
-  return _leaflet.default.marker(element).addTo(map);
+  var marker = new _leaflet.default.marker(element);
+  var markerLat = marker.getLatLng().lat;
+  var markerLng = marker.getLatLng().lng;
+  var markerNorthing = (0, _mgrs.LLtoUTM)({
+    lat: markerLat,
+    lon: markerLng
+  }).northing;
+  var markerEasting = (0, _mgrs.LLtoUTM)({
+    lat: markerLat,
+    lon: markerLng
+  }).easting;
+  var markerZoneletter = (0, _mgrs.LLtoUTM)({
+    lat: markerLat,
+    lon: markerLng
+  }).zoneLetter;
+  var markerZoneNumber = (0, _mgrs.LLtoUTM)({
+    lat: markerLat,
+    lon: markerLng
+  }).zoneNumber;
+  var popupContent = "<h3>Lat: ".concat(markerLat, " Lng: ").concat(markerLng, "</h3>\n                        <h3>Northing: ").concat(markerNorthing, "</h3>\n                        <h3>Easting: ").concat(markerEasting, "</h3>\n                        <h3>Zone Letter: ").concat(markerZoneletter, "</h3>\n                        <h3>Zone Number: ").concat(markerZoneNumber, "</h3>");
+  marker.bindPopup(popupContent).openPopup();
+  return marker.addTo(map);
 } // *********************************************************************************** //
 // * Enable default images in the marker                                             * //
 // *********************************************************************************** //
@@ -15754,7 +15775,8 @@ var DefaultIcon = _leaflet.default.icon({
   iconUrl: _markerIcon.default,
   shadowUrl: _markerShadow.default,
   // icon is 25x41 pixels, so adjust anchor point
-  iconAnchor: [12.5, 41]
+  iconAnchor: [12.5, 41],
+  popupAnchor: [0, -41]
 }); // Set the default marker icon to the constants provided above
 
 
@@ -16159,74 +16181,114 @@ function Grid100K() {
 
     this.data = data;
     var emptyNorthingArray = [];
-
-    function highestAndLowest(numbers) {
-      numbers = numbers.split(' ');
-      return "".concat(Math.max.apply(null, numbers), " ").concat(Math.min.apply(null, numbers));
-    }
-
-    Object.values(this.data).forEach(function (x) {
+    var emptyEastingArray = [];
+    Object.values(this.data).forEach(function (x, i) {
       // Get the corners of the visible grids and convert them from latlon to UTM
       var neLeft = (0, _mgrs.LLtoUTM)({
-        lat: x.top - 0.000001,
-        lon: x.right - 0.000000001
-      });
-      emptyNorthingArray.push(neLeft.northing);
+        lat: x.top - 0.00001,
+        lon: x.right - 0.00001
+      }); // emptyNorthingArray.push(neLeft.northing);
+
       var seLeft = (0, _mgrs.LLtoUTM)({
         lat: x.bottom,
-        lon: x.right - 0.000000001
+        lon: x.right - 0.00001
       });
       var swLeft = (0, _mgrs.LLtoUTM)({
         lat: x.bottom,
         lon: x.left
       });
-      var leftEastingIterator = swLeft.easting;
-      var leftNorthingIterator = swLeft.northing; //* Left Side Easting */
 
-      while (leftEastingIterator <= seLeft.easting) {
-        // This loop basically checks to make sure the grid easting is divisible by 100K
-        // eg- "easting: 5200015" is a bad match
-        // eg- "easting: 5200000" is a good match
-        if (leftEastingIterator % _this5.gridInterval === 0) {
-          for (var index = 0; index < _this5.data.length; index += 1) {
-            var element1 = _this5.data[index];
-            var element2 = _this5.data[index + 1];
+      if (_this5.data[i + 1] && x.letterID === _this5.data[i].letterID) {
+        var sw = (0, _mgrs.LLtoUTM)({
+          lat: x.bottom,
+          lon: x.left + 0.0001
+        });
+        var se = (0, _mgrs.LLtoUTM)({
+          lat: x.bottom,
+          lon: x.right - 0.00001
+        }); //! 15JAN - x.top could be this.north. This would cut down on your polylines
 
-            if (element2) {
-              if (element1.letterID > element2.letterID) {
-                _this5.eastingArray.push({
-                  easting: leftEastingIterator,
-                  zoneNumber: element1.id,
-                  zoneLetter: element1.letterID
-                });
-              }
-            }
-          } // this.eastingArray.push({
-          //   easting: leftEastingIterator,
-          //   zoneNumber: seLeft.zoneNumber,
-          //   zoneLetter: seLeft.zoneLetter,
-          // });
+        var ne = (0, _mgrs.LLtoUTM)({
+          lat: x.top - 0.00001,
+          lon: x.right - 0.00001
+        });
+        var nw = (0, _mgrs.LLtoUTM)({
+          lat: x.top - 0.00001,
+          lon: x.left
+        }); // console.log(sw, ne); // 7100467 - 7991508
 
-        }
-
-        leftEastingIterator += 1;
+        emptyNorthingArray.push(sw, ne);
+        emptyEastingArray.push(sw, se);
+      } else {
+        // const toptop = x.top >= this.north ? this.north : x.top;
+        // console.table({ XTOP: x.top, THISNORTH: this.north, TOPTOP: toptop });
+        // This return statement prevents duplicate data getting pushed to the arrays
+        return;
       }
 
-      if (emptyNorthingArray.length > 1) {
-        var max = Math.max.apply(null, emptyNorthingArray);
-        var min = Math.min.apply(null, emptyNorthingArray);
+      var leftEastingIterator = swLeft.easting;
+      var leftNorthingIterator = swLeft.northing;
+
+      if (emptyEastingArray.length > 1) {
+        var min = emptyEastingArray[0].easting;
+        var max = emptyEastingArray[1].easting;
         var iterator = min;
 
         while (iterator <= max) {
           if (iterator % _this5.gridInterval === 0) {
-            _this5.northingArray.push({
-              northing: iterator,
-              zoneNumber: _this5.data[0].id,
-              zoneLetter: _this5.data[0].letterID
+            _this5.eastingArray.push({
+              easting: iterator,
+              zoneNumber: emptyEastingArray[0].zoneNumber,
+              zoneLetter: emptyEastingArray[0].zoneLetter
             });
           }
 
           iterator += 1;
+        }
+      } //* Left Side Easting */
+      // while (leftEastingIterator <= seLeft.easting) {
+      //   // This loop basically checks to make sure the grid easting is divisible by 100K
+      //   // eg- "easting: 5200015" is a bad match
+      //   // eg- "easting: 5200000" is a good match
+      //   if (leftEastingIterator % this.gridInterval === 0) {
+      //     for (let index = 0; index < this.data.length; index += 1) {
+      //       const element1 = this.data[index];
+      //       const element2 = this.data[index + 1];
+      //       if (element2) {
+      //         if (element1.letterID > element2.letterID) {
+      //           this.eastingArray.push({
+      //             easting: leftEastingIterator,
+      //             zoneNumber: element1.id,
+      //             zoneLetter: element1.letterID,
+      //           });
+      //         }
+      //       }
+      //     }
+      //     // this.eastingArray.push({
+      //     //   easting: leftEastingIterator,
+      //     //   zoneNumber: seLeft.zoneNumber,
+      //     //   zoneLetter: seLeft.zoneLetter,
+      //     // });
+      //   }
+      //   leftEastingIterator += 1;
+      // }
+
+
+      if (emptyNorthingArray.length > 1) {
+        var _min = emptyNorthingArray[0].northing;
+        var _max = emptyNorthingArray[1].northing;
+        var _iterator = _min;
+
+        while (_iterator <= _max) {
+          if (_iterator % _this5.gridInterval === 0) {
+            _this5.northingArray.push({
+              northing: _iterator,
+              zoneNumber: emptyNorthingArray[0].zoneNumber,
+              zoneLetter: emptyNorthingArray[0].zoneLetter
+            });
+          }
+
+          _iterator += 1;
         }
       } //* * Left Side Northing */
       // while (leftNorthingIterator <= neLeft.northing) {
@@ -16312,7 +16374,7 @@ function Grid100K() {
               if (connectingNorthingLineWest.distanceTo({
                 lat: element[0].lat,
                 lng: w.left
-              }) <= _this5.gridInterval * 1.5) {
+              }) <= _this5.gridInterval) {
                 var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
                   lat: connectingNorthingLineWest.lat,
                   lon: w.left
@@ -16328,6 +16390,7 @@ function Grid100K() {
 
                 if (connectingNorthingLineWestToGZD.getBounds().getWest() >= w.left) {
                   // To see how the connecting lines work, just comment this out
+                  //! 15JAN - these are still overlapping
                   return _this5.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
                 } // Alternative version
                 // if (!connectingNorthingLineWestToGZD.getBounds().overlaps(northingLine.getBounds())) {
@@ -16345,7 +16408,7 @@ function Grid100K() {
               if (connectingNorthingLineEast.distanceTo({
                 lat: element[1].lat,
                 lng: e.right
-              }) <= _this5.gridInterval * 1.5) {
+              }) <= _this5.gridInterval) {
                 var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
                   lat: connectingNorthingLineEast.lat,
                   lon: e.right
