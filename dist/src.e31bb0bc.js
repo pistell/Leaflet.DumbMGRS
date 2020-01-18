@@ -117,7 +117,43 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"../node_modules/@babel/runtime/helpers/defineProperty.js":[function(require,module,exports) {
+})({"../node_modules/@babel/runtime/helpers/arrayWithoutHoles.js":[function(require,module,exports) {
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
+      arr2[i] = arr[i];
+    }
+
+    return arr2;
+  }
+}
+
+module.exports = _arrayWithoutHoles;
+},{}],"../node_modules/@babel/runtime/helpers/iterableToArray.js":[function(require,module,exports) {
+function _iterableToArray(iter) {
+  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+}
+
+module.exports = _iterableToArray;
+},{}],"../node_modules/@babel/runtime/helpers/nonIterableSpread.js":[function(require,module,exports) {
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance");
+}
+
+module.exports = _nonIterableSpread;
+},{}],"../node_modules/@babel/runtime/helpers/toConsumableArray.js":[function(require,module,exports) {
+var arrayWithoutHoles = require("./arrayWithoutHoles");
+
+var iterableToArray = require("./iterableToArray");
+
+var nonIterableSpread = require("./nonIterableSpread");
+
+function _toConsumableArray(arr) {
+  return arrayWithoutHoles(arr) || iterableToArray(arr) || nonIterableSpread();
+}
+
+module.exports = _toConsumableArray;
+},{"./arrayWithoutHoles":"../node_modules/@babel/runtime/helpers/arrayWithoutHoles.js","./iterableToArray":"../node_modules/@babel/runtime/helpers/iterableToArray.js","./nonIterableSpread":"../node_modules/@babel/runtime/helpers/nonIterableSpread.js"}],"../node_modules/@babel/runtime/helpers/defineProperty.js":[function(require,module,exports) {
 function _defineProperty(obj, key, value) {
   if (key in obj) {
     Object.defineProperty(obj, key, {
@@ -15685,6 +15721,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.map = exports.gz = void 0;
 
+var _toConsumableArray2 = _interopRequireDefault(require("@babel/runtime/helpers/toConsumableArray"));
+
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
@@ -15736,10 +15774,7 @@ var norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 
 var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
-var map = _leaflet.default.map('map').setView({
-  lat: 53.657661020298,
-  lng: 19.907226562500004
-}, 7);
+var map = _leaflet.default.map('map').setView(southFL, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16056,6 +16091,22 @@ function getPaddingOnZoomLevel() {
   }
 
   return 0.1;
+} // Removes duplicate values in an array
+// https://stackoverflow.com/questions/2218999/remove-duplicates-from-an-array-of-objects-in-javascript
+
+
+function removeDup(something) {
+  return something.reduce(function (prev, ele) {
+    var found = prev.find(function (fele) {
+      return ele.lat === fele.lat && ele.lon === fele.lon;
+    });
+
+    if (!found) {
+      prev.push(ele);
+    }
+
+    return prev;
+  }, []);
 } //! Issues:
 //! Grids fail to draw completely in high northern areas (eg- Northern Canada)
 //! Grids fail at the equator (sometimes failing miserably)
@@ -16191,200 +16242,65 @@ function Grid100K() {
     var _this5 = this;
 
     this.data = data;
-    var emptyNorthingArray = [];
-    var emptyEastingArray = [];
+    var buffer = 0.00001;
     Object.values(this.data).forEach(function (x, i) {
       // Get the corners of the visible grids and convert them from latlon to UTM
-      var neLeft = (0, _mgrs.LLtoUTM)({
-        lat: x.top - 0.00001,
-        lon: x.right - 0.00001
-      }); // emptyNorthingArray.push(neLeft.northing);
-
-      var seLeft = (0, _mgrs.LLtoUTM)({
-        lat: x.bottom,
-        lon: x.right - 0.00001
+      var sw = (0, _mgrs.LLtoUTM)({
+        lat: x.bottom + buffer,
+        lon: x.left + buffer
       });
-      var swLeft = (0, _mgrs.LLtoUTM)({
-        lat: x.bottom,
-        lon: x.left
-      }); //! 15JAN - this may be useless
+      var se = (0, _mgrs.LLtoUTM)({
+        lat: x.bottom + buffer,
+        lon: x.right - buffer
+      }); //! 15JAN - x.top could be this.north. This would cut down on your polylines
 
-      if (_this5.data[i] && x.letterID === _this5.data[i].letterID) {
-        var sw = (0, _mgrs.LLtoUTM)({
-          lat: x.bottom + 0.00001,
-          lon: x.left + 0.0001
-        });
-        var se = (0, _mgrs.LLtoUTM)({
-          lat: x.bottom + 0.00001,
-          lon: x.right - 0.00001
-        }); //! 15JAN - x.top could be this.north. This would cut down on your polylines
+      var ne = (0, _mgrs.LLtoUTM)({
+        lat: x.top - buffer,
+        lon: x.right - buffer
+      }); // reducing the min by 500, this is to catch those annoying "mini" 100k grids
 
-        var ne = (0, _mgrs.LLtoUTM)({
-          lat: x.top - 0.00001,
-          lon: x.right - 0.00001
-        });
-        emptyNorthingArray.push([sw, ne]);
-        emptyEastingArray.push([sw, se]);
-      } else {
-        // const toptop = x.top >= this.north ? this.north : x.top;
-        // console.table({ XTOP: x.top, THISNORTH: this.north, TOPTOP: toptop });
-        // This return statement prevents duplicate data getting pushed to the arrays
-        return;
-      } // const leftEastingIterator = swLeft.easting;
-      // const leftNorthingIterator = swLeft.northing;
+      var northingIterator = sw.northing - 500;
 
-
-      if (emptyEastingArray.length >= 2) {
-        emptyEastingArray.forEach(function (ww) {
-          var min = ww[0];
-          var max = ww[1];
-          var iterator = min.easting;
-
-          if (min.zoneLetter === max.zoneLetter) {
-            while (iterator <= max.easting) {
-              if (iterator % _this5.gridInterval === 0) {
-                _this5.eastingArray.push({
-                  easting: iterator,
-                  zoneNumber: min.zoneNumber,
-                  zoneLetter: min.zoneLetter
-                });
-              }
-
-              iterator += 1;
-            }
+      if (sw.zoneLetter === ne.zoneLetter) {
+        while (northingIterator <= ne.northing) {
+          // This loop basically checks to make sure the easting grid is divisible by 100K
+          if (northingIterator % _this5.gridInterval === 0) {
+            _this5.northingArray.push({
+              northing: northingIterator,
+              zoneNumber: sw.zoneNumber,
+              zoneLetter: sw.zoneLetter
+            });
           }
-        }); // const min = emptyEastingArray[emptyEastingArray.length - 2].easting;
-        // const max = emptyEastingArray[emptyEastingArray.length - 1].easting;
-        // const min = emptyEastingArray.length >= 1 ? emptyEastingArray.shift() : null;
-        // const max = emptyEastingArray.length >= 1 ? emptyEastingArray.pop() : null;
-        // let iterator = min.easting;
-        // // console.log(min.zoneNumber); // 353309 646694
-        // const yyy = this.data[i + 2] ? this.data[i + 1].letterID : this.data[i].letterID;
-        // const ppp = this.data[i + 2] ? this.data[i + 1].id : this.data[i].id;
-        // if (min.zoneLetter === max.zoneLetter) {
-        //   while (iterator <= max.easting) {
-        //     if (iterator % this.gridInterval === 0) {
-        //       this.eastingArray.push({
-        //         easting: iterator,
-        //         zoneNumber: min.zoneNumber,
-        //         zoneLetter: min.zoneLetter,
-        //       });
-        //     }
-        //     iterator += 1;
-        //   }
-        // }
-      } //* Left Side Easting */
-      // while (leftEastingIterator <= seLeft.easting) {
-      //   // This loop basically checks to make sure the grid easting is divisible by 100K
-      //   // eg- "easting: 5200015" is a bad match
-      //   // eg- "easting: 5200000" is a good match
-      //   if (leftEastingIterator % this.gridInterval === 0) {
-      //     for (let index = 0; index < this.data.length; index += 1) {
-      //       const element1 = this.data[index];
-      //       const element2 = this.data[index + 1];
-      //       if (element2) {
-      //         if (element1.letterID > element2.letterID) {
-      //           this.eastingArray.push({
-      //             easting: leftEastingIterator,
-      //             zoneNumber: element1.id,
-      //             zoneLetter: element1.letterID,
-      //           });
-      //         }
-      //       }
-      //     }
-      //     // this.eastingArray.push({
-      //     //   easting: leftEastingIterator,
-      //     //   zoneNumber: seLeft.zoneNumber,
-      //     //   zoneLetter: seLeft.zoneLetter,
-      //     // });
-      //   }
-      //   leftEastingIterator += 1;
-      // }
 
+          northingIterator += 1;
+        }
+      }
 
-      if (emptyNorthingArray.length >= 2) {
-        emptyNorthingArray.forEach(function (ww) {
-          var min = ww[0];
-          var max = ww[1];
-          var iterator = min.northing - 500;
+      var eastingIterator = sw.easting;
 
-          if (min.zoneLetter === max.zoneLetter) {
-            while (iterator <= max.northing) {
-              if (iterator % _this5.gridInterval === 0) {
-                _this5.northingArray.push({
-                  northing: iterator,
-                  zoneNumber: min.zoneNumber,
-                  zoneLetter: min.zoneLetter
-                });
-              }
-
-              iterator += 1;
-            }
+      if (sw.zoneLetter === se.zoneLetter) {
+        while (eastingIterator <= se.easting) {
+          if (eastingIterator % _this5.gridInterval === 0) {
+            _this5.eastingArray.push({
+              easting: eastingIterator,
+              zoneNumber: sw.zoneNumber,
+              zoneLetter: sw.zoneLetter
+            });
           }
-        }); // const min = emptyNorthingArray[0][0];
-        // const max = emptyNorthingArray[0][1];
-        // const min = emptyNorthingArray.length >= 1 ? emptyNorthingArray.shift() : null;
-        // const max = emptyNorthingArray.length >= 1 ? emptyNorthingArray.pop() : null;
-        // reducing the min by 500, this is to catch those annoying "mini" 100k grids
-        // let iterator = min.northing - 500;
-        // if (min.zoneLetter === max.zoneLetter) {
-        //   while (iterator <= max.northing) {
-        //     if (iterator % this.gridInterval === 0) {
-        //       this.northingArray.push({
-        //         northing: iterator,
-        //         zoneNumber: min.zoneNumber,
-        //         zoneLetter: min.zoneLetter,
-        //       });
-        //     }
-        //     iterator += 1;
-        //   }
-        // }
-        // while (iterator <= max) {
-        //   if (iterator % this.gridInterval === 0) {
-        //     this.northingArray.push({
-        //       northing: iterator,
-        //       zoneNumber: emptyNorthingArray[0].zoneNumber,
-        //       zoneLetter: emptyNorthingArray[0].zoneLetter,
-        //     });
-        //   }
-        //   iterator += 1;
-        // }
-      } //* * Left Side Northing */
-      // while (leftNorthingIterator <= neLeft.northing) {
-      //   if (leftNorthingIterator % this.gridInterval === 0) {
-      //     for (let index = 0; index < this.data.length; index += 1) {
-      //       const element1 = this.data[index];
-      //       const element2 = this.data[index + 1];
-      //       if (element2) {
-      //         if (element1.letterID) {
-      //           this.northingArray.push({
-      //             northing: leftNorthingIterator,
-      //             zoneNumber: element1.id,
-      //             zoneLetter: element1.letterID,
-      //           });
-      //         }
-      //       }
-      //     }
-      //     // this.northingArray.push({
-      //     //   northing: leftNorthingIterator,
-      //     //   zoneNumber: neLeft.zoneNumber,
-      //     //   zoneLetter: neLeft.zoneLetter,
-      //     // });
-      //   }
-      //   leftNorthingIterator += 1;
-      // }
 
+          eastingIterator += 1;
+        }
+      }
     }); //* Build the northing grid lines *//
 
     Object.entries(this.northingArray).forEach(function (na) {
       var bottomNorthing = na[1];
 
-      var bottomRow = _this5.eastingArray.map(function (j, i) {
-        if (j.zoneLetter === na[1].zoneLetter && j.zoneNumber === na[1].zoneNumber) {
+      var bottomRow = _this5.eastingArray.map(function (j) {
+        if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
           return [j, bottomNorthing];
         }
-      }); // const bottomRow = this.eastingArray.map((j) => [j, bottomNorthing]);
-
+      });
 
       var emptyBottomRowArr = [];
       bottomRow.forEach(function (k) {
@@ -16395,359 +16311,180 @@ function Grid100K() {
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter
           }));
-        } // emptyBottomRowArr.push(UTMtoLL({
-        //   northing: k[1].northing,
-        //   easting: k[0].easting,
-        //   zoneNumber: k[0].zoneNumber,
-        //   zoneLetter: k[0].zoneLetter,
-        // }));
-
-      }); // Log each visible GZD
-      //! Would be interesting if I could just run this per GZD
-      // console.log(`North: ${this.data[0].id}${this.data[0].letterID}, South: ${this.data[1].id}${this.data[1].letterID}`);
-      // "emptyBottomRowArr.length / 2" prevents SOME lines from overlapping...idk
-      // Removing the "/ 2" will cause the map to draw more polylines
-      //! JAN15 - I removed the /2 and it worked. Try it again when all grids are firing
-
-      var _loop = function _loop(index) {
-        var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]]; // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
-
-        var northingLine = new _leaflet.default.Polyline([element], _this5.lineStyle);
-        var rer = (0, _mgrs.LLtoUTM)(element[0]);
-
-        if (rer.zoneNumber === 31 && rer.zoneLetter === 'V') {
-          if (rer.northing % _this5.gridInterval === 0) {
-            var specialLine = new _leaflet.default.Polyline([{
-              lat: element[0].lat,
-              lng: element[0].lon
-            }, (0, _mgrs.UTMtoLL)({
-              northing: rer.northing,
-              easting: 499999,
-              zoneNumber: rer.zoneNumber,
-              zoneLetter: rer.zoneLetter
-            })], _this5.lineStyle); // 0.0179 is some dumbass number I came up with IOT adjust the specialLine2 start point in GZD 31V. It's not very accurate but 31V is a stupid fucking GZD and has no land on it anyways. Waste of my fucking time.
-
-            var specialLine2 = new _leaflet.default.Polyline([{
-              lat: element[0].lat - 0.0179,
-              lng: 0.0000001
-            }, (0, _mgrs.UTMtoLL)({
-              northing: rer.northing,
-              easting: rer.easting,
-              zoneNumber: rer.zoneNumber,
-              zoneLetter: rer.zoneLetter
-            })], _this5.lineStyle);
-
-            _this5.layerGroup100k.addLayer(specialLine);
-
-            _this5.layerGroup100k.addLayer(specialLine2);
-          }
         }
+      });
+      var northingArrayCleaned = (0, _toConsumableArray2.default)(removeDup(emptyBottomRowArr));
+      var len = northingArrayCleaned.length;
+
+      for (var index = 0; index < len; index += 1) {
+        var element = [northingArrayCleaned[index], northingArrayCleaned[index + 1]];
+        var northingLine = new _leaflet.default.Polyline([element], _this5.greenLine); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
 
         if (element[1]) {
-          Object.values(_this5.data).forEach(function (elem) {
-            if (element[0].lon >= elem.left) {
-              _this5.layerGroup100k.addLayer(northingLine);
-            }
-          }); // console.log(element[0].lon < this.data[0].left);
-          // If the east boundary of the northingLine is less than the right longitude of the GZD, etc...
-          //! 15JAN - this if statement might be useless
-          // if (element[1]) {
-          // This will prevent double lines from being drawn on the map
-          // northingLine.getLatLngs()[0][0] = element[0] (left)
-          // northingLine.getLatLngs()[0][1] = element[1] (right)
-          //! 15JAN - this if statement might be useless
-          // if (northingLine.getLatLngs()[0][0].distanceTo(northingLine.getLatLngs()[0][1]) <= this.gridInterval) {
-          //   if (northingLine.getBounds().getWest() >= this.west - 0.25) {
-          //     // this.layerGroup100k.addLayer(northingLine);
-          //   }
-          // }
-          // This will "connect" the 100k grid to the GZD. This is useful because not all 100k grids are 100k meters across
-          // Convert the Polyline element to a LatLng so we can use the distanceTo() method
+          if (element[0].lat !== element[1].lat && element[1].lon <= _this5.data[0].right && element[0].lon >= _this5.data[0].left) {
+            _this5.layerGroup100k.addLayer(northingLine); // This will "connect" the 100k grid to the west end of the GZD. This is useful because not all 100k grids are 100k meters across
+            // Convert the Polyline element to a LatLng so we can use the distanceTo() method
 
-          var connectingNorthingLineWest = new _leaflet.default.latLng({
-            lat: element[0].lat,
-            lng: element[0].lon
-          }); // if (connectingNorthingLineWest.distanceTo({ lat: element[0].lat, lng: this.data[this.data.length - 2].left }) <= this.gridInterval) {
-          //   const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineWest.lat, lon: this.data[this.data.length - 2].left });
-          //   const extendedLineSouth = UTMtoLL({
-          //     northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
-          //     easting: eastingGridLineEndpoint.easting,
-          //     zoneNumber: eastingGridLineEndpoint.zoneNumber,
-          //     zoneLetter: eastingGridLineEndpoint.zoneLetter,
-          //   });
-          //   const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineSouth], this.greenLine);
-          //   // This ensures the connecting west line does not go past the GZD boundary
-          //   if (connectingNorthingLineWestToGZD.getBounds().getWest() >= this.data[this.data.length - 2].left) {
-          //     // To see how the connecting lines work, just comment this out
-          //     //! 15JAN - this if statement might be useless
-          //     this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
-          //   }
-          // }
-          // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
 
-          Object.values(_this5.data).forEach(function (w) {
+            var connectingNorthingLineWest = new _leaflet.default.latLng({
+              lat: element[0].lat,
+              lng: element[0].lon
+            }); // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
+
             if (connectingNorthingLineWest.distanceTo({
               lat: element[0].lat,
-              lng: w.left
+              lng: _this5.data[_this5.data.length - 2].left
             }) <= _this5.gridInterval) {
               var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
                 lat: connectingNorthingLineWest.lat,
-                lon: w.left
+                lon: _this5.data[_this5.data.length - 2].left
               });
               var extendedLineSouth = (0, _mgrs.UTMtoLL)({
                 northing: Math.round(eastingGridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
-                // easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
                 easting: eastingGridLineEndpoint.easting,
                 zoneNumber: eastingGridLineEndpoint.zoneNumber,
                 zoneLetter: eastingGridLineEndpoint.zoneLetter
               });
-              var connectingNorthingLineWestToGZD = new _leaflet.default.Polyline([connectingNorthingLineWest, extendedLineSouth], _this5.lineStyle); // This ensures the connecting west line does not go past the GZD boundary
+              var connectingNorthingLineWestToGZD = new _leaflet.default.Polyline([connectingNorthingLineWest, extendedLineSouth], _this5.greenLine);
 
-              if (connectingNorthingLineWestToGZD.getBounds().getWest() >= w.left) {
-                // To see how the connecting lines work, just comment this out
-                return _this5.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
-              } // Alternative version
-              // if (!connectingNorthingLineWestToGZD.getBounds().overlaps(northingLine.getBounds())) {
-              //   return this.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
-              // }
-
+              _this5.layerGroup100k.addLayer(connectingNorthingLineWestToGZD);
             }
-          });
-          var connectingNorthingLineEast = new _leaflet.default.latLng({
-            lat: element[1].lat,
-            lng: element[1].lon
-          }); // if (connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: this.data[0].right }) <= this.gridInterval) {
-          //   const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineEast.lat, lon: this.data[0].right });
-          //   const extendedLineSouth = UTMtoLL({
-          //     northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
-          //     easting: eastingGridLineEndpoint.easting,
-          //     zoneNumber: eastingGridLineEndpoint.zoneNumber,
-          //     zoneLetter: eastingGridLineEndpoint.zoneLetter,
-          //   });
-          //   const connectingNorthingLineEastToGZD = new L.Polyline([connectingNorthingLineEast, extendedLineSouth], this.redLine);
-          //   // e.top / 100 is some arbitrary padding BS I added.
-          //   // example: if e.top = 39, then e.top / 100 is 0.39
-          //   this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
-          //   // if (connectingNorthingLineEastToGZD.getBounds().getEast() <= e.right + (e.top / 100)) {
-          //   //   // To see how the connecting lines work, just comment this out
-          //   //   return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
-          //   // }
-          // }
 
-          Object.values(_this5.data).forEach(function (e) {
-            // Multiply gridInterval by 1.5 because some 100k grids are not square shaped and are "fatter" on the bottom
+            var connectingNorthingLineEast = new _leaflet.default.latLng({
+              lat: element[1].lat,
+              lng: element[1].lon
+            });
+
             if (connectingNorthingLineEast.distanceTo({
               lat: element[1].lat,
-              lng: e.right
+              lng: _this5.data[0].right
             }) <= _this5.gridInterval) {
-              // console.count(); // 24
-              // console.log(connectingNorthingLineEast.distanceTo({ lat: element[1].lat, lng: e.right }));
-              var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
+              var _eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
                 lat: connectingNorthingLineEast.lat,
-                lon: e.right
+                lon: _this5.data[0].right
               });
-              var extendedLineSouth = (0, _mgrs.UTMtoLL)({
-                northing: Math.round(eastingGridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
-                easting: eastingGridLineEndpoint.easting,
-                zoneNumber: eastingGridLineEndpoint.zoneNumber,
-                zoneLetter: eastingGridLineEndpoint.zoneLetter
+
+              var _extendedLineSouth = (0, _mgrs.UTMtoLL)({
+                northing: Math.round(_eastingGridLineEndpoint.northing / _this5.gridInterval) * _this5.gridInterval,
+                easting: _eastingGridLineEndpoint.easting,
+                zoneNumber: _eastingGridLineEndpoint.zoneNumber,
+                zoneLetter: _eastingGridLineEndpoint.zoneLetter
               });
-              var connectingNorthingLineEastToGZD = new _leaflet.default.Polyline([connectingNorthingLineEast, extendedLineSouth], _this5.greenLine); // e.top / 100 is some arbitrary padding BS I added.
-              // example: if e.top = 39, then e.top / 100 is 0.39
-              //! JAN15 - this e.top equation is bullshit and not based on science. Remove it
 
-              if (connectingNorthingLineEastToGZD.getBounds().getEast() <= e.right + e.top / 100) {
-                // To see how the connecting lines work, just comment this out
-                return _this5.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
-              } // return this.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
+              var connectingNorthingLineEastToGZD = new _leaflet.default.Polyline([connectingNorthingLineEast, _extendedLineSouth], _this5.greenLine);
 
+              _this5.layerGroup100k.addLayer(connectingNorthingLineEastToGZD);
             }
-          }); // }
+          }
         }
-      };
-
-      for (var index = 0; index < emptyBottomRowArr.length; index += 1) {
-        _loop(index);
       }
     }); //* Build the easting grid lines *//
 
     Object.entries(this.eastingArray).forEach(function (ea) {
-      // console.log(ea[1]);
-      var bottomNorthing = ea[1];
+      var bottomNorthing = ea[1]; // const bottomRow = this.northingArray.map((j) => [j, bottomNorthing]);
 
       var bottomRow = _this5.northingArray.map(function (j) {
-        return [j, bottomNorthing];
+        if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
+          return [j, bottomNorthing];
+        }
       });
 
       var emptyBottomRowArr = [];
       bottomRow.forEach(function (k) {
-        if (k[0].zoneLetter === k[1].zoneLetter) {
-          // console.log(k);
+        if (k) {
           emptyBottomRowArr.push((0, _mgrs.UTMtoLL)({
             northing: k[0].northing,
             easting: k[1].easting,
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter
           }));
-        } // emptyBottomRowArr.push(UTMtoLL({
-        //   northing: k[0].northing,
-        //   easting: k[1].easting,
-        //   zoneNumber: k[0].zoneNumber,
-        //   zoneLetter: k[0].zoneLetter,
-        // }));
-        // mark(UTMtoLL({
-        //   northing: k[0].northing,
-        //   easting: k[1].easting,
-        //   zoneNumber: k[0].zoneNumber,
-        //   zoneLetter: k[0].zoneLetter,
-        // }));
-
+        }
       });
+      var eastingArrayCleaned = (0, _toConsumableArray2.default)(removeDup(emptyBottomRowArr));
+      var len = eastingArrayCleaned.length;
 
-      var _loop2 = function _loop2(index) {
-        var right = _this5.data[0].right;
-        var left = _this5.data[0].left;
-        var element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
-        var eastingLine = new _leaflet.default.Polyline([element], _this5.lineStyle); // If element[1] exists and if element[1]'s latitude is less than the left boundary and greater than the right boundary
-        //! JAN15 - You are using like 3 object loops in this. Try to combined into 1
+      for (var index = 0; index < len; index += 1) {
+        var element = [eastingArrayCleaned[index], eastingArrayCleaned[index + 1]];
+        var eastingLine = new _leaflet.default.Polyline([element], _this5.greenLine); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
 
         if (element[1]) {
-          Object.values(_this5.data).forEach(function (elem) {
-            if (element[1].lon >= elem.left && element[1].lon <= elem.right) {
-              console.log();
+          // If element[1]'s longitude is less than the left boundary and greater than the right boundary
+          if (element[0].lon > _this5.data[0].left && element[0].lon < _this5.data[0].right) {
+            _this5.layerGroup100k.addLayer(eastingLine); // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
 
-              _this5.layerGroup100k.addLayer(eastingLine);
-            }
-          });
-
-          if (eastingLine.getBounds().getSouth() >= _this5.south) {
-            //! BUG: This works but the lines will draw over each other resulting in redundant polylines.
-            //! There has to be a better way to simplify these lines
-            // I do not know why dividing the gridInterval by 2 works, but it does
-            // if (eastingLine.getLatLngs()[0][0].distanceTo(eastingLine.getLatLngs()[0][1]) >= this.gridInterval / 2) {
-            //   if (eastingLine.getBounds().getNorth() <= this.north + 1) {
-            //     //! this is fucking stupid
-            //     if (eastingLine.getLatLngs()[0][0].lng <= right) {
-            //       if (eastingLine.getLatLngs()[0][0].lng >= left) {
-            //       }
-            //     }
-            //   }
-            // }
-            //! JAN15 - This should probably be renamed to connectingEastingLineSouth
-            var connectingEastingLineNorth = new _leaflet.default.latLng({
-              lat: element[0].lat,
-              lng: element[0].lon
-            }); // if (connectingEastingLineNorth.distanceTo({ lat: this.data[0].bottom, lng: element[0].lon }) <= this.gridInterval) {
-            //   // this is the southern most point
-            //   const eastingGridLineEndpoint = LLtoUTM({ lat: this.data[0].bottom, lon: connectingEastingLineNorth.lng });
-            //   const extendedLineSouth = UTMtoLL({
-            //     northing: eastingGridLineEndpoint.northing,
-            //     // round the easting so it lines up with the bottom grid.
-            //     easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
-            //     zoneNumber: eastingGridLineEndpoint.zoneNumber,
-            //     zoneLetter: eastingGridLineEndpoint.zoneLetter,
-            //   });
-            //   const connectingEastingLineNorthToGZD = new L.Polyline([connectingEastingLineNorth, extendedLineSouth], this.lineStyle);
-            //   this.layerGroup100k.addLayer(connectingEastingLineNorthToGZD);
-            // }
-            // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
-
-            Object.values(_this5.data).forEach(function (b) {
-              // Removes the grid gap on latitudes above 64 deg (around Iceland)
-              // const boostPadding = this.north > 64 ? 10000 : 0;
-              if (connectingEastingLineNorth.distanceTo({
-                lat: b.bottom,
-                lng: element[0].lon
-              }) <= _this5.gridInterval) {
-                var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
-                  lat: b.bottom,
-                  lon: connectingEastingLineNorth.lng
-                });
-                var extendedLineSouth = (0, _mgrs.UTMtoLL)({
-                  northing: eastingGridLineEndpoint.northing,
-                  // round the easting so it lines up with the bottom grid.
-                  easting: Math.round(eastingGridLineEndpoint.easting / _this5.gridInterval) * _this5.gridInterval,
-                  zoneNumber: eastingGridLineEndpoint.zoneNumber,
-                  zoneLetter: eastingGridLineEndpoint.zoneLetter
-                });
-                var connectingEastingLineNorthToGZD = new _leaflet.default.Polyline([connectingEastingLineNorth, extendedLineSouth], _this5.lineStyle);
-                return _this5.layerGroup100k.addLayer(connectingEastingLineNorthToGZD);
-              }
-            }); //! JAN15 - This should probably be renamed to connectingEastingLineNorth
 
             var connectingEastingLineSouth = new _leaflet.default.latLng({
-              lat: element[1].lat,
-              lng: element[1].lon
-            }); // if (connectingEastingLineSouth.distanceTo({ lat: this.data[0].top, lng: element[1].lon }) <= this.gridInterval) {
-            //   // console.log(new Number(Math.trunc(connectingEastingLineSouth.distanceTo({ lat: e.top, lng: element[1].lon }))).toLocaleString());
-            //   const eastingGridLineEndpoint = LLtoUTM({ lat: this.data[0].top, lon: connectingEastingLineSouth.lng });
-            //   const extendedLineSouth = UTMtoLL({
-            //     northing: eastingGridLineEndpoint.northing,
-            //     // round the easting so it lines up with the bottom grid.
-            //     easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
-            //     zoneNumber: eastingGridLineEndpoint.zoneNumber,
-            //     zoneLetter: eastingGridLineEndpoint.zoneLetter,
-            //   });
-            //   const connectingEastingLineSouthToGZD = new L.Polyline([connectingEastingLineSouth, extendedLineSouth], this.orangeLine);
-            //   mark(connectingEastingLineSouth);
-            //   this.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
-            // }
+              lat: element[0].lat,
+              lng: element[0].lon
+            });
+            var count = 0;
 
-            Object.values(_this5.data).forEach(function (t) {
-              if (connectingEastingLineSouth.distanceTo({
-                lat: t.top,
-                lng: element[1].lon
-              }) <= _this5.gridInterval) {
-                var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
-                  lat: t.top,
-                  lon: connectingEastingLineSouth.lng
-                });
-                var extendedLineSouth = (0, _mgrs.UTMtoLL)({
-                  northing: eastingGridLineEndpoint.northing,
-                  // round the easting so it lines up with the bottom grid.
-                  easting: Math.round(eastingGridLineEndpoint.easting / _this5.gridInterval) * _this5.gridInterval,
-                  zoneNumber: eastingGridLineEndpoint.zoneNumber,
-                  zoneLetter: eastingGridLineEndpoint.zoneLetter
-                });
-                var connectingEastingLineSouthToGZD = new _leaflet.default.Polyline([connectingEastingLineSouth, extendedLineSouth], _this5.redLine);
+            while (count < _this5.data.length) {
+              if (_this5.data[count]) {
+                if (connectingEastingLineSouth.distanceTo({
+                  lat: _this5.data[count].bottom,
+                  lng: element[0].lon
+                }) <= _this5.gridInterval) {
+                  // this is the southern most point
+                  var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
+                    lat: _this5.data[count].bottom,
+                    lon: connectingEastingLineSouth.lng
+                  });
+                  var extendedLineSouth = (0, _mgrs.UTMtoLL)({
+                    northing: eastingGridLineEndpoint.northing,
+                    // round the easting so it lines up with the bottom grid.
+                    easting: Math.round(eastingGridLineEndpoint.easting / _this5.gridInterval) * _this5.gridInterval,
+                    zoneNumber: eastingGridLineEndpoint.zoneNumber,
+                    zoneLetter: eastingGridLineEndpoint.zoneLetter
+                  });
+                  var connectingEastingLineSouthToGZD = new _leaflet.default.Polyline([connectingEastingLineSouth, extendedLineSouth], _this5.lineStyle);
 
-                if (eastingGridLineEndpoint.zoneNumber === parseInt(t.id)) {
-                  if (connectingEastingLineSouthToGZD.getBounds().getWest() >= t.left) {
-                    // To see how the connecting lines work, just comment this out
-                    return _this5.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
-                  }
+                  _this5.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
                 }
               }
-            });
+
+              var connectingEastingLineNorth = new _leaflet.default.latLng({
+                lat: element[1].lat,
+                lng: element[1].lon
+              });
+
+              if (connectingEastingLineNorth.distanceTo({
+                lat: _this5.data[count].top,
+                lng: element[1].lon
+              }) <= _this5.gridInterval) {
+                // console.log(new Number(Math.trunc(connectingEastingLineNorth.distanceTo({ lat: e.top, lng: element[1].lon }))).toLocaleString());
+                var _eastingGridLineEndpoint2 = (0, _mgrs.LLtoUTM)({
+                  lat: _this5.data[count].top,
+                  lon: connectingEastingLineNorth.lng
+                });
+
+                var _extendedLineSouth2 = (0, _mgrs.UTMtoLL)({
+                  northing: _eastingGridLineEndpoint2.northing,
+                  // round the easting so it lines up with the bottom grid.
+                  easting: Math.round(_eastingGridLineEndpoint2.easting / _this5.gridInterval) * _this5.gridInterval,
+                  zoneNumber: _eastingGridLineEndpoint2.zoneNumber,
+                  zoneLetter: _eastingGridLineEndpoint2.zoneLetter
+                });
+
+                var connectingEastingLineNorthToGZD = new _leaflet.default.Polyline([connectingEastingLineNorth, _extendedLineSouth2], _this5.greenLine);
+
+                _this5.layerGroup100k.addLayer(connectingEastingLineNorthToGZD);
+              }
+
+              count += 1;
+            }
           }
         }
-      };
-
-      for (var index = 0; index < emptyBottomRowArr.length; index += 1) {
-        _loop2(index);
       }
     }); // this.clean() will add the layergroup to the map and then clear out the easting/northing arrays
 
     return this.clean();
-  }; // this.test = function () {
-  //   this.layerGroup100k.eachLayer((layer) => {
-  //     if (layer._latlngs.length > 1) {
-  //       const el0 = map.latLngToLayerPoint(layer.getLatLngs()[0]);
-  //       const el1 = map.latLngToLayerPoint(layer.getLatLngs()[1]);
-  //       const hhh = layer.getLatLngs().reduce((r, i) => (!r.some((j) => !Object.keys(i).some((k) => i[k] !== j[k])) ? [...r, i] : r), []);
-  //       console.log(hhh[0]);
-  //       if (hhh[1]) {
-  //         mark(hhh[1]);
-  //       }
-  //     }
-  //   });
-  // };
-
+  };
 
   this.clean = function () {
     this.layerGroup100k.addTo(map);
     this.eastingArray = [];
-    this.northingArray = []; // this.test();
+    this.northingArray = [];
   };
 
   this.regenerate = function () {
@@ -16766,11 +16503,11 @@ generate1000meterGrids.getVizGrids(); // ***************************************
 // *********************************************************************************** //
 
 map.addEventListener('moveend', function () {
-  generate1000meterGrids.regenerate(); // Clear the grids off the map
+  // generate1000meterGrids.regenerate();
+  // Clear the grids off the map
   // generate1000meterGrids.clean();
   // Run it again
   // generate1000meterGrids.getVizGrids();
-
   setTimeout(function () {
     document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
     document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
@@ -16785,7 +16522,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
   }, 300);
 });
-},{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/toConsumableArray":"../node_modules/@babel/runtime/helpers/toConsumableArray.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -16813,7 +16550,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51341" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52614" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
