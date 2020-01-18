@@ -117,43 +117,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"../node_modules/@babel/runtime/helpers/arrayWithoutHoles.js":[function(require,module,exports) {
-function _arrayWithoutHoles(arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
-      arr2[i] = arr[i];
-    }
-
-    return arr2;
-  }
-}
-
-module.exports = _arrayWithoutHoles;
-},{}],"../node_modules/@babel/runtime/helpers/iterableToArray.js":[function(require,module,exports) {
-function _iterableToArray(iter) {
-  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
-}
-
-module.exports = _iterableToArray;
-},{}],"../node_modules/@babel/runtime/helpers/nonIterableSpread.js":[function(require,module,exports) {
-function _nonIterableSpread() {
-  throw new TypeError("Invalid attempt to spread non-iterable instance");
-}
-
-module.exports = _nonIterableSpread;
-},{}],"../node_modules/@babel/runtime/helpers/toConsumableArray.js":[function(require,module,exports) {
-var arrayWithoutHoles = require("./arrayWithoutHoles");
-
-var iterableToArray = require("./iterableToArray");
-
-var nonIterableSpread = require("./nonIterableSpread");
-
-function _toConsumableArray(arr) {
-  return arrayWithoutHoles(arr) || iterableToArray(arr) || nonIterableSpread();
-}
-
-module.exports = _toConsumableArray;
-},{"./arrayWithoutHoles":"../node_modules/@babel/runtime/helpers/arrayWithoutHoles.js","./iterableToArray":"../node_modules/@babel/runtime/helpers/iterableToArray.js","./nonIterableSpread":"../node_modules/@babel/runtime/helpers/nonIterableSpread.js"}],"../node_modules/@babel/runtime/helpers/defineProperty.js":[function(require,module,exports) {
+})({"../node_modules/@babel/runtime/helpers/defineProperty.js":[function(require,module,exports) {
 function _defineProperty(obj, key, value) {
   if (key in obj) {
     Object.defineProperty(obj, key, {
@@ -15721,8 +15685,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.map = exports.gz = void 0;
 
-var _toConsumableArray2 = _interopRequireDefault(require("@babel/runtime/helpers/toConsumableArray"));
-
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
@@ -16090,23 +16052,7 @@ function getPaddingOnZoomLevel() {
     return 0.15;
   }
 
-  return 0.1;
-} // Removes duplicate values in an array
-// https://stackoverflow.com/questions/2218999/remove-duplicates-from-an-array-of-objects-in-javascript
-
-
-function removeDup(something) {
-  return something.reduce(function (prev, ele) {
-    var found = prev.find(function (fele) {
-      return ele.lat === fele.lat && ele.lon === fele.lon;
-    });
-
-    if (!found) {
-      prev.push(ele);
-    }
-
-    return prev;
-  }, []);
+  return 0.2;
 } //! Issues:
 //! Grids fail to draw completely in high northern areas (eg- Northern Canada)
 //! Grids fail at the equator (sometimes failing miserably)
@@ -16252,14 +16198,13 @@ function Grid100K() {
       var se = (0, _mgrs.LLtoUTM)({
         lat: x.bottom + buffer,
         lon: x.right - buffer
-      }); //! 15JAN - x.top could be this.north. This would cut down on your polylines
-
+      });
       var ne = (0, _mgrs.LLtoUTM)({
         lat: x.top - buffer,
         lon: x.right - buffer
       }); // reducing the min by 500, this is to catch those annoying "mini" 100k grids
 
-      var northingIterator = sw.northing - 500;
+      var northingIterator = sw.northing;
 
       if (sw.zoneLetter === ne.zoneLetter) {
         while (northingIterator <= ne.northing) {
@@ -16294,7 +16239,17 @@ function Grid100K() {
     }); //* Build the northing grid lines *//
 
     Object.entries(this.northingArray).forEach(function (na) {
+      var northingGridsArray = [];
       var bottomNorthing = na[1];
+      var southWestCorner = new _leaflet.default.latLng({
+        lat: _this5.south,
+        lon: _this5.west
+      });
+      var northEastCorner = new _leaflet.default.latLng({
+        lat: _this5.north,
+        lon: _this5.east
+      });
+      var bounds = new _leaflet.default.latLngBounds(southWestCorner, northEastCorner);
 
       var bottomRow = _this5.eastingArray.map(function (j) {
         if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
@@ -16302,33 +16257,36 @@ function Grid100K() {
         }
       });
 
-      var emptyBottomRowArr = [];
       bottomRow.forEach(function (k) {
         if (k) {
-          emptyBottomRowArr.push((0, _mgrs.UTMtoLL)({
+          var northingGrids = (0, _mgrs.UTMtoLL)({
             northing: k[1].northing,
             easting: k[0].easting,
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter
-          }));
+          }); // If the northingGrids are within the visible boundaries of the map, then push them to the array
+
+          if (bounds.contains(northingGrids)) {
+            northingGridsArray.push(northingGrids);
+          }
         }
       });
-      var northingArrayCleaned = (0, _toConsumableArray2.default)(removeDup(emptyBottomRowArr));
-      var len = northingArrayCleaned.length;
+      var len = northingGridsArray.length;
 
       for (var index = 0; index < len; index += 1) {
-        var element = [northingArrayCleaned[index], northingArrayCleaned[index + 1]];
+        var element = [northingGridsArray[index], northingGridsArray[index + 1]];
         var northingLine = new _leaflet.default.Polyline([element], _this5.lineStyle); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
 
         if (element[1]) {
-          if (element[0].lat !== element[1].lat && element[1].lon <= _this5.data[0].right && element[0].lon >= _this5.data[0].left) {
-            _this5.layerGroup100k.addLayer(northingLine); // This will "connect" the 100k grid to the west end of the GZD. This is useful because not all 100k grids are 100k meters across
-            // Convert the Polyline element to a LatLng so we can use the distanceTo() method
+          // If element[1]'s longitude is less than the right GZD boundary longitude and greater than the left GZD boundary
+          if (element[1].lon <= _this5.data[0].right && element[0].lon >= _this5.data[0].left) {
+            _this5.layerGroup100k.addLayer(northingLine); // This will "connect" the 100k grid to the east and west end of the GZD
 
 
             var count = 0;
 
             while (count < _this5.data.length) {
+              // Convert element[0] to a LatLng so we can use the distanceTo() method
               var connectingNorthingLineWest = new _leaflet.default.latLng({
                 lat: element[0].lat,
                 lng: element[0].lon
@@ -16392,11 +16350,20 @@ function Grid100K() {
 
     Object.entries(this.eastingArray).forEach(function (ea) {
       // This empty array will hold all latlngs generated from the "bottomRow" forEach loop.
-      // I am calling it "dirty" because there are going to be some duplicate coordinates that need to be cleaned up
-      var eastingArrayDirty = [];
+      var eastingGridsArray = [];
       var bottomEasting = ea[1];
+      var southWestCorner = new _leaflet.default.latLng({
+        lat: _this5.south,
+        lon: _this5.west
+      });
+      var northEastCorner = new _leaflet.default.latLng({
+        lat: _this5.north,
+        lon: _this5.east
+      });
+      var bounds = new _leaflet.default.latLngBounds(southWestCorner, northEastCorner);
 
       var bottomRow = _this5.northingArray.map(function (j) {
+        // match grid zones and grid IDs together
         if (j.zoneNumber === bottomEasting.zoneNumber && j.zoneLetter === bottomEasting.zoneLetter) {
           return [j, bottomEasting];
         }
@@ -16404,27 +16371,30 @@ function Grid100K() {
 
       bottomRow.forEach(function (k) {
         if (k) {
-          eastingArrayDirty.push((0, _mgrs.UTMtoLL)({
+          var eastingGrids = (0, _mgrs.UTMtoLL)({
             northing: k[0].northing,
             easting: k[1].easting,
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter
-          }));
+          }); // If the eastingGrids are within the visible boundaries of the map, then push them to the array
+
+          if (bounds.contains(eastingGrids)) {
+            eastingGridsArray.push(eastingGrids);
+          }
         }
-      }); //! 17JAN this removeDup function might not be needed
+      }); // I was told that setting the length of the loop like this has better performance than just array.length
 
-      var eastingArrayCleaned = (0, _toConsumableArray2.default)(removeDup(eastingArrayDirty)); // I was told that setting the length of the loop like this has better performance than just array.length
-
-      var len = eastingArrayCleaned.length;
+      var len = eastingGridsArray.length;
 
       for (var index = 0; index < len; index += 1) {
-        var element = [eastingArrayCleaned[index], eastingArrayCleaned[index + 1]];
+        var element = [eastingGridsArray[index], eastingGridsArray[index + 1]];
         var eastingLine = new _leaflet.default.Polyline([element], _this5.lineStyle); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
 
         if (element[1]) {
           // If element[1]'s longitude is less than the left boundary and greater than the right boundary
           if (element[0].lon > _this5.data[0].left && element[0].lon < _this5.data[0].right) {
-            _this5.layerGroup100k.addLayer(eastingLine); // IOT get the bottom latitude for each grid we need to loop over it
+            _this5.layerGroup100k.addLayer(eastingLine); // Connect the easting lines to the north and south parts of the GZD
+            // IOT get the bottom latitude for each grid we need to loop over it
 
 
             var count = 0;
@@ -16494,7 +16464,7 @@ function Grid100K() {
           }
         }
       }
-    }); // this.clean() will add the layergroup to the map and then clear out the easting/northing arrays
+    }); // Adds the layergroup to the map and then clears out the easting/northing arrays
 
     return this.clean();
   };
@@ -16540,7 +16510,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
   }, 300);
 });
-},{"@babel/runtime/helpers/toConsumableArray":"../node_modules/@babel/runtime/helpers/toConsumableArray.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

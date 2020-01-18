@@ -291,20 +291,8 @@ function getPaddingOnZoomLevel() {
   if (map.getZoom() <= 14 && map.getZoom() >= 12) {
     return 0.15;
   }
-  return 0.1;
+  return 0.2;
 }
-// Removes duplicate values in an array
-// https://stackoverflow.com/questions/2218999/remove-duplicates-from-an-array-of-objects-in-javascript
-function removeDup(something) {
-  return something.reduce((prev, ele) => {
-    const found = prev.find((fele) => ele.lat === fele.lat && ele.lon === fele.lon);
-    if (!found) {
-      prev.push(ele);
-    }
-    return prev;
-  }, []);
-}
-
 //! Issues:
 //! Grids fail to draw completely in high northern areas (eg- Northern Canada)
 //! Grids fail at the equator (sometimes failing miserably)
@@ -438,11 +426,10 @@ function Grid100K() {
       // Get the corners of the visible grids and convert them from latlon to UTM
       const sw = LLtoUTM({ lat: x.bottom + buffer, lon: x.left + buffer });
       const se = LLtoUTM({ lat: x.bottom + buffer, lon: x.right - buffer });
-      //! 15JAN - x.top could be this.north. This would cut down on your polylines
       const ne = LLtoUTM({ lat: x.top - buffer, lon: x.right - buffer });
 
       // reducing the min by 500, this is to catch those annoying "mini" 100k grids
-      let northingIterator = sw.northing - 500;
+      let northingIterator = sw.northing;
       if (sw.zoneLetter === ne.zoneLetter) {
         while (northingIterator <= ne.northing) {
           // This loop basically checks to make sure the easting grid is divisible by 100K
@@ -475,39 +462,46 @@ function Grid100K() {
 
     //* Build the northing grid lines *//
     Object.entries(this.northingArray).forEach((na) => {
+      const northingGridsArray = [];
       const bottomNorthing = na[1];
+      const southWestCorner = new L.latLng({ lat: this.south, lon: this.west });
+      const northEastCorner = new L.latLng({ lat: this.north, lon: this.east });
+      const bounds = new L.latLngBounds(southWestCorner, northEastCorner);
       const bottomRow = this.eastingArray.map((j) => {
         if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
           return [j, bottomNorthing];
         }
       });
-      const emptyBottomRowArr = [];
 
       bottomRow.forEach((k) => {
         if (k) {
-          emptyBottomRowArr.push(UTMtoLL({
+          const northingGrids = UTMtoLL({
             northing: k[1].northing,
             easting: k[0].easting,
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter,
-          }));
+          });
+          // If the northingGrids are within the visible boundaries of the map, then push them to the array
+          if (bounds.contains(northingGrids)) {
+            northingGridsArray.push(northingGrids);
+          }
         }
       });
 
-      const northingArrayCleaned = [...removeDup(emptyBottomRowArr)];
-      const len = northingArrayCleaned.length;
-
+      const len = northingGridsArray.length;
       for (let index = 0; index < len; index += 1) {
-        const element = [northingArrayCleaned[index], northingArrayCleaned[index + 1]];
+        const element = [northingGridsArray[index], northingGridsArray[index + 1]];
         const northingLine = new L.Polyline([element], this.lineStyle);
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
         if (element[1]) {
-          if (element[0].lat !== element[1].lat && element[1].lon <= this.data[0].right && element[0].lon >= this.data[0].left) {
+          // If element[1]'s longitude is less than the right GZD boundary longitude and greater than the left GZD boundary
+          if (element[1].lon <= this.data[0].right && element[0].lon >= this.data[0].left) {
             this.layerGroup100k.addLayer(northingLine);
-            // This will "connect" the 100k grid to the west end of the GZD. This is useful because not all 100k grids are 100k meters across
-            // Convert the Polyline element to a LatLng so we can use the distanceTo() method
+
+            // This will "connect" the 100k grid to the east and west end of the GZD
             let count = 0;
             while (count < this.data.length) {
+              // Convert element[0] to a LatLng so we can use the distanceTo() method
               const connectingNorthingLineWest = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
               // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
               if (connectingNorthingLineWest.distanceTo({ lat: element[0].lat, lng: this.data[count].left }) <= this.gridInterval) {
@@ -547,10 +541,13 @@ function Grid100K() {
     //* Build the easting grid lines *//
     Object.entries(this.eastingArray).forEach((ea) => {
       // This empty array will hold all latlngs generated from the "bottomRow" forEach loop.
-      // I am calling it "dirty" because there are going to be some duplicate coordinates that need to be cleaned up
-      const eastingArrayDirty = [];
+      const eastingGridsArray = [];
       const bottomEasting = ea[1];
+      const southWestCorner = new L.latLng({ lat: this.south, lon: this.west });
+      const northEastCorner = new L.latLng({ lat: this.north, lon: this.east });
+      const bounds = new L.latLngBounds(southWestCorner, northEastCorner);
       const bottomRow = this.northingArray.map((j) => {
+        // match grid zones and grid IDs together
         if (j.zoneNumber === bottomEasting.zoneNumber && j.zoneLetter === bottomEasting.zoneLetter) {
           return [j, bottomEasting];
         }
@@ -558,22 +555,23 @@ function Grid100K() {
 
       bottomRow.forEach((k) => {
         if (k) {
-          eastingArrayDirty.push(UTMtoLL({
+          const eastingGrids = UTMtoLL({
             northing: k[0].northing,
             easting: k[1].easting,
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter,
-          }));
+          });
+          // If the eastingGrids are within the visible boundaries of the map, then push them to the array
+          if (bounds.contains(eastingGrids)) {
+            eastingGridsArray.push(eastingGrids);
+          }
         }
       });
 
-      //! 17JAN this removeDup function might not be needed
-      const eastingArrayCleaned = [...removeDup(eastingArrayDirty)];
       // I was told that setting the length of the loop like this has better performance than just array.length
-      const len = eastingArrayCleaned.length;
-
+      const len = eastingGridsArray.length;
       for (let index = 0; index < len; index += 1) {
-        const element = [eastingArrayCleaned[index], eastingArrayCleaned[index + 1]];
+        const element = [eastingGridsArray[index], eastingGridsArray[index + 1]];
         const eastingLine = new L.Polyline([element], this.lineStyle);
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
         if (element[1]) {
@@ -581,6 +579,7 @@ function Grid100K() {
           if (element[0].lon > this.data[0].left && element[0].lon < this.data[0].right) {
             this.layerGroup100k.addLayer(eastingLine);
 
+            // Connect the easting lines to the north and south parts of the GZD
             // IOT get the bottom latitude for each grid we need to loop over it
             let count = 0;
             while (count < this.data.length) {
@@ -623,7 +622,7 @@ function Grid100K() {
       }
     });
 
-    // this.clean() will add the layergroup to the map and then clear out the easting/northing arrays
+    // Adds the layergroup to the map and then clears out the easting/northing arrays
     return this.clean();
   };
 
