@@ -15738,7 +15738,7 @@ var iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements 
 
 var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
-var map = _leaflet.default.map('map').setView(iceland, 7);
+var map = _leaflet.default.map('map').setView(southFL, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16382,17 +16382,30 @@ function Grid100K() {
             //! This is a total hack
             // Basically what this aims to do is clip any polylines that go past their GZD boundaries
             // Setting this to run on longitudes only above 30 for now.
-            if (_this5.south > 30) {
-              if (element[1].lon <= _this5.data[0].left || element[1].lon >= _this5.data[0].right) {
-                var startPoint = new _leaflet.default.point(map.latLngToLayerPoint(element[0]));
-                var endPoint = new _leaflet.default.point(map.latLngToLayerPoint(element[1]));
-                var boundsOfPoints = new _leaflet.default.bounds(startPoint, endPoint);
-                var clipLines = new _leaflet.default.LineUtil.clipSegment(startPoint, endPoint, boundsOfPoints, false, false);
-                return clipLines;
-              }
-            }
-
-            _this5.layerGroup100k.addLayer(eastingLine); // Connect the easting lines to the north and south parts of the GZD
+            // if (this.south < 30) {
+            //   if (element[1].lon <= this.data[0].left || element[1].lon >= this.data[0].right) {
+            //     const slope = (element[0].lat - element[1].lat) / (element[0].lon - element[1].lon);
+            //     const newLat0 = element[0].lat + (slope * (this.data[0].right - element[0].lon));
+            //     const newLat1 = element[1].lat + (slope * (this.data[0].left - element[1].lon));
+            //     // console.log(newLat1);
+            //     // mark(element[0]);
+            //     mark({ lat: newLat1, lng: this.data[0].left });
+            //     new L.Polyline([element[0], { lat: newLat1, lng: this.data[0].left }], this.greenLine).addTo(map);
+            //     const startPoint = new L.point(map.latLngToLayerPoint(element[0]));
+            //     const endPoint = new L.point(map.latLngToLayerPoint(element[1]));
+            //     const boundsOfPoints = new L.bounds(startPoint, endPoint);
+            //     const clipLines = new L.LineUtil.clipSegment(startPoint, endPoint, boundsOfPoints, false, false);
+            //     return clipLines;
+            //   }
+            // }
+            //! delete this if statement
+            // if (element[1].lon < this.data[0].left) {
+            //   const slope = (element[0].lat - element[1].lat) / (element[0].lon - element[1].lon);
+            //   const newLat1 = element[1].lat + (slope * (this.data[0].left - element[1].lon));
+            //   console.log(newLat1);
+            // }
+            _this5.cleanVert(eastingLine, _this5.data[0].left, _this5.data[0].right); // this.layerGroup100k.addLayer(eastingLine);
+            // Connect the easting lines to the north and south parts of the GZD
             // IOT get the bottom latitude for each grid we need to loop over it
 
 
@@ -16400,6 +16413,12 @@ function Grid100K() {
 
             while (count < _this5.data.length) {
               if (_this5.data[count]) {
+                // console.log(element[1].lon > this.data[count].right);
+                // if (element[1].lon < this.data[count].left) {
+                //   const slope = (element[0].lat - element[1].lat) / (element[0].lon - element[1].lon);
+                //   const newLat1 = element[1].lat + (slope * (this.data[count].left - element[1].lon));
+                //   console.log(newLat1);
+                // }
                 // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
                 var connectingEastingLineSouth = new _leaflet.default.latLng({
                   lat: element[0].lat,
@@ -16423,10 +16442,13 @@ function Grid100K() {
                     easting: Math.round(eastingGridLineEndpoint.easting / _this5.gridInterval) * _this5.gridInterval,
                     zoneNumber: eastingGridLineEndpoint.zoneNumber,
                     zoneLetter: eastingGridLineEndpoint.zoneLetter
-                  });
-                  var connectingEastingLineSouthToGZD = new _leaflet.default.Polyline([connectingEastingLineSouth, extendedLineSouth], _this5.lineStyle);
+                  }); // This helps out on latitudes above 60 degrees. Prevents lines overlapping
 
-                  _this5.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
+                  if (connectingEastingLineSouth.lat >= extendedLineSouth.lat) {
+                    var connectingEastingLineSouthToGZD = new _leaflet.default.Polyline([connectingEastingLineSouth, extendedLineSouth], _this5.lineStyle);
+
+                    _this5.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
+                  }
 
                   break;
                 }
@@ -16468,6 +16490,31 @@ function Grid100K() {
     }); // Adds the layergroup to the map and then clears out the easting/northing arrays
 
     return this.clean();
+  }; // This function takes an "horizontal" line and 2 bounds (left and right)
+  // It returns a new line with the same slope but bounded
+  // A line is defined by y = slope * x + b
+
+
+  this.cleanVert = function (line, leftLng, rightLng) {
+    var pts = line.getLatLngs();
+    var options = line.options;
+    var pt1 = pts[0][0];
+    var pt2 = pts[0][1];
+    var slope = (pt1.lat - pt2.lat) / (pt1.lng - pt2.lng);
+
+    if (pt2.lng > rightLng) {
+      var newLat = pt1.lat + (slope * (rightLng - pt1.lng) + 0.00125);
+      pt2 = new _leaflet.default.latLng(newLat, rightLng);
+    }
+
+    if (pt2.lng < leftLng) {
+      var _newLat = pt1.lat + (slope * (leftLng - pt1.lng) + 0.00125);
+
+      pt2 = new _leaflet.default.latLng(_newLat, leftLng); // mark(pt2);
+    }
+
+    var newLine = new _leaflet.default.Polyline([pt1, pt2], options);
+    this.layerGroup100k.addLayer(newLine); // return newLine;
   }; // TODO: Finish configuring the special zones exceptions
   // TODO: connectingEastingLineSouth and connectingEastingLineNorth are overlapping around the Iceland latitudes
   // TODO: the clipSegment LineUtil method works but I set it to only run on latitudes above 30. This is a hack and not based on science. If you switch the map back to southFL and zoom in on the converging eastings you will see that they are indeed crossing over the GZD boundaries.
@@ -16580,7 +16627,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52614" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49362" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -28,7 +28,7 @@ const honduras = [14.83861155338482, -87.45117187500001]; // ? 1272 child elemen
 const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
-const map = L.map('map').setView(iceland, 7);
+const map = L.map('map').setView(southFL, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker
@@ -556,6 +556,7 @@ function Grid100K() {
       for (let index = 0; index < len; index += 1) {
         const element = [eastingGridsArray[index], eastingGridsArray[index + 1]];
         const eastingLine = new L.Polyline([element], this.lineStyle);
+
         this.handleSpecialZones(element);
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
         if (element[1]) {
@@ -564,21 +565,43 @@ function Grid100K() {
             //! This is a total hack
             // Basically what this aims to do is clip any polylines that go past their GZD boundaries
             // Setting this to run on longitudes only above 30 for now.
-            if (this.south > 30) {
-              if (element[1].lon <= this.data[0].left || element[1].lon >= this.data[0].right) {
-                const startPoint = new L.point(map.latLngToLayerPoint(element[0]));
-                const endPoint = new L.point(map.latLngToLayerPoint(element[1]));
-                const boundsOfPoints = new L.bounds(startPoint, endPoint);
-                const clipLines = new L.LineUtil.clipSegment(startPoint, endPoint, boundsOfPoints, false, false);
-                return clipLines;
-              }
-            }
-            this.layerGroup100k.addLayer(eastingLine);
+
+            // if (this.south < 30) {
+            //   if (element[1].lon <= this.data[0].left || element[1].lon >= this.data[0].right) {
+            //     const slope = (element[0].lat - element[1].lat) / (element[0].lon - element[1].lon);
+            //     const newLat0 = element[0].lat + (slope * (this.data[0].right - element[0].lon));
+            //     const newLat1 = element[1].lat + (slope * (this.data[0].left - element[1].lon));
+            //     // console.log(newLat1);
+            //     // mark(element[0]);
+            //     mark({ lat: newLat1, lng: this.data[0].left });
+            //     new L.Polyline([element[0], { lat: newLat1, lng: this.data[0].left }], this.greenLine).addTo(map);
+            //     const startPoint = new L.point(map.latLngToLayerPoint(element[0]));
+            //     const endPoint = new L.point(map.latLngToLayerPoint(element[1]));
+            //     const boundsOfPoints = new L.bounds(startPoint, endPoint);
+            //     const clipLines = new L.LineUtil.clipSegment(startPoint, endPoint, boundsOfPoints, false, false);
+            //     return clipLines;
+            //   }
+            // }
+            //! delete this if statement
+            // if (element[1].lon < this.data[0].left) {
+            //   const slope = (element[0].lat - element[1].lat) / (element[0].lon - element[1].lon);
+            //   const newLat1 = element[1].lat + (slope * (this.data[0].left - element[1].lon));
+            //   console.log(newLat1);
+            // }
+            this.cleanVert(eastingLine, this.data[0].left, this.data[0].right);
+            // this.layerGroup100k.addLayer(eastingLine);
             // Connect the easting lines to the north and south parts of the GZD
             // IOT get the bottom latitude for each grid we need to loop over it
             let count = 0;
             while (count < this.data.length) {
               if (this.data[count]) {
+                // console.log(element[1].lon > this.data[count].right);
+                // if (element[1].lon < this.data[count].left) {
+                //   const slope = (element[0].lat - element[1].lat) / (element[0].lon - element[1].lon);
+                //   const newLat1 = element[1].lat + (slope * (this.data[count].left - element[1].lon));
+                //   console.log(newLat1);
+                // }
+
                 // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
                 const connectingEastingLineSouth = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
                 // If the map view latitude is above 60, then add a multiplier to the gridInterval since the 100k grids get more spaced out as you go north
@@ -593,8 +616,12 @@ function Grid100K() {
                     zoneNumber: eastingGridLineEndpoint.zoneNumber,
                     zoneLetter: eastingGridLineEndpoint.zoneLetter,
                   });
-                  const connectingEastingLineSouthToGZD = new L.Polyline([connectingEastingLineSouth, extendedLineSouth], this.lineStyle);
-                  this.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
+
+                  // This helps out on latitudes above 60 degrees. Prevents lines overlapping
+                  if (connectingEastingLineSouth.lat >= extendedLineSouth.lat) {
+                    const connectingEastingLineSouthToGZD = new L.Polyline([connectingEastingLineSouth, extendedLineSouth], this.lineStyle);
+                    this.layerGroup100k.addLayer(connectingEastingLineSouthToGZD);
+                  }
                   break;
                 }
               }
@@ -621,6 +648,31 @@ function Grid100K() {
 
     // Adds the layergroup to the map and then clears out the easting/northing arrays
     return this.clean();
+  };
+
+  // This function takes an "horizontal" line and 2 bounds (left and right)
+  // It returns a new line with the same slope but bounded
+  // A line is defined by y = slope * x + b
+  this.cleanVert = function (line, leftLng, rightLng) {
+    const pts = line.getLatLngs();
+    const { options } = line;
+    const pt1 = pts[0][0];
+    let pt2 = pts[0][1];
+    const slope = (pt1.lat - pt2.lat) / (pt1.lng - pt2.lng);
+    if (pt2.lng > rightLng) {
+      const newLat = pt1.lat + (slope * (rightLng - pt1.lng) + 0.00125);
+      pt2 = new L.latLng(newLat, rightLng);
+    }
+    if (pt2.lng < leftLng) {
+      const newLat = pt1.lat + (slope * (leftLng - pt1.lng) + 0.00125);
+      pt2 = new L.latLng(newLat, leftLng);
+      // mark(pt2);
+    }
+    const newLine = new L.Polyline([pt1, pt2], options);
+
+    this.layerGroup100k.addLayer(newLine);
+
+    // return newLine;
   };
 
   // TODO: Finish configuring the special zones exceptions
