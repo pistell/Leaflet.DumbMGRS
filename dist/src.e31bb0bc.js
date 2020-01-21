@@ -16461,6 +16461,7 @@ function Grid100K() {
     var newLine = new _leaflet.default.Polyline([pt1, pt2], options);
     this.layerGroup100k.addLayer(newLine);
   }; //! Honestly I am thinking of just disabling the 100k grids for anything above 72 degrees
+  //! GZD 31U does not work when the GZDs to the north of it are in visible range
   // TODO: Finish configuring the special zones exceptions
   // TODO: northOfSvalbard northings are not shooting off.
   // TODO: northing lines above 72 degrees latitude DO NOT WORK
