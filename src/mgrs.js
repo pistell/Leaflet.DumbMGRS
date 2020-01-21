@@ -1,3 +1,9 @@
+// This is just a slightly modified version of mgrs.js.
+// Added function UTMtoMGRS, and exported LLtoUTM and UTMtoLL since they weren't before
+// James Pistell 2020
+// For Leaflet.DumbMGRS
+// https://github.com/pistell/Leaflet.DumbMGRS
+
 /**
    * UTM zones are grouped, and assigned to one of a group of 6
    * sets.

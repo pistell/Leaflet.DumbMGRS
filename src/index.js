@@ -31,7 +31,7 @@ const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const map = L.map('map').setView(southFL, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
-// Just a quicker way to add a marker
+// Just a quicker way to add a marker, used for debugging purposes
 function mark(element) {
   const marker = new L.marker(element);
   const markerLat = marker.getLatLng().lat;
@@ -294,14 +294,14 @@ function getPaddingOnZoomLevel() {
   }
   return 0.2;
 }
+
 //! Issues:
-//! Grids fail to draw completely in high northern areas (eg- Northern Canada)
-//! Grids fail at the equator (sometimes failing miserably)
+//! Grids fail at the equator
 //! Grids fail around Antarctica
-//! Grids fail around Iceland
-//! Grids fail on GZD 31U (This is one of those "special" case grid zones)
-//! Grids fail between GZD 31V and 32V (another special case zone)
-//! Basically anything above Latitude 64 throws tons of errors, the northingLine Polyline keeps protruding past it's Grid Zone boundaries. This isn't noticeable at latitudes below Iceland but it gets worse as you pan up northwards
+//! Grids fail around southern Argentina
+//! Northing grids fail on latitudes above 72 degrees
+//! Grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
+//! Some grids fail when the map is zoomed in at zoom level >= 8 (this is most likely an issue with getPaddingOnZoomLevel())
 function Grid100K() {
   // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
   this.constructor = function () {
@@ -321,24 +321,28 @@ function Grid100K() {
       lineCap: 'butt',
       lineJoin: 'miter-clip',
     };
+    // default line style for 100K grids
     this.lineStyle = {
       color: 'black',
       weight: 4,
       opacity: 0.5,
       ...this.lineOptions,
     };
+    // line style for debugging
     this.greenLine = {
       color: 'green',
       weight: 8,
       opacity: 0.25,
       ...this.lineOptions,
     };
+    // line style for debugging
     this.orangeLine = {
       color: 'orange',
       weight: 8,
       opacity: 0.25,
       ...this.lineOptions,
     };
+    // line style for debugging
     this.redLine = {
       color: 'red',
       weight: 2,
@@ -354,12 +358,15 @@ function Grid100K() {
     this.uniqueVisibleGrids = {};
     // Create a new layergroup to hold the grid lines
     this.layerGroup100k = new L.LayerGroup([]);
-    return this;
   };
 
 
   // Returns the visible grids on the map and their bounds
   this.getVizGrids = function () {
+    // Prevent the map from drawing 100K grids when it is zoomed out too far.
+    if (map.getZoom() < 6) {
+      return;
+    }
     // Calling constructor to get it's values (eg- this.northingArray, etc...)
     this.constructor();
     // empty the empty array (I really need a new name for this)
@@ -376,7 +383,7 @@ function Grid100K() {
       acc[grid].push(this.empty[k]);
       return acc;
     }, {});
-    return this.prepGrids(this.uniqueVisibleGrids);
+    this.prepGrids(this.uniqueVisibleGrids);
   };
 
   // Now that we have the visible grids, we can iterate over them
@@ -385,6 +392,7 @@ function Grid100K() {
     const visibleGridsIterator = new Map(Object.entries(this.uniqueVisibleGrids));
 
     // Not sure how useful this promise is. It works fine with just a forEach loop
+    //! use async/await or just a forEach loop?
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     visibleGridsIterator.forEach((grid) => {
@@ -409,7 +417,7 @@ function Grid100K() {
       const se = LLtoUTM({ lat: x.bottom + buffer, lon: x.right - buffer });
       const ne = LLtoUTM({ lat: x.top - buffer, lon: x.right - buffer });
 
-      // reducing the min by 500, this is to catch those annoying "mini" 100k grids
+      // Find all northing grids that are divisible by 100,000
       let northingIterator = sw.northing;
       if (sw.zoneLetter === ne.zoneLetter) {
         while (northingIterator <= ne.northing) {
@@ -425,6 +433,7 @@ function Grid100K() {
         }
       }
 
+      // Find all easting grids that are divisible by 100,000
       let eastingIterator = sw.easting;
       if (sw.zoneLetter === se.zoneLetter) {
         while (eastingIterator <= se.easting) {
@@ -454,6 +463,7 @@ function Grid100K() {
         }
       });
 
+      // Since bottomRow now contains grids from this.northingArray and this.eastingArray, we can add them to the empty array to loop over later
       bottomRow.forEach((k) => {
         if (k) {
           const northingGrids = UTMtoLL({
@@ -477,10 +487,10 @@ function Grid100K() {
         this.handleSpecialZones(element);
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
         if (element[1]) {
-          // this.layerGroup100k.addLayer(northingLine);
           // If element[1]'s longitude is less than the right GZD boundary longitude and greater than the left GZD boundary
           if (element[1].lon <= this.data[0].right && element[0].lon >= this.data[0].left) {
-            // this.layerGroup100k.addLayer(northingLine);
+            // This is where the northingLine grids will be output from
+            // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
             this.cleanLine(northingLine, this.data[0].left, this.data[0].right);
             // This will "connect" the 100k grid to the east and west end of the GZD
             let count = 0;
@@ -514,6 +524,7 @@ function Grid100K() {
         }
       });
 
+      // Since bottomRow now contains grids from this.northingArray and this.eastingArray, we can add them to the empty array to loop over later
       bottomRow.forEach((k) => {
         if (k) {
           const eastingGrids = UTMtoLL({
@@ -539,7 +550,7 @@ function Grid100K() {
         if (element[1]) {
           // If element[1]'s longitude is less than the left boundary and greater than the right boundary
           if (element[0].lon > this.data[0].left && element[0].lon < this.data[0].right) {
-            // Basically what this aims to do is clip any polylines that go past their GZD boundaries
+            // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
             this.cleanLine(eastingLine, this.data[0].left, this.data[0].right);
             // Connect the easting lines to the north and south parts of the GZD
             // IOT get the bottom latitude for each grid we need to loop over it
@@ -565,11 +576,11 @@ function Grid100K() {
   };
 
   // These 2 functions will "connect" the northing and easting 100k grid lines to their adjacent GZD
-  // Connector is the connecting line we pass in (eg - connectingEastingLineSouth)
-  // Element is the grid lines generated from the for loop. The element is an object with 2 arrays containing latlons
-  // Data is the GZD data (example, this.data contains info on the corner boundaries of the visible GZDs)
-  // Count is the index used in the while loop
-  // Direction is the information we want to access in "this.data[count].top/bottom/left/right"
+  // CONNECTOR is the connecting line we pass in (eg - connectingEastingLineSouth)
+  // ELEMENT is the grid lines generated from the for loop. The element is an object with 2 arrays containing latlons
+  // DATA is the GZD data (example, this.data contains info on the corner boundaries of the visible GZDs)
+  // COUNT is the index used in the while loop
+  // DIRECTION is the information we want to access in "this.data[count].top/bottom/left/right"
   this.connectingNorthingLine = function (connector, element, elementIndex, data, count, direction) {
     if (connector.distanceTo({ lat: element[elementIndex].lat, lng: data[count][direction] }) <= this.gridInterval) {
       const northingGridLineEndpoint = LLtoUTM({ lat: connector.lat, lon: data[count][direction] });
@@ -663,7 +674,7 @@ function Grid100K() {
         if (element[1].lon > westBounds) {
           const eastingLine = new L.Polyline([element], this.lineStyle);
           const connectingNorthingLineWest = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
-          //! Can this be a function?
+          //! Remove this if statement and use this.connectingLine()
           // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
           if (connectingNorthingLineWest.distanceTo({ lat: element[0].lat, lng: westBounds }) <= this.gridInterval) {
             const eastingGridLineEndpoint = LLtoUTM({ lat: connectingNorthingLineWest.lat, lon: westBounds });
@@ -705,6 +716,7 @@ generate1000meterGrids.getVizGrids();
 // * Event Listeners                                                                 * //
 // *********************************************************************************** //
 map.addEventListener('moveend', () => {
+  // removes and adds the 100k grids to the map on moveend
   generate1000meterGrids.regenerate();
   // Clear the grids off the map
   // generate1000meterGrids.clean();
