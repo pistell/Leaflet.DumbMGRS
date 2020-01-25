@@ -16050,26 +16050,55 @@ gz.addTo(map); // **************************************************************
 // If there is a high zoom level, we need to add more padding so the grids generate throughout the whole screen
 
 function getPaddingOnZoomLevel() {
-  var northBuffer = map.getBounds().getNorth() >= 72 ? 0.2 : 0;
+  var northBuffer = map.getBounds().getNorth() >= 62 ? 0.2 : 0;
+  var zoom = map.getZoom();
 
-  if (map.getZoom() >= 17) {
-    return 3;
+  if (zoom >= 18) {
+    return 800;
   }
 
-  if (map.getZoom() < 17 && map.getZoom() >= 15) {
-    return 1;
-  }
+  switch (zoom) {
+    case 17:
+      return 400;
 
-  if (map.getZoom() <= 14 && map.getZoom() >= 12) {
-    return 0.15;
-  }
+    case 16:
+      return 200;
 
-  return 0.2 + northBuffer;
+    case 15:
+      return 100;
+
+    case 14:
+      return 50;
+
+    case 13:
+      return 25;
+
+    case 12:
+      return 12;
+
+    case 11:
+      return 6;
+
+    case 10:
+      return 3 + northBuffer;
+
+    case 9:
+      return 0.7 + northBuffer;
+
+    case 8:
+      return 0.3 + northBuffer;
+
+    case 7:
+      return 0.2 + northBuffer;
+
+    case 6:
+      return 0.1 + northBuffer;
+
+    default:
+      break;
+  }
 } //! Issues:
-//! Grids fail at the equator
 //! Grids fail around Antarctica
-//! Grids fail around southern Argentina
-//! Northing grids fail on latitudes above 72 degrees
 //! Grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
 //! Some grids fail when the map is zoomed in at zoom level >= 8 (this is most likely an issue with getPaddingOnZoomLevel())
 
