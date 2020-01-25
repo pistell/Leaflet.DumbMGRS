@@ -15744,7 +15744,9 @@ var iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements 
 
 var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
-var map = _leaflet.default.map('map').setView(southFL, 7);
+var quito = [0.17578097424708533, -77.84912109375];
+
+var map = _leaflet.default.map('map').setView(quito, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16619,7 +16621,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49362" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55206" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

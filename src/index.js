@@ -28,7 +28,8 @@ const honduras = [14.83861155338482, -87.45117187500001]; // ? 1272 child elemen
 const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
-const map = L.map('map').setView(southFL, 7);
+const quito = [0.17578097424708533, -77.84912109375];
+const map = L.map('map').setView(quito, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
