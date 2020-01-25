@@ -29,7 +29,7 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView(iceland, 7);
+const map = L.map('map').setView({ lat: -61.70029083832628, lng: 2.2631835937500004 }, 6);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -284,6 +284,7 @@ gz.addTo(map);
 // *********************************************************************************** //
 // If there is a high zoom level, we need to add more padding so the grids generate throughout the whole screen
 function getPaddingOnZoomLevel() {
+  const northBuffer = map.getBounds().getNorth() >= 72 ? 0.2 : 0;
   if (map.getZoom() >= 17) {
     return 3;
   }
@@ -293,7 +294,7 @@ function getPaddingOnZoomLevel() {
   if (map.getZoom() <= 14 && map.getZoom() >= 12) {
     return 0.15;
   }
-  return 0.2;
+  return 0.2 + northBuffer;
 }
 
 //! Issues:
@@ -488,11 +489,12 @@ function Grid100K() {
         this.handleSpecialZones(element);
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
         if (element[1]) {
+          this.cleanLine(northingLine, this.data[0].left, this.data[0].right);
           // If element[1]'s longitude is less than the right GZD boundary longitude and greater than the left GZD boundary
           if (element[1].lon <= this.data[0].right && element[0].lon >= this.data[0].left) {
             // This is where the northingLine grids will be output from
             // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
-            this.cleanLine(northingLine, this.data[0].left, this.data[0].right);
+            // this.cleanLine(northingLine, this.data[0].left, this.data[0].right);
             // This will "connect" the 100k grid to the east and west end of the GZD
             let count = 0;
             while (count < this.data.length) {
@@ -549,10 +551,11 @@ function Grid100K() {
         this.handleSpecialZones(element);
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
         if (element[1]) {
+          this.cleanLine(eastingLine, this.data[0].left, this.data[0].right);
           // If element[1]'s longitude is less than the left boundary and greater than the right boundary
           if (element[0].lon > this.data[0].left && element[0].lon < this.data[0].right) {
             // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
-            this.cleanLine(eastingLine, this.data[0].left, this.data[0].right);
+            // this.cleanLine(eastingLine, this.data[0].left, this.data[0].right);
             // Connect the easting lines to the north and south parts of the GZD
             // IOT get the bottom latitude for each grid we need to loop over it
             let count = 0;
@@ -561,10 +564,10 @@ function Grid100K() {
               const connectingEastingLineSouth = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
               this.connectingEastingLine(connectingEastingLineSouth, element, 0, this.data, count, 'bottom');
               //! Total HACK ALERT: Shit gets "weird" the further north we go. So only run this on lats below 64
-              if (this.north < 64) {
-                const connectingEastingLineNorth = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
-                this.connectingEastingLine(connectingEastingLineNorth, element, 1, this.data, count, 'top');
-              }
+              // if (this.north < 72) {
+              const connectingEastingLineNorth = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
+              this.connectingEastingLine(connectingEastingLineNorth, element, 1, this.data, count, 'top');
+              // }
               count += 1;
             }
           }
@@ -573,7 +576,7 @@ function Grid100K() {
     });
 
     // Adds the layergroup to the map and then clears out the easting/northing arrays
-    return this.clean();
+    return this.clearAll();
   };
 
   // These 2 functions will "connect" the northing and easting 100k grid lines to their adjacent GZD
@@ -583,7 +586,8 @@ function Grid100K() {
   // COUNT is the index used in the while loop
   // DIRECTION is the information we want to access in "this.data[count].top/bottom/left/right"
   this.connectingNorthingLine = function (connector, element, elementIndex, data, count, direction) {
-    if (connector.distanceTo({ lat: element[elementIndex].lat, lng: data[count][direction] }) <= this.gridInterval) {
+    const southBuffer = this.south > -20 ? 1 : 1.51;
+    if (connector.distanceTo({ lat: element[elementIndex].lat, lng: data[count][direction] }) <= this.gridInterval * southBuffer) {
       const northingGridLineEndpoint = LLtoUTM({ lat: connector.lat, lon: data[count][direction] });
       const extendedNorthingLine = UTMtoLL({
         northing: Math.round(northingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
@@ -598,7 +602,7 @@ function Grid100K() {
 
   this.connectingEastingLine = function (connector, element, elementIndex, data, count, direction) {
     // If the map view latitude is above 60, then add a multiplier to the gridInterval since the 100k grids get more spaced out as you go north
-    const northBuffer = this.north > 60 ? 1.5 : 1.01;
+    const northBuffer = this.north > 60 ? 1.5 : 1.03;
     if (connector.distanceTo({ lat: data[count][direction], lng: element[elementIndex].lon }) <= this.gridInterval * northBuffer) {
       const eastingGridLineEndpoint = LLtoUTM({ lat: data[count][direction], lon: connector.lng });
       const extendedEastingLine = UTMtoLL({
@@ -623,13 +627,17 @@ function Grid100K() {
     // line style options passed in from eastingLine/northingLine
     const { options } = line;
     // pt1 is element[0]
-    const pt1 = lineToClean[0][0];
+    let pt1 = lineToClean[0][0];
     // pt2 is element[1]
     let pt2 = lineToClean[0][1];
     // slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
     const slope = (pt1.lat - pt2.lat) / (pt1.lng - pt2.lng);
     // adding some space to the longitude so lines are more accurate
     const lngBuffer = 0.00125;
+    if (pt1.lng < leftLongitudeLimit) {
+      const newLat = pt1.lat + (slope * (leftLongitudeLimit - pt1.lng) + lngBuffer);
+      pt1 = new L.latLng(newLat, leftLongitudeLimit);
+    }
     if (pt2.lng > rightLongitudeLimit) {
       const newLat = pt1.lat + (slope * (rightLongitudeLimit - pt1.lng) + lngBuffer);
       pt2 = new L.latLng(newLat, rightLongitudeLimit);
@@ -639,7 +647,18 @@ function Grid100K() {
       pt2 = new L.latLng(newLat, leftLongitudeLimit);
     }
     const newLine = new L.Polyline([pt1, pt2], options);
-    this.layerGroup100k.addLayer(newLine);
+
+    if (pt2.lat > this.south) {
+      this.layerGroup100k.addLayer(newLine);
+    }
+
+
+    // This works well when you're on the oddball zones like 31X, 33X
+    // if (newLine.getLatLngs()[1].lat > newLine.getLatLngs()[0].lat) {
+    //   if (newLine.getLatLngs()[0].lng !== rightLongitudeLimit) {
+    //     this.layerGroup100k.addLayer(newLine);
+    //   }
+    // }
   };
 
 
@@ -650,6 +669,21 @@ function Grid100K() {
   // TODO: northing lines above 72 degrees latitude DO NOT WORK
   this.handleSpecialZones = function (element) {
     const rer = LLtoUTM(element[0]);
+
+    // if (element[1] && rer.zoneLetter === 'X' && rer.zoneNumber === 33) {
+    //   if (element[0].lon < this.data[0].right && element[1].lon > this.data[0].left) {
+    //     // Super confusing ternary action going on here. This essentially is just reassigning longitudes for any polylines that go outside their GZD boundaries
+    //     const clippedNorthingLine = [element[1].lon > this.data[0].right ? [element[1].lat, this.data[0].right] : element[1], element[0].lon < this.data[0].left ? [element[0].lat, this.data[0].left] : element[0]];
+    //     const northingLine = new L.Polyline([clippedNorthingLine], this.lineStyle);
+    //     if (northingLine.getLatLngs()[0][1].lat > northingLine.getLatLngs()[0][0].lat) {
+    //       if (northingLine.getLatLngs()[0][0].lng !== this.data[0].right) {
+    //         this.cleanLine(northingLine, this.data[0].left, this.data[0].right);
+    //       }
+    //     }
+    //   }
+    // }
+
+
     if (rer.zoneNumber === 31 && rer.zoneLetter === 'V') {
       if (rer.northing % this.gridInterval === 0) {
         const specialLine = new L.Polyline([{ lat: element[0].lat, lng: element[0].lon }, UTMtoLL({
@@ -694,7 +728,7 @@ function Grid100K() {
     }
   };
 
-  this.clean = function () {
+  this.clearAll = function () {
     this.layerGroup100k.addTo(map);
     this.eastingArray = [];
     this.northingArray = [];
@@ -720,7 +754,7 @@ map.addEventListener('moveend', () => {
   // removes and adds the 100k grids to the map on moveend
   generate1000meterGrids.regenerate();
   // Clear the grids off the map
-  // generate1000meterGrids.clean();
+  // generate1000meterGrids.clearAll();
   // Run it again
   // generate1000meterGrids.getVizGrids();
   setTimeout(() => {
