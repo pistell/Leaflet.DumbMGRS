@@ -325,6 +325,9 @@ function getPaddingOnZoomLevel() {
 //! Grids fail around Antarctica
 //! Grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
 //! Grid labels for the connecting lines do not show up
+// TODO: Finish grid labels
+// TODO: Create a grid label toggle
+// TODO: combine the 1mil, 100k, and 1000m grids into one class...
 function Grid100K() {
   // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
   this.constructor = function () {
@@ -468,6 +471,23 @@ function Grid100K() {
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter,
                 });
+
+                // ? If I add this functionality to the eastingIterator and then fire off this.test() I might be able to generate some labels
+                const testtt = UTMtoLL({
+                  northing: northingIteratorNorthHemisphere + (this.gridInterval / 2),
+                  easting: sw.easting,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter,
+                });
+                const grid100kLabel = new L.Marker(testtt, {
+                  interactive: false,
+                  icon: new L.DivIcon({
+                    className: 'leaflet-grid-label',
+                    iconAnchor: new L.Point(-25, 10),
+                    html: `<div class="grid-label">${get100kID(sw.easting, northingIteratorNorthHemisphere + (this.gridInterval / 2), sw.zoneNumber)}</div>`,
+                  }),
+                });
+                this.layerGroup100k.addLayer(grid100kLabel);
               }
               northingIteratorNorthHemisphere += 1;
             }
@@ -838,11 +858,11 @@ function Grid100K() {
             interactive: false,
             icon: new L.DivIcon({
               className: 'leaflet-grid-label',
-              iconAnchor: new L.Point(10, 10),
+              iconAnchor: new L.Point(25, 10),
               html: `<div class="grid-label">${get100kID(k[0].easting, k[1].northing, k[0].zoneNumber)}</div>`,
             }),
           });
-          this.layerGroup100k.addLayer(grid100kLabel);
+          // this.layerGroup100k.addLayer(grid100kLabel);
 
           // If the northingGrids are within the visible boundaries of the map, then push them to the array
           if (bounds.contains(northingGrids)) {
@@ -850,6 +870,7 @@ function Grid100K() {
           }
         }
       });
+
 
       // for (let index = 0; index < labelGridsArray.length; index += 1) {
       //   const element = [labelGridsArray[index], labelGridsArray[index + 1]];

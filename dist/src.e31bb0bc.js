@@ -16101,6 +16101,9 @@ function getPaddingOnZoomLevel() {
 //! Grids fail around Antarctica
 //! Grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
 //! Grid labels for the connecting lines do not show up
+// TODO: Finish grid labels
+// TODO: Create a grid label toggle
+// TODO: combine the 1mil, 100k, and 1000m grids into one class...
 
 
 function Grid100K() {
@@ -16260,7 +16263,25 @@ function Grid100K() {
                   northing: northingIteratorNorthHemisphere + _this5.gridInterval / 2,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter
+                }); // ? If I add this functionality to the eastingIterator and then fire off this.test() I might be able to generate some labels
+
+
+                var testtt = (0, _mgrs.UTMtoLL)({
+                  northing: northingIteratorNorthHemisphere + _this5.gridInterval / 2,
+                  easting: sw.easting,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter
                 });
+                var grid100kLabel = new _leaflet.default.Marker(testtt, {
+                  interactive: false,
+                  icon: new _leaflet.default.DivIcon({
+                    className: 'leaflet-grid-label',
+                    iconAnchor: new _leaflet.default.Point(-25, 10),
+                    html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(sw.easting, northingIteratorNorthHemisphere + _this5.gridInterval / 2, sw.zoneNumber), "</div>")
+                  })
+                });
+
+                _this5.layerGroup100k.addLayer(grid100kLabel);
               }
 
               northingIteratorNorthHemisphere += 1;
@@ -16729,13 +16750,11 @@ function Grid100K() {
             interactive: false,
             icon: new _leaflet.default.DivIcon({
               className: 'leaflet-grid-label',
-              iconAnchor: new _leaflet.default.Point(10, 10),
+              iconAnchor: new _leaflet.default.Point(25, 10),
               html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(k[0].easting, k[1].northing, k[0].zoneNumber), "</div>")
             })
-          });
-
-          _this6.layerGroup100k.addLayer(grid100kLabel); // If the northingGrids are within the visible boundaries of the map, then push them to the array
-
+          }); // this.layerGroup100k.addLayer(grid100kLabel);
+          // If the northingGrids are within the visible boundaries of the map, then push them to the array
 
           if (bounds.contains(northingGrids)) {
             labelGridsArray.push(northingGrids);
