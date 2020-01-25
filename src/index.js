@@ -29,7 +29,7 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView({ lat: 33.330528249028106, lng: -102.3046875 }, 7);
+const map = L.map('map').setView(southNY, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -290,6 +290,7 @@ function getPaddingOnZoomLevel() {
   if (zoom >= 18) {
     return 800;
   }
+
   switch (zoom) {
     case 17:
       return 400;
@@ -323,6 +324,7 @@ function getPaddingOnZoomLevel() {
 //! Issues:
 //! Grids fail around Antarctica
 //! Grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
+//! Grid labels for the connecting lines do not show up
 function Grid100K() {
   // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
   this.constructor = function () {
@@ -442,82 +444,90 @@ function Grid100K() {
       const nw = LLtoUTM({ lat: x.top - buffer, lon: x.left + buffer });
 
       const hemisphere = map.getCenter().lat <= 0 ? 'South' : 'North';
-      let northingIteratorSouth = sw.northing;
-      let eastingIteratorSouth = nw.easting;
-      let northingIteratorNorth = sw.northing;
-      let eastingIteratorNorth = sw.easting;
+      let northingIteratorNorthHemisphere = sw.northing;
+      let eastingIteratorNorthHemisphere = sw.easting;
+      let northingIteratorSouthHemisphere = sw.northing;
+      let eastingIteratorSouthHemisphere = nw.easting;
 
       // Check which hemisphere the user is in and make adjustments
       switch (hemisphere) {
         case 'North':
           // Find all northing grids that are divisible by 100,000
           if (sw.zoneLetter === ne.zoneLetter) {
-            while (northingIteratorNorth <= ne.northing) {
+            while (northingIteratorNorthHemisphere <= ne.northing) {
               // This loop basically checks to make sure the easting grid is divisible by 100K
-
-              if (northingIteratorNorth % this.gridInterval === 0) {
+              if (northingIteratorNorthHemisphere % this.gridInterval === 0) {
                 this.northingArray.push({
-                  northing: northingIteratorNorth,
+                  northing: northingIteratorNorthHemisphere,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter,
                 });
-
+                // Push the coordinates for the 100k grid labels
                 this.labelN.push({
-                  northing: northingIteratorNorth + (this.gridInterval / 2),
+                  northing: northingIteratorNorthHemisphere + (this.gridInterval / 2),
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter,
                 });
               }
-
-              northingIteratorNorth += 1;
+              northingIteratorNorthHemisphere += 1;
             }
           }
           // Find all easting grids that are divisible by 100,000
           if (sw.zoneLetter === se.zoneLetter) {
-            while (eastingIteratorNorth <= se.easting) {
-              if (eastingIteratorNorth % this.gridInterval === 0) {
+            while (eastingIteratorNorthHemisphere <= se.easting) {
+              if (eastingIteratorNorthHemisphere % this.gridInterval === 0) {
                 this.eastingArray.push({
-                  easting: eastingIteratorNorth,
+                  easting: eastingIteratorNorthHemisphere,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter,
                 });
-
+                // Push the coordinates for the 100k grid labels
                 this.labelS.push({
-                  easting: eastingIteratorNorth + this.gridInterval / 2,
+                  easting: eastingIteratorNorthHemisphere + this.gridInterval / 2,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter,
                 });
               }
-              eastingIteratorNorth += 1;
+              eastingIteratorNorthHemisphere += 1;
             }
           }
           break;
         case 'South':
           // Find all northing grids that are divisible by 100,000
           if (sw.zoneLetter === ne.zoneLetter) {
-            while (northingIteratorSouth <= ne.northing) {
+            while (northingIteratorSouthHemisphere <= ne.northing) {
               // This loop basically checks to make sure the easting grid is divisible by 100K
-              if (northingIteratorSouth % this.gridInterval === 0) {
+              if (northingIteratorSouthHemisphere % this.gridInterval === 0) {
                 this.northingArray.push({
-                  northing: northingIteratorSouth,
+                  northing: northingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter,
+                });
+                this.labelN.push({
+                  northing: northingIteratorSouthHemisphere + (this.gridInterval / 2),
                   zoneNumber: nw.zoneNumber,
                   zoneLetter: nw.zoneLetter,
                 });
               }
-              northingIteratorSouth += 1;
+              northingIteratorSouthHemisphere += 1;
             }
           }
           // Find all easting grids that are divisible by 100,000
           if (nw.zoneLetter === ne.zoneLetter) {
-            while (eastingIteratorSouth <= ne.easting) {
-              if (eastingIteratorSouth % this.gridInterval === 0) {
+            while (eastingIteratorSouthHemisphere <= ne.easting) {
+              if (eastingIteratorSouthHemisphere % this.gridInterval === 0) {
                 this.eastingArray.push({
-                  easting: eastingIteratorSouth,
+                  easting: eastingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter,
+                });
+                this.labelS.push({
+                  easting: eastingIteratorSouthHemisphere + this.gridInterval / 2,
                   zoneNumber: nw.zoneNumber,
                   zoneLetter: nw.zoneLetter,
                 });
               }
-              eastingIteratorSouth += 1;
+              eastingIteratorSouthHemisphere += 1;
             }
           }
           break;
@@ -614,7 +624,6 @@ function Grid100K() {
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter,
           });
-
           // If the eastingGrids are within the visible boundaries of the map, then push them to the array
           if (bounds.contains(eastingGrids)) {
             eastingGridsArray.push(eastingGrids);
@@ -654,6 +663,21 @@ function Grid100K() {
     return this.clearAll();
   };
 
+  //! This function adds grid labels without using any other loops.
+  //! Recommend that you explore this route instead of using this.genLabels()
+  this.test = function (elem) {
+    const grid100kData = LLtoUTM({ lat: elem.lat, lon: elem.lng || elem.lon });
+    const grid100kLabel = new L.Marker(elem, {
+      interactive: false,
+      icon: new L.DivIcon({
+        className: 'leaflet-grid-label',
+        iconAnchor: new L.Point(-25, 50),
+        html: `<div class="grid-label">${get100kID(grid100kData.easting, grid100kData.northing, grid100kData.zoneNumber)}</div>`,
+      }),
+    });
+    this.layerGroup100k.addLayer(grid100kLabel);
+  };
+
   // These 2 functions will "connect" the northing and easting 100k grid lines to their adjacent GZD
   // CONNECTOR is the connecting line we pass in (eg - connectingEastingLineSouth)
   // ELEMENT is the grid lines generated from the for loop. The element is an object with 2 arrays containing latlons
@@ -672,6 +696,10 @@ function Grid100K() {
       });
       const connectingNorthingLineToGZD = new L.Polyline([connector, extendedNorthingLine], this.lineStyle);
       this.layerGroup100k.addLayer(connectingNorthingLineToGZD);
+      //! 84,000 is some bullshit number
+      if (connector.distanceTo({ lat: element[elementIndex].lat, lng: data[count][direction] }) <= 84000) {
+        // this.test({ lat: connector.lat, lon: data[count][direction] });
+      }
     }
   };
 
@@ -782,6 +810,7 @@ function Grid100K() {
     }
   };
 
+  //! this.test() does the same thing but without any loops
   this.genLabels = function () {
     Object.entries(this.labelN).forEach((na) => {
       const labelGridsArray = [];
@@ -804,6 +833,17 @@ function Grid100K() {
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter,
           });
+
+          const grid100kLabel = new L.Marker(northingGrids, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new L.Point(10, 10),
+              html: `<div class="grid-label">${get100kID(k[0].easting, k[1].northing, k[0].zoneNumber)}</div>`,
+            }),
+          });
+          this.layerGroup100k.addLayer(grid100kLabel);
+
           // If the northingGrids are within the visible boundaries of the map, then push them to the array
           if (bounds.contains(northingGrids)) {
             labelGridsArray.push(northingGrids);
@@ -811,21 +851,21 @@ function Grid100K() {
         }
       });
 
-      for (let index = 0; index < labelGridsArray.length; index += 1) {
-        const element = [labelGridsArray[index], labelGridsArray[index + 1]];
-        if (element[1]) {
-          const grid100kData = LLtoUTM(element[0]);
-          const grid100kLabel = new L.Marker(element[0], {
-            interactive: false,
-            icon: new L.DivIcon({
-              className: 'leaflet-grid-label',
-              iconAnchor: new L.Point(10, 10),
-              html: `<div class="grid-label">${get100kID(grid100kData.easting, grid100kData.northing, grid100kData.zoneNumber)}</div>`,
-            }),
-          });
-          this.layerGroup100k.addLayer(grid100kLabel);
-        }
-      }
+      // for (let index = 0; index < labelGridsArray.length; index += 1) {
+      //   const element = [labelGridsArray[index], labelGridsArray[index + 1]];
+      //   if (element[1]) {
+      //     const grid100kData = LLtoUTM(element[0]);
+      //     const grid100kLabel = new L.Marker(element[0], {
+      //       interactive: false,
+      //       icon: new L.DivIcon({
+      //         className: 'leaflet-grid-label',
+      //         iconAnchor: new L.Point(10, 10),
+      //         html: `<div class="grid-label">${get100kID(grid100kData.easting, grid100kData.northing, grid100kData.zoneNumber)}</div>`,
+      //       }),
+      //     });
+      //     // this.layerGroup100k.addLayer(grid100kLabel);
+      //   }
+      // }
     });
   };
 
