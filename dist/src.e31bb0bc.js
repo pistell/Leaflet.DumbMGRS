@@ -15746,7 +15746,10 @@ var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
 var quito = [0.17578097424708533, -77.84912109375];
 
-var map = _leaflet.default.map('map').setView(southFL, 7);
+var map = _leaflet.default.map('map').setView({
+  lat: 33.330528249028106,
+  lng: -102.3046875
+}, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16100,7 +16103,6 @@ function getPaddingOnZoomLevel() {
 } //! Issues:
 //! Grids fail around Antarctica
 //! Grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
-//! Some grids fail when the map is zoomed in at zoom level >= 8 (this is most likely an issue with getPaddingOnZoomLevel())
 
 
 function Grid100K() {
@@ -16155,6 +16157,8 @@ function Grid100K() {
     this.uniqueVisibleGrids = {}; // Create a new layergroup to hold the grid lines
 
     this.layerGroup100k = new _leaflet.default.LayerGroup([]);
+    this.labelN = [];
+    this.labelS = [];
   }; // Returns the visible grids on the map and their bounds
 
 
@@ -16252,6 +16256,12 @@ function Grid100K() {
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter
                 });
+
+                _this5.labelN.push({
+                  northing: northingIteratorNorth + _this5.gridInterval / 2,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter
+                });
               }
 
               northingIteratorNorth += 1;
@@ -16264,6 +16274,12 @@ function Grid100K() {
               if (eastingIteratorNorth % _this5.gridInterval === 0) {
                 _this5.eastingArray.push({
                   easting: eastingIteratorNorth,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter
+                });
+
+                _this5.labelS.push({
+                  easting: eastingIteratorNorth + _this5.gridInterval / 2,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter
                 });
@@ -16641,10 +16657,71 @@ function Grid100K() {
     }
   };
 
+  this.genLabels = function () {
+    var _this6 = this;
+
+    Object.entries(this.labelN).forEach(function (na) {
+      var labelGridsArray = [];
+      var bottomNorthing = na[1];
+      var southWestCorner = new _leaflet.default.latLng({
+        lat: _this6.south,
+        lon: _this6.west
+      });
+      var northEastCorner = new _leaflet.default.latLng({
+        lat: _this6.north,
+        lon: _this6.east
+      });
+      var bounds = new _leaflet.default.latLngBounds(southWestCorner, northEastCorner);
+
+      var bottomRow = _this6.labelS.map(function (j) {
+        if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
+          return [j, bottomNorthing];
+        }
+      }); // Since bottomRow now contains grids from this.labelN and this.labelS, we can add them to the empty array to loop over later
+
+
+      bottomRow.forEach(function (k) {
+        if (k) {
+          var northingGrids = (0, _mgrs.UTMtoLL)({
+            northing: k[1].northing,
+            easting: k[0].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter
+          }); // If the northingGrids are within the visible boundaries of the map, then push them to the array
+
+          if (bounds.contains(northingGrids)) {
+            labelGridsArray.push(northingGrids);
+          }
+        }
+      });
+
+      for (var index = 0; index < labelGridsArray.length; index += 1) {
+        var element = [labelGridsArray[index], labelGridsArray[index + 1]];
+
+        if (element[1]) {
+          var grid100kData = (0, _mgrs.LLtoUTM)(element[0]);
+          var grid100kLabel = new _leaflet.default.Marker(element[0], {
+            interactive: false,
+            icon: new _leaflet.default.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new _leaflet.default.Point(10, 10),
+              html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(grid100kData.easting, grid100kData.northing, grid100kData.zoneNumber), "</div>")
+            })
+          });
+
+          _this6.layerGroup100k.addLayer(grid100kLabel);
+        }
+      }
+    });
+  };
+
   this.clearAll = function () {
+    this.genLabels();
     this.layerGroup100k.addTo(map);
     this.eastingArray = [];
     this.northingArray = [];
+    this.labelN = [];
+    this.labelS = [];
   };
 
   this.regenerate = function () {

@@ -29,7 +29,7 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView(southFL, 7);
+const map = L.map('map').setView({ lat: 33.330528249028106, lng: -102.3046875 }, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -323,7 +323,6 @@ function getPaddingOnZoomLevel() {
 //! Issues:
 //! Grids fail around Antarctica
 //! Grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
-//! Some grids fail when the map is zoomed in at zoom level >= 8 (this is most likely an issue with getPaddingOnZoomLevel())
 function Grid100K() {
   // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
   this.constructor = function () {
@@ -380,6 +379,8 @@ function Grid100K() {
     this.uniqueVisibleGrids = {};
     // Create a new layergroup to hold the grid lines
     this.layerGroup100k = new L.LayerGroup([]);
+    this.labelN = [];
+    this.labelS = [];
   };
 
 
@@ -453,13 +454,21 @@ function Grid100K() {
           if (sw.zoneLetter === ne.zoneLetter) {
             while (northingIteratorNorth <= ne.northing) {
               // This loop basically checks to make sure the easting grid is divisible by 100K
+
               if (northingIteratorNorth % this.gridInterval === 0) {
                 this.northingArray.push({
                   northing: northingIteratorNorth,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter,
                 });
+
+                this.labelN.push({
+                  northing: northingIteratorNorth + (this.gridInterval / 2),
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter,
+                });
               }
+
               northingIteratorNorth += 1;
             }
           }
@@ -469,6 +478,12 @@ function Grid100K() {
               if (eastingIteratorNorth % this.gridInterval === 0) {
                 this.eastingArray.push({
                   easting: eastingIteratorNorth,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter,
+                });
+
+                this.labelS.push({
+                  easting: eastingIteratorNorth + this.gridInterval / 2,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter,
                 });
@@ -767,10 +782,60 @@ function Grid100K() {
     }
   };
 
+  this.genLabels = function () {
+    Object.entries(this.labelN).forEach((na) => {
+      const labelGridsArray = [];
+      const bottomNorthing = na[1];
+      const southWestCorner = new L.latLng({ lat: this.south, lon: this.west });
+      const northEastCorner = new L.latLng({ lat: this.north, lon: this.east });
+      const bounds = new L.latLngBounds(southWestCorner, northEastCorner);
+      const bottomRow = this.labelS.map((j) => {
+        if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
+          return [j, bottomNorthing];
+        }
+      });
+
+      // Since bottomRow now contains grids from this.labelN and this.labelS, we can add them to the empty array to loop over later
+      bottomRow.forEach((k) => {
+        if (k) {
+          const northingGrids = UTMtoLL({
+            northing: k[1].northing,
+            easting: k[0].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter,
+          });
+          // If the northingGrids are within the visible boundaries of the map, then push them to the array
+          if (bounds.contains(northingGrids)) {
+            labelGridsArray.push(northingGrids);
+          }
+        }
+      });
+
+      for (let index = 0; index < labelGridsArray.length; index += 1) {
+        const element = [labelGridsArray[index], labelGridsArray[index + 1]];
+        if (element[1]) {
+          const grid100kData = LLtoUTM(element[0]);
+          const grid100kLabel = new L.Marker(element[0], {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new L.Point(10, 10),
+              html: `<div class="grid-label">${get100kID(grid100kData.easting, grid100kData.northing, grid100kData.zoneNumber)}</div>`,
+            }),
+          });
+          this.layerGroup100k.addLayer(grid100kLabel);
+        }
+      }
+    });
+  };
+
   this.clearAll = function () {
+    this.genLabels();
     this.layerGroup100k.addTo(map);
     this.eastingArray = [];
     this.northingArray = [];
+    this.labelN = [];
+    this.labelS = [];
   };
 
   this.regenerate = function () {
