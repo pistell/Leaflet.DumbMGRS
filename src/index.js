@@ -29,7 +29,7 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView(quito, 7);
+const map = L.map('map').setView(iceland, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -598,7 +598,7 @@ function Grid100K() {
 
   this.connectingEastingLine = function (connector, element, elementIndex, data, count, direction) {
     // If the map view latitude is above 60, then add a multiplier to the gridInterval since the 100k grids get more spaced out as you go north
-    const northBuffer = this.north > 60 ? 1.5 : 1;
+    const northBuffer = this.north > 60 ? 1.5 : 1.01;
     if (connector.distanceTo({ lat: data[count][direction], lng: element[elementIndex].lon }) <= this.gridInterval * northBuffer) {
       const eastingGridLineEndpoint = LLtoUTM({ lat: data[count][direction], lon: connector.lng });
       const extendedEastingLine = UTMtoLL({

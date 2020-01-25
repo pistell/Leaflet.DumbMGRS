@@ -15746,7 +15746,7 @@ var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
 var quito = [0.17578097424708533, -77.84912109375];
 
-var map = _leaflet.default.map('map').setView(quito, 7);
+var map = _leaflet.default.map('map').setView(iceland, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16426,7 +16426,7 @@ function Grid100K() {
 
   this.connectingEastingLine = function (connector, element, elementIndex, data, count, direction) {
     // If the map view latitude is above 60, then add a multiplier to the gridInterval since the 100k grids get more spaced out as you go north
-    var northBuffer = this.north > 60 ? 1.5 : 1;
+    var northBuffer = this.north > 60 ? 1.5 : 1.01;
 
     if (connector.distanceTo({
       lat: data[count][direction],
