@@ -124,8 +124,15 @@ svg {
     }
   }
 }
-// .leaflet-grid-label {
-//   margin-left: 8px;
-//   -webkit-transform: rotate(90deg);
-//   transform: rotate(90deg);
-// }
+.leaflet-grid-label {
+  margin-left: 8px;
+  -webkit-transform: rotate(90deg);
+  transform: rotate(90deg);
+  .grid-label {
+    background-color: yellow;
+    width: fit-content;
+    opacity: 0.7;
+    color: red;
+    font-weight: bold;
+  }
+}
