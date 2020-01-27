@@ -898,6 +898,7 @@ function getPaddingOnZoomLevel1000Meters() {
   }
 }
 
+//! BUG: 1000m grids are all jacked up on the southern hemisphere
 function Grid1000M(enableLabels) {
   this.constructor = function () {
     this.visibleBounds = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters());

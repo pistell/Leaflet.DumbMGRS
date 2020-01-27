@@ -64,6 +64,8 @@ I am trying to generate 3 types of grids
 
 6. Toggle switch for 1000m grids works, but when the user scrolls the labels get placed back on the map for some reason.
 
+7. 1000m grids are all kinda jacked up in the southern hemisphere.
+
 ## Other Stuff
 
 Readme created with [createapp.dev](https://createapp.dev/)

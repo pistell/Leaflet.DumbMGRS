@@ -16791,7 +16791,8 @@ function getPaddingOnZoomLevel1000Meters() {
     default:
       break;
   }
-}
+} //! BUG: 1000m grids are all jacked up on the southern hemisphere
+
 
 function Grid1000M(enableLabels) {
   this.constructor = function () {
@@ -17325,7 +17326,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49368" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54125" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
