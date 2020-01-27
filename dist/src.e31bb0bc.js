@@ -16097,12 +16097,7 @@ function getPaddingOnZoomLevel() {
     default:
       break;
   }
-} //! Issues:
-//! Grids fail around Antarctica
-//! Grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
-//! Grid labels for the connecting lines do not show up
-// TODO: Finish grid labels
-// TODO: Create a grid label toggle
+} // TODO: Create a grid label toggle
 // TODO: combine the 1mil, 100k, and 1000m grids into one class...
 
 
@@ -16605,8 +16600,7 @@ function Grid100K() {
     if (pt2.lat > this.south) {
       this.layerGroup100k.addLayer(newLine);
     }
-  }; //! GZD 31U does not work when the GZDs to the north of it are in visible range
-  // TODO: Finish configuring the special zones exceptions
+  }; // TODO: Finish configuring the special zones exceptions
 
 
   this.handleSpecialZones = function (element) {
@@ -16673,8 +16667,7 @@ function Grid100K() {
         }
       }
     }
-  }; //! this.test() does the same thing but without any loops
-
+  };
 
   this.genLabels = function () {
     var _this6 = this;
