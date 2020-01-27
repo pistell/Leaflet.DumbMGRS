@@ -62,6 +62,8 @@ I am trying to generate 3 types of grids
 
 5. 100K grids in GZD 31U does not work when the GZDs to the north of it are in visible range
 
+6. Toggle switch for 1000m grids works, but when the user scrolls the labels get placed back on the map for some reason.
+
 ## Other Stuff
 
 Readme created with [createapp.dev](https://createapp.dev/)

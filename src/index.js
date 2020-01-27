@@ -29,7 +29,7 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView({ lat: 44.04934954474218, lng: -75.78334808349611 }, 14);
+const map = L.map('map').setView({ lat: 44.06588017158586, lng: -76.11911773681642 }, 13);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -842,7 +842,10 @@ function Grid100K() {
               html: `<div class="grid-label">${get100kID(grid100kData.easting, grid100kData.northing, grid100kData.zoneNumber)}</div>`,
             }),
           });
-          this.layerGroup100k.addLayer(grid100kLabel);
+          // Only put labels on the map if they are in bounds
+          if (map.getBounds().pad(0.1).contains(element[0])) {
+            this.layerGroup100k.addLayer(grid100kLabel);
+          }
         }
       }
     });
@@ -895,7 +898,7 @@ function getPaddingOnZoomLevel1000Meters() {
   }
 }
 
-function Grid1000M() {
+function Grid1000M(enableLabels) {
   this.constructor = function () {
     this.visibleBounds = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters());
     this.north = this.visibleBounds.getNorth();
@@ -906,7 +909,7 @@ function Grid1000M() {
     this.northingArray = [];
     this.lineOptions = {
       color: 'black',
-      weight: 2,
+      weight: 1,
       opacity: 0.5,
       interactive: false,
       fill: false,
@@ -917,8 +920,18 @@ function Grid1000M() {
     };
     this.map = map;
     this.layerGroup1000m = new L.LayerGroup([]);
+    this.layerGroup1000mLabels = new L.LayerGroup([]);
+    //! Why am I declaring a global var for this? Because It is the only way I can access it...
+    window.globalLabels = this.layerGroup1000mLabels;
     this.gridInterval = 1000;
+    this.enableLabels = this.areLabelsEnabled(enableLabels);
     return this;
+  };
+
+  //! Is this needed?
+  this.areLabelsEnabled = function (val = enableLabels) {
+    this.val = val;
+    return this.val;
   };
 
   this.determineGrids = function () {
@@ -926,7 +939,6 @@ function Grid1000M() {
     if (map.getZoom() < 12) {
       return;
     }
-
     this.constructor();
     const NEBounds = LLtoUTM({ lat: this.north, lon: this.east });
     const NWBounds = LLtoUTM({ lat: this.constructor().north, lon: this.constructor().west });
@@ -967,29 +979,31 @@ function Grid1000M() {
           zoneLetter: seLeft.zoneLetter,
         });
 
-        // Put the easting grid line label at the bottom of the map
-        const leftEastingGrid1000MLabelCoords = UTMtoLL({
-          easting: leftEastingIterator,
-          northing: LLtoUTM(map.getBounds().getSouthWest()).northing + (leftEastingIterator / this.gridInterval % 100),
-          zoneNumber: seLeft.zoneNumber,
-          zoneLetter: seLeft.zoneLetter,
-        });
+        if (this.enableLabels) {
+          // Put the easting grid line label at the bottom of the map
+          const leftEastingGrid1000MLabelCoords = UTMtoLL({
+            easting: leftEastingIterator,
+            northing: LLtoUTM(map.getBounds().getSouthWest()).northing + (leftEastingIterator / this.gridInterval % 100),
+            zoneNumber: seLeft.zoneNumber,
+            zoneLetter: seLeft.zoneLetter,
+          });
 
-        const leftEastingGrid1000MLabel = new L.Marker(leftEastingGrid1000MLabelCoords, {
-          interactive: false,
-          icon: new L.DivIcon({
-            className: 'leaflet-grid-label',
-            // set an icon offset so they are visible to the user
-            iconAnchor: new L.Point(12, 30),
-            // example: if leftEastingIterator = 720000
-            // then remove the first char, and the last 3 chars and keep the "20"
-            html: `<div class="grid-label-1000m">${leftEastingIterator.toString().slice(1, -3)}</div>`,
-          }),
-        });
+          const leftEastingGrid1000MLabel = new L.Marker(leftEastingGrid1000MLabelCoords, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              // set an icon offset so they are visible to the user
+              iconAnchor: new L.Point(12, 30),
+              // example: if leftEastingIterator = 720000
+              // then remove the first char, and the last 3 chars and keep the "20"
+              html: `<div class="grid-label-1000m">${leftEastingIterator.toString().slice(1, -3)}</div>`,
+            }),
+          });
 
-        // If the grid label is within the map bounds, then add it to the map
-        if (map.getBounds().pad(0.1).contains(leftEastingGrid1000MLabelCoords)) {
-          this.layerGroup1000m.addLayer(leftEastingGrid1000MLabel);
+          // If the grid label is within the map bounds, then add it to the map
+          if (map.getBounds().pad(0.1).contains(leftEastingGrid1000MLabelCoords)) {
+            this.layerGroup1000mLabels.addLayer(leftEastingGrid1000MLabel);
+          }
         }
       }
       leftEastingIterator += 1;
@@ -1004,26 +1018,28 @@ function Grid1000M() {
           zoneLetter: neLeft.zoneLetter,
         });
 
-        const leftNorthingGrid1000MLabelCoords = UTMtoLL({
-          easting: LLtoUTM(map.getBounds().getNorthWest()).easting - (leftNorthingIterator / this.gridInterval % 100),
-          northing: leftNorthingIterator,
-          zoneNumber: neLeft.zoneNumber,
-          zoneLetter: neLeft.zoneLetter,
-        });
+        if (this.enableLabels) {
+          const leftNorthingGrid1000MLabelCoords = UTMtoLL({
+            easting: LLtoUTM(map.getBounds().getNorthWest()).easting - (leftNorthingIterator / this.gridInterval % 100),
+            northing: leftNorthingIterator,
+            zoneNumber: neLeft.zoneNumber,
+            zoneLetter: neLeft.zoneLetter,
+          });
 
-        const leftNorthingGrid1000MLabel = new L.Marker(leftNorthingGrid1000MLabelCoords, {
-          interactive: false,
-          icon: new L.DivIcon({
-            className: 'leaflet-grid-label',
-            iconAnchor: new L.Point(-30, 12),
-            html: `<div class="grid-label-1000m">${leftNorthingIterator.toString().slice(2, -3)}</div>`,
-          }),
-        });
+          const leftNorthingGrid1000MLabel = new L.Marker(leftNorthingGrid1000MLabelCoords, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new L.Point(-30, 12),
+              html: `<div class="grid-label-1000m">${leftNorthingIterator.toString().slice(2, -3)}</div>`,
+            }),
+          });
 
-        // Set labels that are only greater than 1000m from the SE corner, that way they don't overlap the easting labels
-        if (leftNorthingGrid1000MLabel.getLatLng().distanceTo(map.getBounds().getSouthWest()) >= this.gridInterval) {
-          if (map.getBounds().pad(0.1).contains(leftNorthingGrid1000MLabelCoords)) {
-            this.layerGroup1000m.addLayer(leftNorthingGrid1000MLabel);
+          // Set labels that are only greater than 1000m from the SE corner, that way they don't overlap the easting labels
+          if (leftNorthingGrid1000MLabel.getLatLng().distanceTo(map.getBounds().getSouthWest()) >= this.gridInterval) {
+            if (map.getBounds().pad(0.1).contains(leftNorthingGrid1000MLabelCoords)) {
+              this.layerGroup1000mLabels.addLayer(leftNorthingGrid1000MLabel);
+            }
           }
         }
       }
@@ -1055,26 +1071,28 @@ function Grid1000M() {
           zoneLetter: seRight.zoneLetter,
         });
 
+        if (this.enableLabels) {
         // Put the easting grid line label at the bottom of the map
-        const rightEastingGrid1000MLabelCoords = UTMtoLL({
-          easting: rightEastingIterator,
-          northing: LLtoUTM(map.getBounds().getSouthWest()).northing + (rightEastingIterator / this.gridInterval % 100),
-          zoneNumber: seRight.zoneNumber,
-          zoneLetter: seRight.zoneLetter,
-        });
+          const rightEastingGrid1000MLabelCoords = UTMtoLL({
+            easting: rightEastingIterator,
+            northing: LLtoUTM(map.getBounds().getSouthWest()).northing + (rightEastingIterator / this.gridInterval % 100),
+            zoneNumber: seRight.zoneNumber,
+            zoneLetter: seRight.zoneLetter,
+          });
 
-        const rightEastingGrid1000MLabel = new L.Marker(rightEastingGrid1000MLabelCoords, {
-          interactive: false,
-          icon: new L.DivIcon({
-            className: 'leaflet-grid-label',
-            iconAnchor: new L.Point(12, 30),
-            html: `<div class="grid-label-1000m">${rightEastingIterator.toString().slice(1, -3)}</div>`,
-          }),
-        });
+          const rightEastingGrid1000MLabel = new L.Marker(rightEastingGrid1000MLabelCoords, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new L.Point(12, 30),
+              html: `<div class="grid-label-1000m">${rightEastingIterator.toString().slice(1, -3)}</div>`,
+            }),
+          });
 
-        // Make sure that the label is within the visible bounds of the map
-        if (map.getBounds().pad(0.1).contains(rightEastingGrid1000MLabelCoords)) {
-          this.layerGroup1000m.addLayer(rightEastingGrid1000MLabel);
+          // Make sure that the label is within the visible bounds of the map
+          if (map.getBounds().pad(0.1).contains(rightEastingGrid1000MLabelCoords)) {
+            this.layerGroup1000mLabels.addLayer(rightEastingGrid1000MLabel);
+          }
         }
       }
       rightEastingIterator += 1;
@@ -1088,26 +1106,29 @@ function Grid1000M() {
           zoneNumber: neRight.zoneNumber,
           zoneLetter: neRight.zoneLetter,
         });
-        const rightNorthingGrid1000MLabelCoords = UTMtoLL({
-          easting: LLtoUTM(map.getBounds().getNorthEast()).easting - (rightNorthingIterator / this.gridInterval % 100),
-          northing: rightNorthingIterator,
-          zoneNumber: neRight.zoneNumber,
-          zoneLetter: neRight.zoneLetter,
-        });
 
-        const rightNorthingGrid1000MLabel = new L.Marker(rightNorthingGrid1000MLabelCoords, {
-          interactive: false,
-          icon: new L.DivIcon({
-            className: 'leaflet-grid-label',
-            iconAnchor: new L.Point(50, 12),
-            html: `<div class="grid-label-1000m">${rightNorthingIterator.toString().slice(2, -3)}</div>`,
-          }),
-        });
+        if (this.enableLabels) {
+          const rightNorthingGrid1000MLabelCoords = UTMtoLL({
+            easting: LLtoUTM(map.getBounds().getNorthEast()).easting - (rightNorthingIterator / this.gridInterval % 100),
+            northing: rightNorthingIterator,
+            zoneNumber: neRight.zoneNumber,
+            zoneLetter: neRight.zoneLetter,
+          });
 
-        // Set labels that are only greater than 1000m from the SE corner, that way they don't overlap the easting labels
-        if (rightNorthingGrid1000MLabel.getLatLng().distanceTo(map.getBounds().getSouthEast()) >= this.gridInterval) {
-          if (map.getBounds().pad(0.1).contains(rightNorthingGrid1000MLabelCoords)) {
-            this.layerGroup1000m.addLayer(rightNorthingGrid1000MLabel);
+          const rightNorthingGrid1000MLabel = new L.Marker(rightNorthingGrid1000MLabelCoords, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new L.Point(50, 12),
+              html: `<div class="grid-label-1000m">${rightNorthingIterator.toString().slice(2, -3)}</div>`,
+            }),
+          });
+
+          // Set labels that are only greater than 1000m from the SE corner, that way they don't overlap the easting labels
+          if (rightNorthingGrid1000MLabel.getLatLng().distanceTo(map.getBounds().getSouthEast()) >= this.gridInterval) {
+            if (map.getBounds().pad(0.1).contains(rightNorthingGrid1000MLabelCoords)) {
+              this.layerGroup1000mLabels.addLayer(rightNorthingGrid1000MLabel);
+            }
           }
         }
       }
@@ -1231,19 +1252,31 @@ function Grid1000M() {
 
     // All the Polylines are now in this group, we can add it to the map
     this.layerGroup1000m.addTo(this.map);
+    this.layerGroup1000mLabels.addTo(this.map);
     return this;
   };
 
   this.regenerate = function () {
     if (this.layerGroup1000m) {
       this.map.removeLayer(this.layerGroup1000m);
+      this.map.removeLayer(this.layerGroup1000mLabels);
+      this.determineGrids();
+    }
+  };
+
+  this.cleaner = function () {
+    if (this.areLabelsEnabled() === false) {
+      window.globalLabels.eachLayer((layer) => {
+        map.removeLayer(layer);
+      });
+    } else {
       this.determineGrids();
     }
   };
 }
 
 
-const generate1000meterGrids = new Grid1000M(new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
+const generate1000meterGrids = new Grid1000M(true);
 generate1000meterGrids.determineGrids();
 // *********************************************************************************** //
 // * Event Listeners                                                                 * //
@@ -1253,6 +1286,8 @@ map.addEventListener('moveend', () => {
   generate100KGrids.regenerate();
   // removes and adds the 100m meter grids to the map on moveend
   generate1000meterGrids.regenerate();
+  // const generate1000meterGrids3 = (val) => new Grid1000M(val);
+  // generate1000meterGrids3(document.querySelector('#myonoffswitch').hasAttribute('checked')).determineGrids();
   setTimeout(() => {
     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
     document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
@@ -1266,7 +1301,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
     document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
     document.querySelector('.numberOfLayers > .div6').innerHTML = `${document.querySelectorAll('.leaflet-grid-label').length}`;
+    document.querySelector('#myonoffswitch').toggleAttribute('checked');
   }, 300);
+});
+
+//! Bug: When ticked, the grid labels will be removed. However when a user moves a map, the labels show up again.
+document.querySelector('#myonoffswitch').addEventListener('change', (event) => {
+  const checkbox = event.target;
+  //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
+  const generate1000meterGrids2 = (val) => new Grid1000M(val);
+  generate1000meterGrids2(checkbox.checked).cleaner();
+  if (checkbox.checked) {
+    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+  } else {
+    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+  }
 });
 
 
