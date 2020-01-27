@@ -902,7 +902,6 @@ function Grid1000M() {
     this.south = this.visibleBounds.getSouth();
     this.east = this.visibleBounds.getEast();
     this.west = this.visibleBounds.getWest();
-
     this.eastingArray = [];
     this.northingArray = [];
     this.lineOptions = {
@@ -980,12 +979,15 @@ function Grid1000M() {
           interactive: false,
           icon: new L.DivIcon({
             className: 'leaflet-grid-label',
-            // 2 numbers, X and Y. Each different depending on map zoom level
+            // set an icon offset so they are visible to the user
             iconAnchor: new L.Point(12, 30),
+            // example: if leftEastingIterator = 720000
+            // then remove the first char, and the last 3 chars and keep the "20"
             html: `<div class="grid-label-1000m">${leftEastingIterator.toString().slice(1, -3)}</div>`,
           }),
         });
 
+        // If the grid label is within the map bounds, then add it to the map
         if (map.getBounds().pad(0.1).contains(leftEastingGrid1000MLabelCoords)) {
           this.layerGroup1000m.addLayer(leftEastingGrid1000MLabel);
         }
@@ -1013,7 +1015,6 @@ function Grid1000M() {
           interactive: false,
           icon: new L.DivIcon({
             className: 'leaflet-grid-label',
-            // 2 numbers, X and Y. Each different depending on map zoom level
             iconAnchor: new L.Point(-30, 12),
             html: `<div class="grid-label-1000m">${leftNorthingIterator.toString().slice(2, -3)}</div>`,
           }),
@@ -1066,7 +1067,6 @@ function Grid1000M() {
           interactive: false,
           icon: new L.DivIcon({
             className: 'leaflet-grid-label',
-            // 2 numbers, X and Y. Each different depending on map zoom level
             iconAnchor: new L.Point(12, 30),
             html: `<div class="grid-label-1000m">${rightEastingIterator.toString().slice(1, -3)}</div>`,
           }),
@@ -1079,8 +1079,6 @@ function Grid1000M() {
       }
       rightEastingIterator += 1;
     }
-    // https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
-    // Good info on how to remove duplicates
 
     //* Right Side Northing */
     while (rightNorthingIterator <= neRight.northing) {
@@ -1101,7 +1099,6 @@ function Grid1000M() {
           interactive: false,
           icon: new L.DivIcon({
             className: 'leaflet-grid-label',
-            // 2 numbers, X and Y. Each different depending on map zoom level
             iconAnchor: new L.Point(50, 12),
             html: `<div class="grid-label-1000m">${rightNorthingIterator.toString().slice(2, -3)}</div>`,
           }),
@@ -1129,8 +1126,6 @@ function Grid1000M() {
       const emptyBottomRowArr = [];
 
       bottomRow.forEach((k) => {
-        // previous layers: 589
-        // new layers: 567
         const northingGrids1000Meters = UTMtoLL({
           northing: k[1].northing,
           easting: k[0].easting,
@@ -1150,46 +1145,43 @@ function Grid1000M() {
             // element[1] ensures that each element in the loop has 2 arrays. If there is only 1 array then it's the "odd-man-out" so we disregard it
             // element[1].lon <= eastingDict[NWBounds.zoneNumber].right - 0.000000001 ensures that the lines will not go over the GZD boundaries
             if (element[1] && element[1].lon <= eastingDict[this.bounds.zoneNumber].right - 0.000000001) {
-              const northingLine = new L.Polyline([element], this.lineOptions);
-              this.layerGroup1000m.addLayer(northingLine);
+              const northingLineLeft = new L.Polyline([element], this.lineOptions);
+              this.layerGroup1000m.addLayer(northingLineLeft);
               // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
               // Convert the Polyline element to a LatLng so we can use the distanceTo() method
-              const finalNorthingLine = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
+              const finalNorthingLineLeft = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
               // If any Polylines are less than 1000 meters away from the GZD, we can then start connecting them
-              if (finalNorthingLine.distanceTo({ lat: element[1].lat, lng: eastingDict[this.bounds.zoneNumber].right - 0.000000001 }) < this.gridInterval) {
-                const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLine.lat, lon: eastingDict[this.bounds.zoneNumber].right - 0.000000001 });
-
+              if (finalNorthingLineLeft.distanceTo({ lat: element[1].lat, lng: eastingDict[this.bounds.zoneNumber].right - 0.000000001 }) <= this.gridInterval) {
+                const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLineLeft.lat, lon: eastingDict[this.bounds.zoneNumber].right - 0.000000001 });
                 const extendedLine = UTMtoLL({
                   northing: Math.round(gridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
                   easting: gridLineEndpoint.easting,
                   zoneNumber: gridLineEndpoint.zoneNumber,
                   zoneLetter: gridLineEndpoint.zoneLetter,
                 });
-
-                const northingLinetoGZD = new L.Polyline([extendedLine, finalNorthingLine], this.lineOptions);
-                this.layerGroup1000m.addLayer(northingLinetoGZD);
+                const northingLineLeftToGZD = new L.Polyline([extendedLine, finalNorthingLineLeft], this.lineOptions);
+                this.layerGroup1000m.addLayer(northingLineLeftToGZD);
               }
             }
             break;
           case 'right':
             if (element[1] && element[0].lon >= eastingDict[this.bounds.zoneNumber].left) {
-              const northingLine = new L.Polyline([element], this.lineOptions);
-              //! console.log(northingLine.getLatLngs()[0]);
-              this.layerGroup1000m.addLayer(northingLine);
+              const northingLineRight = new L.Polyline([element], this.lineOptions);
+              this.layerGroup1000m.addLayer(northingLineRight);
               // Since element[0] starts on the left, we use that to test if the polyline is extending over the GZD bounds
-              const finalNorthingLine = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+              const finalNorthingLineRight = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
               // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
               // Convert the Polyline element to a LatLng so we can use the distanceTo() method
-              if (finalNorthingLine.distanceTo({ lat: element[0].lat, lng: eastingDict[this.bounds.zoneNumber].left }) < this.gridInterval) {
-                const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLine.lat, lon: eastingDict[this.bounds.zoneNumber].left });
+              if (finalNorthingLineRight.distanceTo({ lat: element[0].lat, lng: eastingDict[this.bounds.zoneNumber].left }) < this.gridInterval) {
+                const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLineRight.lat, lon: eastingDict[this.bounds.zoneNumber].left });
                 const extendedLine = UTMtoLL({
                   northing: Math.round(gridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
                   easting: gridLineEndpoint.easting,
                   zoneNumber: gridLineEndpoint.zoneNumber,
                   zoneLetter: gridLineEndpoint.zoneLetter,
                 });
-                const northingLinetoGZD = new L.Polyline([extendedLine, finalNorthingLine], this.lineOptions);
-                this.layerGroup1000m.addLayer(northingLinetoGZD);
+                const northingLineRightToGZD = new L.Polyline([extendedLine, finalNorthingLineRight], this.lineOptions);
+                this.layerGroup1000m.addLayer(northingLineRightToGZD);
               }
             }
             break;
@@ -1200,8 +1192,8 @@ function Grid1000M() {
     });
 
     Object.entries(this.eastingArray).forEach((e) => {
-      const bottomNorthing = e[1];
-      const bottomRow = this.northingArray.map((j) => [j, bottomNorthing]);
+      const bottomEasting = e[1];
+      const bottomRow = this.northingArray.map((j) => [j, bottomEasting]);
       const emptyBottomRowArr = [];
 
       bottomRow.forEach((k) => {
@@ -1221,14 +1213,14 @@ function Grid1000M() {
         switch (this.direction) {
           case 'left':
             if (element[1] && element[1].lon <= eastingDict[this.bounds.zoneNumber].right - 0.000000001) {
-              const eastingLine = new L.Polyline([element], this.lineOptions);
-              this.layerGroup1000m.addLayer(eastingLine);
+              const eastingLineLeft = new L.Polyline([element], this.lineOptions);
+              this.layerGroup1000m.addLayer(eastingLineLeft);
             }
             break;
           case 'right':
             if (element[1] && element[1].lon >= eastingDict[this.bounds.zoneNumber].left) {
-              const eastingLine = new L.Polyline([element], this.lineOptions);
-              this.layerGroup1000m.addLayer(eastingLine);
+              const eastingLineRight = new L.Polyline([element], this.lineOptions);
+              this.layerGroup1000m.addLayer(eastingLineRight);
             }
             break;
           default:

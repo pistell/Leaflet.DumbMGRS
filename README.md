@@ -2,7 +2,9 @@
 
 An MGRS grid overlay plugin for your leaflet application... But dumber!
 
-![screenshot](./src/img/screenshot_27JAN.png)
+![screenshot](./src/img/screenshot_27JAN_2.png)
+
+![screenshot](./src/img/4square.jpg)
 
 ## Do not use this in production, this is incomplete
 

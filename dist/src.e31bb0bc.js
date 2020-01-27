@@ -16899,11 +16899,13 @@ function Grid1000M() {
           interactive: false,
           icon: new _leaflet.default.DivIcon({
             className: 'leaflet-grid-label',
-            // 2 numbers, X and Y. Each different depending on map zoom level
+            // set an icon offset so they are visible to the user
             iconAnchor: new _leaflet.default.Point(12, 30),
+            // example: if leftEastingIterator = 720000
+            // then remove the first char, and the last 3 chars and keep the "20"
             html: "<div class=\"grid-label-1000m\">".concat(leftEastingIterator.toString().slice(1, -3), "</div>")
           })
-        });
+        }); // If the grid label is within the map bounds, then add it to the map
 
         if (map.getBounds().pad(0.1).contains(leftEastingGrid1000MLabelCoords)) {
           this.layerGroup1000m.addLayer(leftEastingGrid1000MLabel);
@@ -16931,7 +16933,6 @@ function Grid1000M() {
           interactive: false,
           icon: new _leaflet.default.DivIcon({
             className: 'leaflet-grid-label',
-            // 2 numbers, X and Y. Each different depending on map zoom level
             iconAnchor: new _leaflet.default.Point(-30, 12),
             html: "<div class=\"grid-label-1000m\">".concat(leftNorthingIterator.toString().slice(2, -3), "</div>")
           })
@@ -16995,7 +16996,6 @@ function Grid1000M() {
           interactive: false,
           icon: new _leaflet.default.DivIcon({
             className: 'leaflet-grid-label',
-            // 2 numbers, X and Y. Each different depending on map zoom level
             iconAnchor: new _leaflet.default.Point(12, 30),
             html: "<div class=\"grid-label-1000m\">".concat(rightEastingIterator.toString().slice(1, -3), "</div>")
           })
@@ -17007,9 +17007,7 @@ function Grid1000M() {
       }
 
       rightEastingIterator += 1;
-    } // https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
-    // Good info on how to remove duplicates
-    //* Right Side Northing */
+    } //* Right Side Northing */
 
 
     while (rightNorthingIterator <= neRight.northing) {
@@ -17029,7 +17027,6 @@ function Grid1000M() {
           interactive: false,
           icon: new _leaflet.default.DivIcon({
             className: 'leaflet-grid-label',
-            // 2 numbers, X and Y. Each different depending on map zoom level
             iconAnchor: new _leaflet.default.Point(50, 12),
             html: "<div class=\"grid-label-1000m\">".concat(rightNorthingIterator.toString().slice(2, -3), "</div>")
           })
@@ -17062,8 +17059,6 @@ function Grid1000M() {
 
       var emptyBottomRowArr = [];
       bottomRow.forEach(function (k) {
-        // previous layers: 589
-        // new layers: 567
         var northingGrids1000Meters = (0, _mgrs.UTMtoLL)({
           northing: k[1].northing,
           easting: k[0].easting,
@@ -17084,23 +17079,23 @@ function Grid1000M() {
             // element[1] ensures that each element in the loop has 2 arrays. If there is only 1 array then it's the "odd-man-out" so we disregard it
             // element[1].lon <= eastingDict[NWBounds.zoneNumber].right - 0.000000001 ensures that the lines will not go over the GZD boundaries
             if (element[1] && element[1].lon <= _gzdObject.eastingDict[_this8.bounds.zoneNumber].right - 0.000000001) {
-              var northingLine = new _leaflet.default.Polyline([element], _this8.lineOptions);
+              var northingLineLeft = new _leaflet.default.Polyline([element], _this8.lineOptions);
 
-              _this8.layerGroup1000m.addLayer(northingLine); // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
+              _this8.layerGroup1000m.addLayer(northingLineLeft); // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
               // Convert the Polyline element to a LatLng so we can use the distanceTo() method
 
 
-              var finalNorthingLine = new _leaflet.default.latLng({
+              var finalNorthingLineLeft = new _leaflet.default.latLng({
                 lat: element[1].lat,
                 lng: element[1].lon
               }); // If any Polylines are less than 1000 meters away from the GZD, we can then start connecting them
 
-              if (finalNorthingLine.distanceTo({
+              if (finalNorthingLineLeft.distanceTo({
                 lat: element[1].lat,
                 lng: _gzdObject.eastingDict[_this8.bounds.zoneNumber].right - 0.000000001
-              }) < _this8.gridInterval) {
+              }) <= _this8.gridInterval) {
                 var gridLineEndpoint = (0, _mgrs.LLtoUTM)({
-                  lat: finalNorthingLine.lat,
+                  lat: finalNorthingLineLeft.lat,
                   lon: _gzdObject.eastingDict[_this8.bounds.zoneNumber].right - 0.000000001
                 });
                 var extendedLine = (0, _mgrs.UTMtoLL)({
@@ -17109,9 +17104,9 @@ function Grid1000M() {
                   zoneNumber: gridLineEndpoint.zoneNumber,
                   zoneLetter: gridLineEndpoint.zoneLetter
                 });
-                var northingLinetoGZD = new _leaflet.default.Polyline([extendedLine, finalNorthingLine], _this8.lineOptions);
+                var northingLineLeftToGZD = new _leaflet.default.Polyline([extendedLine, finalNorthingLineLeft], _this8.lineOptions);
 
-                _this8.layerGroup1000m.addLayer(northingLinetoGZD);
+                _this8.layerGroup1000m.addLayer(northingLineLeftToGZD);
               }
             }
 
@@ -17119,25 +17114,23 @@ function Grid1000M() {
 
           case 'right':
             if (element[1] && element[0].lon >= _gzdObject.eastingDict[_this8.bounds.zoneNumber].left) {
-              var _northingLine = new _leaflet.default.Polyline([element], _this8.lineOptions); //! console.log(northingLine.getLatLngs()[0]);
+              var northingLineRight = new _leaflet.default.Polyline([element], _this8.lineOptions);
+
+              _this8.layerGroup1000m.addLayer(northingLineRight); // Since element[0] starts on the left, we use that to test if the polyline is extending over the GZD bounds
 
 
-              _this8.layerGroup1000m.addLayer(_northingLine); // Since element[0] starts on the left, we use that to test if the polyline is extending over the GZD bounds
-
-
-              var _finalNorthingLine = new _leaflet.default.latLng({
+              var finalNorthingLineRight = new _leaflet.default.latLng({
                 lat: element[0].lat,
                 lng: element[0].lon
               }); // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
               // Convert the Polyline element to a LatLng so we can use the distanceTo() method
 
-
-              if (_finalNorthingLine.distanceTo({
+              if (finalNorthingLineRight.distanceTo({
                 lat: element[0].lat,
                 lng: _gzdObject.eastingDict[_this8.bounds.zoneNumber].left
               }) < _this8.gridInterval) {
                 var _gridLineEndpoint = (0, _mgrs.LLtoUTM)({
-                  lat: _finalNorthingLine.lat,
+                  lat: finalNorthingLineRight.lat,
                   lon: _gzdObject.eastingDict[_this8.bounds.zoneNumber].left
                 });
 
@@ -17148,9 +17141,9 @@ function Grid1000M() {
                   zoneLetter: _gridLineEndpoint.zoneLetter
                 });
 
-                var _northingLinetoGZD = new _leaflet.default.Polyline([_extendedLine, _finalNorthingLine], _this8.lineOptions);
+                var northingLineRightToGZD = new _leaflet.default.Polyline([_extendedLine, finalNorthingLineRight], _this8.lineOptions);
 
-                _this8.layerGroup1000m.addLayer(_northingLinetoGZD);
+                _this8.layerGroup1000m.addLayer(northingLineRightToGZD);
               }
             }
 
@@ -17162,10 +17155,10 @@ function Grid1000M() {
       }
     });
     Object.entries(this.eastingArray).forEach(function (e) {
-      var bottomNorthing = e[1];
+      var bottomEasting = e[1];
 
       var bottomRow = _this8.northingArray.map(function (j) {
-        return [j, bottomNorthing];
+        return [j, bottomEasting];
       });
 
       var emptyBottomRowArr = [];
@@ -17188,18 +17181,18 @@ function Grid1000M() {
         switch (_this8.direction) {
           case 'left':
             if (element[1] && element[1].lon <= _gzdObject.eastingDict[_this8.bounds.zoneNumber].right - 0.000000001) {
-              var eastingLine = new _leaflet.default.Polyline([element], _this8.lineOptions);
+              var eastingLineLeft = new _leaflet.default.Polyline([element], _this8.lineOptions);
 
-              _this8.layerGroup1000m.addLayer(eastingLine);
+              _this8.layerGroup1000m.addLayer(eastingLineLeft);
             }
 
             break;
 
           case 'right':
             if (element[1] && element[1].lon >= _gzdObject.eastingDict[_this8.bounds.zoneNumber].left) {
-              var _eastingLine = new _leaflet.default.Polyline([element], _this8.lineOptions);
+              var eastingLineRight = new _leaflet.default.Polyline([element], _this8.lineOptions);
 
-              _this8.layerGroup1000m.addLayer(_eastingLine);
+              _this8.layerGroup1000m.addLayer(eastingLineRight);
             }
 
             break;
