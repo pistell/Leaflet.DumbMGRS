@@ -15746,7 +15746,7 @@ var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
 var quito = [0.17578097424708533, -77.84912109375];
 
-var map = _leaflet.default.map('map').setView(southNY, 7);
+var map = _leaflet.default.map('map').setView(southFL, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16807,7 +16807,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52591" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49368" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
