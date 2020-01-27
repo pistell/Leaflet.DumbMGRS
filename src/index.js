@@ -898,7 +898,7 @@ function getPaddingOnZoomLevel1000Meters() {
   }
 }
 
-//! BUG: 1000m grids are all jacked up on the southern hemisphere
+//! BUG: 1000m grids are all jacked up on the southern hemisphere. Use the switch statement in Grid100K
 function Grid1000M(enableLabels) {
   this.constructor = function () {
     this.visibleBounds = new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters());
@@ -1073,7 +1073,7 @@ function Grid1000M(enableLabels) {
         });
 
         if (this.enableLabels) {
-        // Put the easting grid line label at the bottom of the map
+          // Put the easting grid line label at the bottom of the map
           const rightEastingGrid1000MLabelCoords = UTMtoLL({
             easting: rightEastingIterator,
             northing: LLtoUTM(map.getBounds().getSouthWest()).northing + (rightEastingIterator / this.gridInterval % 100),

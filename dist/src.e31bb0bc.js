@@ -16791,7 +16791,7 @@ function getPaddingOnZoomLevel1000Meters() {
     default:
       break;
   }
-} //! BUG: 1000m grids are all jacked up on the southern hemisphere
+} //! BUG: 1000m grids are all jacked up on the southern hemisphere. Use the switch statement in Grid100K
 
 
 function Grid1000M(enableLabels) {
