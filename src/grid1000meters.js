@@ -4,16 +4,26 @@
 // *********************************************************************************** //
 // If there is a high zoom level, we need to add more padding so the grids generate throughout the whole screen
 function getPaddingOnZoomLevel() {
-  if (map.getZoom() >= 17) {
-    return 3;
+  const zoom = map.getZoom();
+  if (zoom >= 18) {
+    return 4;
   }
-  if (map.getZoom() < 17 && map.getZoom() >= 15) {
-    return 1;
+  switch (zoom) {
+    case 17:
+      return 1.5;
+    case 16:
+      return 0.75;
+    case 15:
+      return 0.25;
+    case 14:
+      return 0.15;
+    case 13:
+      return 0.1;
+    case 12:
+      return 0.03;
+    default:
+      break;
   }
-  if (map.getZoom() <= 14 && map.getZoom() >= 12) {
-    return 0.15;
-  }
-  return 0.1;
 }
 //! You might benefit from simplifying these lines https://leafletjs.com/reference-1.6.0.html#lineutil
 function Grid1000() {
@@ -37,17 +47,15 @@ function Grid1000() {
     };
     this.map = map;
     this.layerGroup1000m = new L.LayerGroup([]);
-    this.gridInterval = 100000;
+    this.gridInterval = 1000;
     return this;
   };
 
   this.determineGrids = function () {
     // Do not add 1000 meter grids if the zoom level is <= 12
-    if (map.getZoom() <= 6) {
-      console.log('blocked');
+    if (map.getZoom() < 12) {
       return;
     }
-
 
     this.constructor();
     const NEBounds = LLtoUTM({ lat: this.north, lon: this.east });
@@ -293,19 +301,21 @@ function Grid1000() {
   };
 }
 
-const generate1000meterGrids = new Grid1000(new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
-generate1000meterGrids.determineGrids();
+// const generate1000meterGrids = new Grid1000(new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
+// generate1000meterGrids.determineGrids();
 
-map.addEventListener('moveend', () => {
-  // if (map.getZoom() >= 6) {
-  generate1000meterGrids.clean();
-  generate1000meterGrids.determineGrids();
-  // }
+// map.addEventListener('moveend', () => {
+//   // if (map.getZoom() >= 6) {
+//   generate1000meterGrids.clean();
+//   generate1000meterGrids.determineGrids();
+//   // }
 
-  // generate100kGrids.clean();
-  // generate100kGrids.determineGrids();
-  setTimeout(() => {
-    document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
-    document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
-  }, 300);
-}, { once: true });
+//   // generate100kGrids.clean();
+//   // generate100kGrids.determineGrids();
+//   setTimeout(() => {
+//     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
+//     document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
+//   }, 300);
+// }, { once: true });
+
+export default Grid1000;
