@@ -29,7 +29,7 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView({ lat: 44.054654651726786, lng: -75.79622268676759 }, 13);
+const map = L.map('map').setView({ lat: 43.72335083905222, lng: -75.79055786132812 }, 13);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -1030,19 +1030,24 @@ function Grid1000() {
   this.generateSplitGrids = function (direction, bounds) {
     this.direction = direction;
     this.bounds = bounds;
-    // const layerGroup1000m = new L.LayerGroup([]);
     Object.entries(this.northingArray).forEach((e) => {
       const bottomNorthing = e[1];
       const bottomRow = this.eastingArray.map((j) => [j, bottomNorthing]);
       const emptyBottomRowArr = [];
 
       bottomRow.forEach((k) => {
-        emptyBottomRowArr.push(UTMtoLL({
+        // previous layers: 589
+        // new layers: 567
+        const northingGrids1000Meters = UTMtoLL({
           northing: k[1].northing,
           easting: k[0].easting,
           zoneNumber: k[0].zoneNumber,
           zoneLetter: k[0].zoneLetter,
-        }));
+        });
+
+        if (map.getBounds().pad(getPaddingOnZoomLevel1000Meters()).contains(northingGrids1000Meters)) {
+          emptyBottomRowArr.push(northingGrids1000Meters);
+        }
       });
 
       for (let index = 0; index < emptyBottomRowArr.length; index += 1) {
@@ -1106,17 +1111,19 @@ function Grid1000() {
       const emptyBottomRowArr = [];
 
       bottomRow.forEach((k) => {
-        emptyBottomRowArr.push(UTMtoLL({
+        const eastingGrids1000Meters = UTMtoLL({
           northing: k[0].northing,
           easting: k[1].easting,
           zoneNumber: k[0].zoneNumber,
           zoneLetter: k[0].zoneLetter,
-        }));
+        });
+        if (map.getBounds().pad(getPaddingOnZoomLevel1000Meters()).contains(eastingGrids1000Meters)) {
+          emptyBottomRowArr.push(eastingGrids1000Meters);
+        }
       });
 
       for (let index = 0; index < emptyBottomRowArr.length; index += 1) {
         const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
-
         switch (this.direction) {
           case 'left':
             if (element[1] && element[1].lon <= eastingDict[this.bounds.zoneNumber].right - 0.000000001) {
@@ -1136,38 +1143,15 @@ function Grid1000() {
       }
     });
 
-    // This was supposed to reduce the points on the map instead it did nothing
-    // const reducePoints = this.layerGroup1000m.eachLayer((layer) => {
-    //   layer.getLatLngs().forEach((j) => {
-    //     if (j[1]) {
-    //       const pixelPosition0 = new L.point(map.latLngToLayerPoint(j[0]));
-    //       const pixelPosition1 = new L.point(map.latLngToLayerPoint(j[1]));
-    //       return L.LineUtil.simplify([pixelPosition0, pixelPosition1], 40).map((point) => {
-    //         const mynewpoint = map.layerPointToLatLng([point.x, point.y]);
-    //         const mynewline = new L.Polyline([mynewpoint], this.lineOptions);
-    //         return mynewline;
-    //       });
-    //     }
-    //   });
-    // });
-    // reducePoints.addTo(map);
     // All the Polylines are now in this group, we can add it to the map
     this.layerGroup1000m.addTo(this.map);
-
-    // Set layer count and map zoom data only once on DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
-        document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
-      }, 300);
-    }, { once: true });
-
     return this;
   };
 
-  this.clean = function () {
+  this.regenerate = function () {
     if (this.layerGroup1000m) {
       this.map.removeLayer(this.layerGroup1000m);
+      this.determineGrids();
     }
   };
 }
@@ -1181,12 +1165,8 @@ generate1000meterGrids.determineGrids();
 map.addEventListener('moveend', () => {
   // removes and adds the 100k grids to the map on moveend
   generate100KGrids.regenerate();
-  // Clear the grids off the map
-  // generate100KGrids.clearAll();
-  // Run it again
-  // generate100KGrids.getVizGrids();
-  generate1000meterGrids.clean();
-  generate1000meterGrids.determineGrids();
+  // removes and adds the 100m meter grids to the map on moveend
+  // generate1000meterGrids.regenerate();
   setTimeout(() => {
     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
     document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
