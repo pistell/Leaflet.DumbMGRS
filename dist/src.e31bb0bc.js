@@ -14636,8 +14636,9 @@ function radToDeg(rad) {
 
 
 function LLtoUTM(ll) {
-  var Lat = ll.lat;
-  var Long = ll.lon;
+  var Lat = ll.lat; //! added || ll.lng to comply with Leaflet
+
+  var Long = ll.lon || ll.lng;
   var a = 6378137; // ellip.radius;
 
   var eccSquared = 0.00669438; // ellip.eccsq;
@@ -15747,9 +15748,9 @@ var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 var quito = [0.17578097424708533, -77.84912109375];
 
 var map = _leaflet.default.map('map').setView({
-  lat: 43.72335083905222,
-  lng: -75.79055786132812
-}, 13);
+  lat: 44.04934954474218,
+  lng: -75.78334808349611
+}, 14);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16774,28 +16775,29 @@ function getPaddingOnZoomLevel1000Meters() {
       return 0.75;
 
     case 15:
-      return 0.25;
+      return 0.4;
 
     case 14:
-      return 0.15;
+      return 0.18;
 
     case 13:
       return 0.1;
 
     case 12:
-      return 0.03;
+      return 0.04;
 
     default:
       break;
   }
 }
 
-function Grid1000() {
+function Grid1000M() {
   this.constructor = function () {
-    this.north = new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters()).getNorth();
-    this.south = new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters()).getSouth();
-    this.east = new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters()).getEast();
-    this.west = new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters()).getWest();
+    this.visibleBounds = new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters());
+    this.north = this.visibleBounds.getNorth();
+    this.south = this.visibleBounds.getSouth();
+    this.east = this.visibleBounds.getEast();
+    this.west = this.visibleBounds.getWest();
     this.eastingArray = [];
     this.northingArray = [];
     this.lineOptions = {
@@ -16820,7 +16822,6 @@ function Grid1000() {
 
     // Do not add 1000 meter grids if the zoom level is <= 12
     if (map.getZoom() < 12) {
-      console.log('blocked');
       return;
     }
 
@@ -16886,7 +16887,27 @@ function Grid1000() {
           easting: leftEastingIterator,
           zoneNumber: seLeft.zoneNumber,
           zoneLetter: seLeft.zoneLetter
+        }); // Put the easting grid line label at the bottom of the map
+
+        var leftEastingGrid1000MLabelCoords = (0, _mgrs.UTMtoLL)({
+          easting: leftEastingIterator,
+          northing: (0, _mgrs.LLtoUTM)(map.getBounds().getSouthWest()).northing + leftEastingIterator / this.gridInterval % 100,
+          zoneNumber: seLeft.zoneNumber,
+          zoneLetter: seLeft.zoneLetter
         });
+        var leftEastingGrid1000MLabel = new _leaflet.default.Marker(leftEastingGrid1000MLabelCoords, {
+          interactive: false,
+          icon: new _leaflet.default.DivIcon({
+            className: 'leaflet-grid-label',
+            // 2 numbers, X and Y. Each different depending on map zoom level
+            iconAnchor: new _leaflet.default.Point(12, 30),
+            html: "<div class=\"grid-label-1000m\">".concat(leftEastingIterator.toString().slice(1, -3), "</div>")
+          })
+        });
+
+        if (map.getBounds().pad(0.1).contains(leftEastingGrid1000MLabelCoords)) {
+          this.layerGroup1000m.addLayer(leftEastingGrid1000MLabel);
+        }
       }
 
       leftEastingIterator += 1;
@@ -16900,6 +16921,27 @@ function Grid1000() {
           zoneNumber: neLeft.zoneNumber,
           zoneLetter: neLeft.zoneLetter
         });
+        var leftNorthingGrid1000MLabelCoords = (0, _mgrs.UTMtoLL)({
+          easting: (0, _mgrs.LLtoUTM)(map.getBounds().getNorthWest()).easting - leftNorthingIterator / this.gridInterval % 100,
+          northing: leftNorthingIterator,
+          zoneNumber: neLeft.zoneNumber,
+          zoneLetter: neLeft.zoneLetter
+        });
+        var leftNorthingGrid1000MLabel = new _leaflet.default.Marker(leftNorthingGrid1000MLabelCoords, {
+          interactive: false,
+          icon: new _leaflet.default.DivIcon({
+            className: 'leaflet-grid-label',
+            // 2 numbers, X and Y. Each different depending on map zoom level
+            iconAnchor: new _leaflet.default.Point(-30, 12),
+            html: "<div class=\"grid-label-1000m\">".concat(leftNorthingIterator.toString().slice(2, -3), "</div>")
+          })
+        }); // Set labels that are only greater than 1000m from the SE corner, that way they don't overlap the easting labels
+
+        if (leftNorthingGrid1000MLabel.getLatLng().distanceTo(map.getBounds().getSouthWest()) >= this.gridInterval) {
+          if (map.getBounds().pad(0.1).contains(leftNorthingGrid1000MLabelCoords)) {
+            this.layerGroup1000m.addLayer(leftNorthingGrid1000MLabel);
+          }
+        }
       }
 
       leftNorthingIterator += 1;
@@ -16941,7 +16983,27 @@ function Grid1000() {
           easting: rightEastingIterator,
           zoneNumber: seRight.zoneNumber,
           zoneLetter: seRight.zoneLetter
+        }); // Put the easting grid line label at the bottom of the map
+
+        var rightEastingGrid1000MLabelCoords = (0, _mgrs.UTMtoLL)({
+          easting: rightEastingIterator,
+          northing: (0, _mgrs.LLtoUTM)(map.getBounds().getSouthWest()).northing + rightEastingIterator / this.gridInterval % 100,
+          zoneNumber: seRight.zoneNumber,
+          zoneLetter: seRight.zoneLetter
         });
+        var rightEastingGrid1000MLabel = new _leaflet.default.Marker(rightEastingGrid1000MLabelCoords, {
+          interactive: false,
+          icon: new _leaflet.default.DivIcon({
+            className: 'leaflet-grid-label',
+            // 2 numbers, X and Y. Each different depending on map zoom level
+            iconAnchor: new _leaflet.default.Point(12, 30),
+            html: "<div class=\"grid-label-1000m\">".concat(rightEastingIterator.toString().slice(1, -3), "</div>")
+          })
+        }); // Make sure that the label is within the visible bounds of the map
+
+        if (map.getBounds().pad(0.1).contains(rightEastingGrid1000MLabelCoords)) {
+          this.layerGroup1000m.addLayer(rightEastingGrid1000MLabel);
+        }
       }
 
       rightEastingIterator += 1;
@@ -16957,6 +17019,27 @@ function Grid1000() {
           zoneNumber: neRight.zoneNumber,
           zoneLetter: neRight.zoneLetter
         });
+        var rightNorthingGrid1000MLabelCoords = (0, _mgrs.UTMtoLL)({
+          easting: (0, _mgrs.LLtoUTM)(map.getBounds().getNorthEast()).easting - rightNorthingIterator / this.gridInterval % 100,
+          northing: rightNorthingIterator,
+          zoneNumber: neRight.zoneNumber,
+          zoneLetter: neRight.zoneLetter
+        });
+        var rightNorthingGrid1000MLabel = new _leaflet.default.Marker(rightNorthingGrid1000MLabelCoords, {
+          interactive: false,
+          icon: new _leaflet.default.DivIcon({
+            className: 'leaflet-grid-label',
+            // 2 numbers, X and Y. Each different depending on map zoom level
+            iconAnchor: new _leaflet.default.Point(50, 12),
+            html: "<div class=\"grid-label-1000m\">".concat(rightNorthingIterator.toString().slice(2, -3), "</div>")
+          })
+        }); // Set labels that are only greater than 1000m from the SE corner, that way they don't overlap the easting labels
+
+        if (rightNorthingGrid1000MLabel.getLatLng().distanceTo(map.getBounds().getSouthEast()) >= this.gridInterval) {
+          if (map.getBounds().pad(0.1).contains(rightNorthingGrid1000MLabelCoords)) {
+            this.layerGroup1000m.addLayer(rightNorthingGrid1000MLabel);
+          }
+        }
       }
 
       rightNorthingIterator += 1;
@@ -17036,7 +17119,8 @@ function Grid1000() {
 
           case 'right':
             if (element[1] && element[0].lon >= _gzdObject.eastingDict[_this8.bounds.zoneNumber].left) {
-              var _northingLine = new _leaflet.default.Polyline([element], _this8.lineOptions);
+              var _northingLine = new _leaflet.default.Polyline([element], _this8.lineOptions); //! console.log(northingLine.getLatLngs()[0]);
+
 
               _this8.layerGroup1000m.addLayer(_northingLine); // Since element[0] starts on the left, we use that to test if the polyline is extending over the GZD bounds
 
@@ -17138,7 +17222,7 @@ function Grid1000() {
   };
 }
 
-var generate1000meterGrids = new Grid1000(new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
+var generate1000meterGrids = new Grid1000M(new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
 generate1000meterGrids.determineGrids(); // *********************************************************************************** //
 // * Event Listeners                                                                 * //
 // *********************************************************************************** //
@@ -17146,11 +17230,12 @@ generate1000meterGrids.determineGrids(); // ************************************
 map.addEventListener('moveend', function () {
   // removes and adds the 100k grids to the map on moveend
   generate100KGrids.regenerate(); // removes and adds the 100m meter grids to the map on moveend
-  // generate1000meterGrids.regenerate();
 
+  generate1000meterGrids.regenerate();
   setTimeout(function () {
     document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
     document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
+    document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
   }, 300);
 }, {
   once: true
@@ -17160,6 +17245,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setTimeout(function () {
     document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
     document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
+    document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
   }, 300);
 });
 },{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {

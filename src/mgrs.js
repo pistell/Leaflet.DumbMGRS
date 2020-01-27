@@ -135,7 +135,8 @@ function radToDeg(rad) {
    */
 function LLtoUTM(ll) {
   const Lat = ll.lat;
-  const Long = ll.lon;
+  //! added || ll.lng to comply with Leaflet
+  const Long = ll.lon || ll.lng;
   const a = 6378137; // ellip.radius;
   const eccSquared = 0.00669438; // ellip.eccsq;
   const k0 = 0.9996;
