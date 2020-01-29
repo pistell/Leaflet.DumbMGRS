@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 // Import stylesheets
 import './styles.scss';
@@ -918,6 +920,7 @@ function Grid1000M(enableLabels) {
       smoothFactor: 4,
       lineCap: 'butt',
       lineJoin: 'miter-clip',
+      // className: 'leaflet-zoom-hide',
     };
     this.map = map;
     this.layerGroup1000m = new L.LayerGroup([]);
@@ -1277,8 +1280,507 @@ function Grid1000M(enableLabels) {
 }
 
 
-const generate1000meterGrids = new Grid1000M(true);
-generate1000meterGrids.determineGrids();
+// const generate1000meterGrids = new Grid1000M(true);
+// generate1000meterGrids.determineGrids();
+
+
+//! BEGIN PLUGIN TEST
+// *********************************************************************************** //
+// * TEST PLUGIN                                                                     * //
+// *********************************************************************************** //
+
+L.MGRS1000Meters = L.LayerGroup.extend({
+  // Default options
+  options: {
+    interval: 20,
+    showOriginLabel: true,
+    redraw: 'move',
+    hidden: false,
+    zoomIntervals: [],
+    lineStyle: {
+      color: 'black',
+      weight: 1,
+      opacity: 0.5,
+      interactive: false,
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+    },
+    bounds: {
+      visibleBounds: new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel1000Meters()),
+      get north() {
+        return this.visibleBounds.getNorth();
+      },
+      get south() {
+        return this.visibleBounds.getSouth();
+      },
+      get east() {
+        return this.visibleBounds.getEast();
+      },
+      get west() {
+        return this.visibleBounds.getWest();
+      },
+    },
+    enableLabels: true,
+    eastingArray: [],
+    northingArray: [],
+    layerGroup1000m: new L.LayerGroup([]),
+    layerGroup1000mLabels: new L.LayerGroup([]),
+    gridInterval: 1000,
+  },
+
+  // Leaflet calls the initialize method when an instance of a control plugin is created by calling new directly or by using the factory function
+  initialize(options) {
+    L.LayerGroup.prototype.initialize.call(this);
+    // this._latLng = this.options.bounds.visibleBounds;
+    // L.Util.setOptions() combines the values of the default settings (specified by the options object parameter passed to the L.Class.extend method) with the values of the settings for this instance of the control plugin, which are specified by the options object passed as a parameter to the initialize method.
+    L.Util.setOptions(this, options);
+  },
+
+  onAdd(map) {
+    // if (map.getZoom() > 12) {
+    this._map = map;
+
+    // const layerElementTag = 'div';
+    // // Leaflet hides elements with the leaflet-zoom-hide class while the map is zooming to improve performance.
+    // const layerElementClasses = '.my-leaflet-layer leaflet-zoom-hide';
+    // this._container = L.DomUtil.create(layerElementTag, layerElementClasses);
+    // const pane = map.getPanes().overlayPane;
+    // // Leaflet layer plugins must explicitly add themselves to the overlay pane Leaflet provides for plugins.
+    // pane.appendChild(this._container);
+    // // Calculate initial position of container with `L.Map.latLngToLayerPoint()`, `getPixelOrigin()` and/or `getPixelBounds()`
+    // // console.log(this._container);
+    // const position = map.getPixelBounds();
+    // L.DomUtil.setPosition(this._container, position);
+    // // Add and position children elements if needed
+    // // map.on('zoomend viewreset', this._update, this);
+
+    // const graticule = this.redraw();
+
+    this._map.on(`viewreset ${this.options.redraw}`, this.redraw(), this);
+    this.eachLayer(map.addLayer, map);
+    // }
+  },
+
+  onRemove(map) {
+    L.DomUtil.remove(this._container);
+    map.off('zoomend viewreset', this._update, this);
+    // map.getPanes().overlayPane.removeChild(this._layerElement);
+    // map.off('viewreset', this._updatePosition, this);
+  },
+
+  // hide() {
+  //   this.options.hidden = true;
+  //   this.redraw();
+  // },
+
+  // show() {
+  //   this.options.hidden = false;
+  //   this.redraw();
+  // },
+
+  redraw() {
+    this._bounds = this.options.bounds.visibleBounds;
+    this.clearLayers();
+
+    if (!this.options.hidden) {
+    //   const currentZoom = this._map.getZoom();
+
+      //   for (let i = 0; i < this.options.zoomIntervals.length; i++) {
+      //     if (currentZoom >= this.options.zoomIntervals[i].start && currentZoom <= this.options.zoomIntervals[i].end) {
+      //       this.options.interval = this.options.zoomIntervals[i].interval;
+      //       break;
+      //     }
+      //   }
+
+      //   this.constructLines(this.getMins(), this.getLineCounts());
+
+      //   if (this.options.showOriginLabel) {
+      //     this.addLayer(this.addOriginLabel());
+      //   }
+
+
+      const NEBounds = LLtoUTM({ lat: this.options.bounds.north, lon: this.options.bounds.east });
+      const NWBounds = LLtoUTM({ lat: this.options.bounds.north, lon: this.options.bounds.west });
+      const SEBounds = LLtoUTM({ lat: this.options.bounds.south, lon: this.options.bounds.east });
+      const SWBounds = LLtoUTM({ lat: this.options.bounds.south, lon: this.options.bounds.west });
+
+      if (NEBounds.zoneNumber === NWBounds.zoneNumber || SEBounds.zoneNumber === SWBounds.zoneNumber) {
+        let noAdjacentGZD = false;
+        // Since there are no GZDs that are splitting the map bounds, we only need to run one "side"
+        return this.right(NEBounds, noAdjacentGZD = true);
+      }
+      const leftPromise = new Promise((resolve) => {
+        resolve(this.left(NWBounds));
+      });
+      Promise.all([leftPromise]).then(() => new Promise((resolve) => {
+        // Clear out the arrays so the right side can generate grids
+
+        this.options.eastingArray = [];
+        this.options.northingArray = [];
+        setTimeout(() => resolve(this.right(NEBounds)), 10);
+      }));
+    }
+
+    return this;
+  },
+
+  left(NWBounds) {
+    const neLeft = LLtoUTM({ lat: this.options.bounds.north, lon: eastingDict[NWBounds.zoneNumber].right - 0.000000001 });
+    const seLeft = LLtoUTM({ lat: this.options.bounds.south, lon: eastingDict[NWBounds.zoneNumber].right - 0.000000001 });
+    const swLeft = LLtoUTM({ lat: this.options.bounds.south, lon: this.options.bounds.west });
+
+    let leftEastingIterator = swLeft.easting;
+    let leftNorthingIterator = swLeft.northing;
+
+    //* Left Side Easting */
+    while (leftEastingIterator <= seLeft.easting) {
+      if (leftEastingIterator % this.options.gridInterval === 0) {
+        // this.endCoordNorthing does not change on the easting
+        this.options.eastingArray.push({
+          easting: leftEastingIterator,
+          zoneNumber: seLeft.zoneNumber,
+          zoneLetter: seLeft.zoneLetter,
+        });
+
+        if (this.options.enableLabels) {
+          // Put the easting grid line label at the bottom of the map
+          const leftEastingGrid1000MLabelCoords = UTMtoLL({
+            easting: leftEastingIterator,
+            northing: LLtoUTM(map.getBounds().getSouthWest()).northing + (leftEastingIterator / this.options.gridInterval % 100),
+            zoneNumber: seLeft.zoneNumber,
+            zoneLetter: seLeft.zoneLetter,
+          });
+
+          const leftEastingGrid1000MLabel = new L.Marker(leftEastingGrid1000MLabelCoords, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              // set an icon offset so they are visible to the user
+              iconAnchor: new L.Point(12, 30),
+              // example: if leftEastingIterator = 720000
+              // then remove the first char, and the last 3 chars and keep the "20"
+              html: `<div class="grid-label-1000m">${leftEastingIterator.toString().slice(1, -3)}</div>`,
+            }),
+          });
+
+          // If the grid label is within the map bounds, then add it to the map
+          if (map.getBounds().pad(0.1).contains(leftEastingGrid1000MLabelCoords)) {
+            // this.options.layerGroup1000mLabels.addLayer(leftEastingGrid1000MLabel);
+            this.addLayer(leftEastingGrid1000MLabel);
+          }
+        }
+      }
+      leftEastingIterator += 1;
+    }
+
+    //* * Left Side Northing */
+    while (leftNorthingIterator <= neLeft.northing) {
+      if (leftNorthingIterator % this.options.gridInterval === 0) {
+        this.options.northingArray.push({
+          northing: leftNorthingIterator,
+          zoneNumber: neLeft.zoneNumber,
+          zoneLetter: neLeft.zoneLetter,
+        });
+
+        if (this.options.enableLabels) {
+          const leftNorthingGrid1000MLabelCoords = UTMtoLL({
+            easting: LLtoUTM(map.getBounds().getNorthWest()).easting - (leftNorthingIterator / this.options.gridInterval % 100),
+            northing: leftNorthingIterator,
+            zoneNumber: neLeft.zoneNumber,
+            zoneLetter: neLeft.zoneLetter,
+          });
+
+          const leftNorthingGrid1000MLabel = new L.Marker(leftNorthingGrid1000MLabelCoords, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new L.Point(-30, 12),
+              html: `<div class="grid-label-1000m">${leftNorthingIterator.toString().slice(2, -3)}</div>`,
+            }),
+          });
+
+          // Set labels that are only greater than 1000m from the SE corner, that way they don't overlap the easting labels
+          if (leftNorthingGrid1000MLabel.getLatLng().distanceTo(map.getBounds().getSouthWest()) >= this.options.gridInterval) {
+            if (map.getBounds().pad(0.1).contains(leftNorthingGrid1000MLabelCoords)) {
+              // this.options.layerGroup1000mLabels.addLayer(leftNorthingGrid1000MLabel);
+              this.addLayer(leftNorthingGrid1000MLabel);
+            }
+          }
+        }
+      }
+      leftNorthingIterator += 1;
+    }
+
+    return this.generateSplitGrids('left', NWBounds);
+  },
+
+  right(NEBounds, noAdjacentGZD = false) {
+    let swRight;
+    if (noAdjacentGZD) {
+      swRight = LLtoUTM({ lat: this.options.bounds.south, lon: this.options.bounds.west });
+    } else {
+      swRight = LLtoUTM({ lat: this.options.bounds.south, lon: eastingDict[NEBounds.zoneNumber].left });
+    }
+
+    const neRight = LLtoUTM({ lat: this.options.bounds.north, lon: this.options.bounds.east });
+    const seRight = LLtoUTM({ lat: this.options.bounds.south, lon: this.options.bounds.east });
+    let rightEastingIterator = swRight.easting;
+    let rightNorthingIterator = swRight.northing;
+
+    //* Right Side Easting */
+    while (rightEastingIterator <= seRight.easting) {
+      if (rightEastingIterator % this.options.gridInterval === 0) {
+        this.options.eastingArray.push({
+          easting: rightEastingIterator,
+          zoneNumber: seRight.zoneNumber,
+          zoneLetter: seRight.zoneLetter,
+        });
+
+        if (this.options.enableLabels) {
+          // Put the easting grid line label at the bottom of the map
+          const rightEastingGrid1000MLabelCoords = UTMtoLL({
+            easting: rightEastingIterator,
+            northing: LLtoUTM(map.getBounds().getSouthWest()).northing + (rightEastingIterator / this.options.gridInterval % 100),
+            zoneNumber: seRight.zoneNumber,
+            zoneLetter: seRight.zoneLetter,
+          });
+
+          const rightEastingGrid1000MLabel = new L.Marker(rightEastingGrid1000MLabelCoords, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new L.Point(12, 30),
+              html: `<div class="grid-label-1000m">${rightEastingIterator.toString().slice(1, -3)}</div>`,
+            }),
+          });
+
+          // Make sure that the label is within the visible bounds of the map
+          if (map.getBounds().pad(0.1).contains(rightEastingGrid1000MLabelCoords)) {
+            // this.options.layerGroup1000mLabels.addLayer(rightEastingGrid1000MLabel);
+            this.addLayer(rightEastingGrid1000MLabel);
+          }
+        }
+      }
+      rightEastingIterator += 1;
+    }
+
+    //* Right Side Northing */
+    while (rightNorthingIterator <= neRight.northing) {
+      if (rightNorthingIterator % this.options.gridInterval === 0) {
+        this.options.northingArray.push({
+          northing: rightNorthingIterator,
+          zoneNumber: neRight.zoneNumber,
+          zoneLetter: neRight.zoneLetter,
+        });
+
+        if (this.options.enableLabels) {
+          const rightNorthingGrid1000MLabelCoords = UTMtoLL({
+            easting: LLtoUTM(map.getBounds().getNorthEast()).easting - (rightNorthingIterator / this.options.gridInterval % 100),
+            northing: rightNorthingIterator,
+            zoneNumber: neRight.zoneNumber,
+            zoneLetter: neRight.zoneLetter,
+          });
+
+          const rightNorthingGrid1000MLabel = new L.Marker(rightNorthingGrid1000MLabelCoords, {
+            interactive: false,
+            icon: new L.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new L.Point(50, 12),
+              html: `<div class="grid-label-1000m">${rightNorthingIterator.toString().slice(2, -3)}</div>`,
+            }),
+          });
+
+          // Set labels that are only greater than 1000m from the SE corner, that way they don't overlap the easting labels
+          if (rightNorthingGrid1000MLabel.getLatLng().distanceTo(map.getBounds().getSouthEast()) >= this.options.gridInterval) {
+            if (map.getBounds().pad(0.1).contains(rightNorthingGrid1000MLabelCoords)) {
+              // this.options.layerGroup1000mLabels.addLayer(rightNorthingGrid1000MLabel);
+              this.addLayer(rightNorthingGrid1000MLabel);
+            }
+          }
+        }
+      }
+      rightNorthingIterator += 1;
+    }
+    this.generateSplitGrids('right', NEBounds);
+  },
+
+
+  generateSplitGrids(direction, bounds) {
+    this.direction = direction;
+    this.bounds = bounds;
+
+    Object.entries(this.options.northingArray).forEach((e) => {
+      const bottomNorthing = e[1];
+      const bottomRow = this.options.eastingArray.map((j) => [j, bottomNorthing]);
+      const emptyBottomRowArr = [];
+
+      bottomRow.forEach((k) => {
+        const northingGrids1000Meters = UTMtoLL({
+          northing: k[1].northing,
+          easting: k[0].easting,
+          zoneNumber: k[0].zoneNumber,
+          zoneLetter: k[0].zoneLetter,
+        });
+
+        if (map.getBounds().pad(getPaddingOnZoomLevel1000Meters()).contains(northingGrids1000Meters)) {
+          emptyBottomRowArr.push(northingGrids1000Meters);
+        }
+      });
+
+      for (let index = 0; index < emptyBottomRowArr.length; index += 1) {
+        const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
+        switch (this.direction) {
+          case 'left':
+            // element[1] ensures that each element in the loop has 2 arrays. If there is only 1 array then it's the "odd-man-out" so we disregard it
+            // element[1].lon <= eastingDict[NWBounds.zoneNumber].right - 0.000000001 ensures that the lines will not go over the GZD boundaries
+            if (element[1] && element[1].lon <= eastingDict[this.bounds.zoneNumber].right - 0.000000001) {
+              const northingLineLeft = new L.Polyline([element], this.options.lineStyle);
+              // this.options.layerGroup1000m.addLayer(northingLineLeft);
+              this.addLayer(northingLineLeft);
+              // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
+              // Convert the Polyline element to a LatLng so we can use the distanceTo() method
+              const finalNorthingLineLeft = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
+              // If any Polylines are less than 1000 meters away from the GZD, we can then start connecting them
+              if (finalNorthingLineLeft.distanceTo({ lat: element[1].lat, lng: eastingDict[this.bounds.zoneNumber].right - 0.000000001 }) <= this.options.gridInterval) {
+                const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLineLeft.lat, lon: eastingDict[this.bounds.zoneNumber].right - 0.000000001 });
+                const extendedLine = UTMtoLL({
+                  northing: Math.round(gridLineEndpoint.northing / this.options.gridInterval) * this.options.gridInterval,
+                  easting: gridLineEndpoint.easting,
+                  zoneNumber: gridLineEndpoint.zoneNumber,
+                  zoneLetter: gridLineEndpoint.zoneLetter,
+                });
+                const northingLineLeftToGZD = new L.Polyline([extendedLine, finalNorthingLineLeft], this.options.lineStyle);
+                // this.options.layerGroup1000m.addLayer(northingLineLeftToGZD);
+                this.addLayer(northingLineLeftToGZD);
+              }
+            }
+            break;
+          case 'right':
+            if (element[1] && element[0].lon >= eastingDict[this.bounds.zoneNumber].left) {
+              const northingLineRight = new L.Polyline([element], this.options.lineStyle);
+              // this.options.layerGroup1000m.addLayer(northingLineRight);
+              this.addLayer(northingLineRight);
+              // Since element[0] starts on the left, we use that to test if the polyline is extending over the GZD bounds
+              const finalNorthingLineRight = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+              // This will "connect" the 1000m grid to the GZD. This is useful because not all 1000m grids...are 1000m
+              // Convert the Polyline element to a LatLng so we can use the distanceTo() method
+              if (finalNorthingLineRight.distanceTo({ lat: element[0].lat, lng: eastingDict[this.bounds.zoneNumber].left }) < this.options.gridInterval) {
+                const gridLineEndpoint = LLtoUTM({ lat: finalNorthingLineRight.lat, lon: eastingDict[this.bounds.zoneNumber].left });
+                const extendedLine = UTMtoLL({
+                  northing: Math.round(gridLineEndpoint.northing / this.options.gridInterval) * this.options.gridInterval,
+                  easting: gridLineEndpoint.easting,
+                  zoneNumber: gridLineEndpoint.zoneNumber,
+                  zoneLetter: gridLineEndpoint.zoneLetter,
+                });
+                const northingLineRightToGZD = new L.Polyline([extendedLine, finalNorthingLineRight], this.options.lineStyle);
+                // this.options.layerGroup1000m.addLayer(northingLineRightToGZD);
+                this.addLayer(northingLineRightToGZD);
+              }
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    });
+
+    Object.entries(this.options.eastingArray).forEach((e) => {
+      const bottomEasting = e[1];
+      const bottomRow = this.options.northingArray.map((j) => [j, bottomEasting]);
+      const emptyBottomRowArr = [];
+
+      bottomRow.forEach((k) => {
+        const eastingGrids1000Meters = UTMtoLL({
+          northing: k[0].northing,
+          easting: k[1].easting,
+          zoneNumber: k[0].zoneNumber,
+          zoneLetter: k[0].zoneLetter,
+        });
+        if (map.getBounds().pad(getPaddingOnZoomLevel1000Meters()).contains(eastingGrids1000Meters)) {
+          emptyBottomRowArr.push(eastingGrids1000Meters);
+        }
+      });
+
+      for (let index = 0; index < emptyBottomRowArr.length; index += 1) {
+        const element = [emptyBottomRowArr[index], emptyBottomRowArr[index + 1]];
+        switch (this.direction) {
+          case 'left':
+            if (element[1] && element[1].lon <= eastingDict[this.bounds.zoneNumber].right - 0.000000001) {
+              const eastingLineLeft = new L.Polyline([element], this.options.lineStyle);
+              // this.options.layerGroup1000m.addLayer(eastingLineLeft);
+              this.addLayer(eastingLineLeft);
+            }
+            break;
+          case 'right':
+            if (element[1] && element[1].lon >= eastingDict[this.bounds.zoneNumber].left) {
+              const eastingLineRight = new L.Polyline([element], this.options.lineStyle);
+              // this.options.layerGroup1000m.addLayer(eastingLineRight);
+              this.addLayer(eastingLineRight);
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    });
+
+    // All the Polylines are now in this group, we can add it to the map
+    // this.options.layerGroup1000m.addTo(this.map);
+    // this.options.layerGroup1000mLabels.addTo(this.map);
+    // return this;
+    // this.addLayer(this.options.layerGroup1000mLabels);
+    // this.addLayer(this.options.layerGroup1000m);
+    console.log(this);
+  },
+
+
+  _update() {
+    // To reposition the layer after a zoom, the _update method first recalculates the screen coordinates of the layer with the latLngToLayerPoint
+    const position = this._map.latLngToLayerPoint(this._latLng);
+    // Recalculate position of container
+    L.DomUtil.setPosition(this._container, position);
+    // Add/remove/reposition children elements if needed
+  },
+
+  getPaddingOnZoomLevel1000Meters() {
+    const zoom = map.getZoom();
+    if (zoom >= 18) {
+      return 4;
+    }
+    switch (zoom) {
+      case 17:
+        return 1.5;
+      case 16:
+        return 0.75;
+      case 15:
+        return 0.4;
+      case 14:
+        return 0.18;
+      case 13:
+        return 0.1;
+      case 12:
+        return 0.04;
+      default:
+        break;
+    }
+    return this;
+  },
+
+});
+
+// The standard Leaflet plugin creation pattern is to implement a factory function that enables the creation of the plugin to be chained with other function calls:
+// The common convention is to name the factory function after the class of the your plugin but make the first letter lower case.
+L.mgrs1000meters = function (options) {
+  return new L.MGRS1000Meters(options);
+};
+
+L.mgrs1000meters({ color: 'red' }).addTo(map);
+//! END PLUGIN TEST
+
+
 // *********************************************************************************** //
 // * Event Listeners                                                                 * //
 // *********************************************************************************** //
@@ -1286,7 +1788,7 @@ map.addEventListener('moveend', () => {
   // removes and adds the 100k grids to the map on moveend
   generate100KGrids.regenerate();
   // removes and adds the 100m meter grids to the map on moveend
-  generate1000meterGrids.regenerate();
+  // generate1000meterGrids.regenerate();
   // const generate1000meterGrids3 = (val) => new Grid1000M(val);
   // generate1000meterGrids3(document.querySelector('#myonoffswitch').hasAttribute('checked')).determineGrids();
   setTimeout(() => {
@@ -1307,17 +1809,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 //! Bug: When ticked, the grid labels will be removed. However when a user moves a map, the labels show up again.
-document.querySelector('#myonoffswitch').addEventListener('change', (event) => {
-  const checkbox = event.target;
-  //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
-  const generate1000meterGrids2 = (val) => new Grid1000M(val);
-  generate1000meterGrids2(checkbox.checked).cleaner();
-  if (checkbox.checked) {
-    document.querySelector('#myonoffswitch').toggleAttribute('checked');
-  } else {
-    document.querySelector('#myonoffswitch').toggleAttribute('checked');
-  }
-});
+// document.querySelector('#myonoffswitch').addEventListener('change', (event) => {
+//   const checkbox = event.target;
+//   //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
+//   const generate1000meterGrids2 = (val) => new Grid1000M(val);
+//   generate1000meterGrids2(checkbox.checked).cleaner();
+//   if (checkbox.checked) {
+//     document.querySelector('#myonoffswitch').toggleAttribute('checked');
+//   } else {
+//     document.querySelector('#myonoffswitch').toggleAttribute('checked');
+//   }
+// });
 
 
 export { map };
