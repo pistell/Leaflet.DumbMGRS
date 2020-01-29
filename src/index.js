@@ -1823,7 +1823,7 @@ L.OSGraticule = L.LayerGroup.extend({
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
-    gridLetterStyle: 'color: #216fff; font-size:12px;',
+    gridLetterStyle: 'color: black; font-size:12px;',
   },
 
   lineStyle: {
@@ -1878,8 +1878,9 @@ L.OSGraticule = L.LayerGroup.extend({
       const NWBounds = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
       const SEBounds = LLtoUTM({ lat: this._bounds.getSouth(), lon: this._bounds.getEast() });
       const SWBounds = LLtoUTM({ lat: this._bounds.getSouth(), lon: this._bounds.getWest() });
-      let noAdjacentGZD = false;
-      this.right(NEBounds, noAdjacentGZD = true);
+      // let noAdjacentGZD = false;
+      // this.right(NEBounds, noAdjacentGZD = true);
+      this.constructLines(this._bounds);
     }
 
     return this;
@@ -1892,6 +1893,8 @@ L.OSGraticule = L.LayerGroup.extend({
     return {
       easting: Math.floor(nw.easting / s) * s,
       northing: Math.floor(nw.northing / s) * s,
+      zoneNumber: nw.zoneNumber,
+      zoneLetter: nw.zoneLetter,
     };
   },
 
@@ -1906,11 +1909,163 @@ L.OSGraticule = L.LayerGroup.extend({
     };
   },
 
+  constructLines(bounds) {
+    const s = this.options.gridInterval;
+
+    const mins = this.getOSMins();
+    const counts = this.getOSLineCounts();
+
+    const lines = new Array();
+    const labels = new Array();
+
+    //  for vertical lines
+    for (let i = 0; i <= counts.x; i++) {
+      const e = mins.easting + (s * i);
+      const n = mins.northing;
+
+      const topLL = UTMtoLL({
+        northing: n,
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter,
+      });
+
+      const bottomLL = UTMtoLL({
+        northing: n - (counts.y * s),
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter,
+      });
+
+      // var topLL = OSGridToLatLong(e, n);
+      // var bottomLL = OSGridToLatLong(e, n - (counts.y * s));
+      const line = new L.Polyline([bottomLL, topLL], this.lineStyle);
+      lines.push(line);
+
+      // if (this.options.showLabels) {
+      //   labels.push(this.buildXLabel(topLL, gridrefNumToLet(e, n, 4).e));
+      // }
+    }
+    // for horizontal lines
+    for (let i = 0; i <= counts.y; i++) {
+      const e = mins.easting;
+      const n = mins.northing - (s * i);
+      const leftLL = UTMtoLL({
+        northing: n,
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter,
+      });
+      const rightLL = UTMtoLL({
+        northing: n,
+        easting: e + (counts.x * s),
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter,
+      });
+      // var leftLL = OSGridToLatLong(e, n);
+      // var rightLL = OSGridToLatLong(e + (counts.x * s) , n);
+      // var line = new L.Polyline([leftLL, rightLL], this.lineStyle);
+      const line = new L.Polyline([leftLL, rightLL], this.lineStyle);
+      lines.push(line);
+      if (this.options.showLabels) {
+        labels.push(this.buildYLabel(leftLL, n.toString().slice(2, -3)));
+      }
+    }
+    //! Previous lines drawn: 553
+    lines.forEach(this.addLayer, this);
+    labels.forEach(this.addLayer, this);
+  },
+
   right(NEBounds, noAdjacentGZD = false) {
     this.northingArray = [];
     this.eastingArray = [];
     this.gridLabels = [];
+    const s = this.options.gridInterval;
 
+    const mins = this.getOSMins();
+    const counts = this.getOSLineCounts();
+
+    const lines = new Array();
+    const labels = new Array();
+
+    //  for vertical lines
+    for (let i = 0; i <= counts.x; i++) {
+      const e = mins.easting + (s * i);
+      const n = mins.northing;
+
+      const topLL = UTMtoLL({
+        northing: n,
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter,
+      });
+
+      const bottomLL = UTMtoLL({
+        northing: n - (counts.y * s),
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter,
+      });
+
+      // var topLL = OSGridToLatLong(e, n);
+      // var bottomLL = OSGridToLatLong(e, n - (counts.y * s));
+      const line = new L.Polyline([bottomLL, topLL], {
+        color: 'pink',
+        weight: 4,
+        opacity: 0.85,
+        interactive: false,
+        clickable: false, // legacy support
+        fill: false,
+        noClip: true,
+        smoothFactor: 4,
+        lineCap: 'butt',
+        lineJoin: 'miter-clip',
+      });
+      lines.push(line);
+
+      // if (this.options.showLabels) {
+      //   labels.push(this.buildXLabel(topLL, gridrefNumToLet(e, n, 4).e));
+      // }
+    }
+    // for horizontal lines
+    for (let i = 0; i <= counts.y; i++) {
+      const e = mins.easting;
+      const n = mins.northing - (s * i);
+      const leftLL = UTMtoLL({
+        northing: n,
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter,
+      });
+      const rightLL = UTMtoLL({
+        northing: n,
+        easting: e + (counts.x * s),
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter,
+      });
+      // var leftLL = OSGridToLatLong(e, n);
+      // var rightLL = OSGridToLatLong(e + (counts.x * s) , n);
+      // var line = new L.Polyline([leftLL, rightLL], this.lineStyle);
+      const line = new L.Polyline([leftLL, rightLL], {
+        color: 'pink',
+        weight: 4,
+        opacity: 0.85,
+        interactive: false,
+        clickable: false, // legacy support
+        fill: false,
+        noClip: true,
+        smoothFactor: 4,
+        lineCap: 'butt',
+        lineJoin: 'miter-clip',
+      });
+      lines.push(line);
+
+      // if (this.options.showLabels) {
+      //   labels.push(this.buildYLabel(leftLL, gridrefNumToLet(e, n, 4).n));
+      // }
+    }
+    //! Previous lines drawn: 553
+    // lines.forEach(this.addLayer, this);
 
     let swRight;
     if (noAdjacentGZD) {
@@ -2162,21 +2317,21 @@ L.OSGraticule = L.LayerGroup.extend({
   //   });
   // },
 
-  // buildYLabel: function(pos, label) {
-  //   var bounds = this._map.getBounds().pad(-0.001);
-  //   pos.lng = bounds.getWest();
+  buildYLabel(pos, label) {
+    const bounds = this._map.getBounds().pad(-0.001);
+    pos.lng = bounds.getWest();
 
-  //   return L.marker(pos, {
-  //     interactive: false,
-  //     clickable: false, //legacy support
-  //     icon: L.divIcon({
-  //       iconSize: [0,0],
-  //       iconAnchor: [-5,15],
-  //       className: 'leaflet-grid-label',
-  //       html: '<div style="'+ this.options.gridLetterStyle + '">' + label + '</div>'
-  //     })
-  //   });
-  // },
+    return L.marker(pos, {
+      interactive: false,
+      clickable: false, // legacy support
+      icon: L.divIcon({
+        iconSize: [0, 0],
+        iconAnchor: [-5, 12],
+        className: 'leaflet-grid-label',
+        html: `<div class="grid-label-1000m" style="${this.options.gridLetterStyle}">${label}</div>`,
+      }),
+    });
+  },
 
   getPaddingOnZoomLevel1000Meters() {
     const zoom = map.getZoom();

@@ -17740,7 +17740,7 @@ _leaflet.default.OSGraticule = _leaflet.default.LayerGroup.extend({
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
-    gridLetterStyle: 'color: #216fff; font-size:12px;'
+    gridLetterStyle: 'color: black; font-size:12px;'
   },
   lineStyle: {
     color: 'black',
@@ -17803,9 +17803,10 @@ _leaflet.default.OSGraticule = _leaflet.default.LayerGroup.extend({
       var SWBounds = (0, _mgrs.LLtoUTM)({
         lat: this._bounds.getSouth(),
         lon: this._bounds.getWest()
-      });
-      var noAdjacentGZD = false;
-      this.right(NEBounds, noAdjacentGZD = true);
+      }); // let noAdjacentGZD = false;
+      // this.right(NEBounds, noAdjacentGZD = true);
+
+      this.constructLines(this._bounds);
     }
 
     return this;
@@ -17819,7 +17820,9 @@ _leaflet.default.OSGraticule = _leaflet.default.LayerGroup.extend({
     });
     return {
       easting: Math.floor(nw.easting / s) * s,
-      northing: Math.floor(nw.northing / s) * s
+      northing: Math.floor(nw.northing / s) * s,
+      zoneNumber: nw.zoneNumber,
+      zoneLetter: nw.zoneLetter
     };
   },
   getOSLineCounts: function getOSLineCounts() {
@@ -17841,11 +17844,158 @@ _leaflet.default.OSGraticule = _leaflet.default.LayerGroup.extend({
       y: Math.ceil((nw.northing - sw.northing) / s)
     };
   },
+  constructLines: function constructLines(bounds) {
+    var s = this.options.gridInterval;
+    var mins = this.getOSMins();
+    var counts = this.getOSLineCounts();
+    var lines = new Array();
+    var labels = new Array(); //  for vertical lines
+
+    for (var i = 0; i <= counts.x; i++) {
+      var e = mins.easting + s * i;
+      var n = mins.northing;
+      var topLL = (0, _mgrs.UTMtoLL)({
+        northing: n,
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter
+      });
+      var bottomLL = (0, _mgrs.UTMtoLL)({
+        northing: n - counts.y * s,
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter
+      }); // var topLL = OSGridToLatLong(e, n);
+      // var bottomLL = OSGridToLatLong(e, n - (counts.y * s));
+
+      var line = new _leaflet.default.Polyline([bottomLL, topLL], this.lineStyle);
+      lines.push(line); // if (this.options.showLabels) {
+      //   labels.push(this.buildXLabel(topLL, gridrefNumToLet(e, n, 4).e));
+      // }
+    } // for horizontal lines
+
+
+    for (var _i = 0; _i <= counts.y; _i++) {
+      var _e = mins.easting;
+
+      var _n = mins.northing - s * _i;
+
+      var leftLL = (0, _mgrs.UTMtoLL)({
+        northing: _n,
+        easting: _e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter
+      });
+      var rightLL = (0, _mgrs.UTMtoLL)({
+        northing: _n,
+        easting: _e + counts.x * s,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter
+      }); // var leftLL = OSGridToLatLong(e, n);
+      // var rightLL = OSGridToLatLong(e + (counts.x * s) , n);
+      // var line = new L.Polyline([leftLL, rightLL], this.lineStyle);
+
+      var _line = new _leaflet.default.Polyline([leftLL, rightLL], this.lineStyle);
+
+      lines.push(_line);
+
+      if (this.options.showLabels) {
+        labels.push(this.buildYLabel(leftLL, _n.toString().slice(2, -3)));
+      }
+    } //! Previous lines drawn: 553
+
+
+    lines.forEach(this.addLayer, this);
+    labels.forEach(this.addLayer, this);
+  },
   right: function right(NEBounds) {
     var noAdjacentGZD = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
     this.northingArray = [];
     this.eastingArray = [];
     this.gridLabels = [];
+    var s = this.options.gridInterval;
+    var mins = this.getOSMins();
+    var counts = this.getOSLineCounts();
+    var lines = new Array();
+    var labels = new Array(); //  for vertical lines
+
+    for (var i = 0; i <= counts.x; i++) {
+      var e = mins.easting + s * i;
+      var n = mins.northing;
+      var topLL = (0, _mgrs.UTMtoLL)({
+        northing: n,
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter
+      });
+      var bottomLL = (0, _mgrs.UTMtoLL)({
+        northing: n - counts.y * s,
+        easting: e,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter
+      }); // var topLL = OSGridToLatLong(e, n);
+      // var bottomLL = OSGridToLatLong(e, n - (counts.y * s));
+
+      var line = new _leaflet.default.Polyline([bottomLL, topLL], {
+        color: 'pink',
+        weight: 4,
+        opacity: 0.85,
+        interactive: false,
+        clickable: false,
+        // legacy support
+        fill: false,
+        noClip: true,
+        smoothFactor: 4,
+        lineCap: 'butt',
+        lineJoin: 'miter-clip'
+      });
+      lines.push(line); // if (this.options.showLabels) {
+      //   labels.push(this.buildXLabel(topLL, gridrefNumToLet(e, n, 4).e));
+      // }
+    } // for horizontal lines
+
+
+    for (var _i2 = 0; _i2 <= counts.y; _i2++) {
+      var _e2 = mins.easting;
+
+      var _n2 = mins.northing - s * _i2;
+
+      var leftLL = (0, _mgrs.UTMtoLL)({
+        northing: _n2,
+        easting: _e2,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter
+      });
+      var rightLL = (0, _mgrs.UTMtoLL)({
+        northing: _n2,
+        easting: _e2 + counts.x * s,
+        zoneNumber: mins.zoneNumber,
+        zoneLetter: mins.zoneLetter
+      }); // var leftLL = OSGridToLatLong(e, n);
+      // var rightLL = OSGridToLatLong(e + (counts.x * s) , n);
+      // var line = new L.Polyline([leftLL, rightLL], this.lineStyle);
+
+      var _line2 = new _leaflet.default.Polyline([leftLL, rightLL], {
+        color: 'pink',
+        weight: 4,
+        opacity: 0.85,
+        interactive: false,
+        clickable: false,
+        // legacy support
+        fill: false,
+        noClip: true,
+        smoothFactor: 4,
+        lineCap: 'butt',
+        lineJoin: 'miter-clip'
+      });
+
+      lines.push(_line2); // if (this.options.showLabels) {
+      //   labels.push(this.buildYLabel(leftLL, gridrefNumToLet(e, n, 4).n));
+      // }
+    } //! Previous lines drawn: 553
+    // lines.forEach(this.addLayer, this);
+
+
     var swRight;
 
     if (noAdjacentGZD) {
@@ -18135,20 +18285,22 @@ _leaflet.default.OSGraticule = _leaflet.default.LayerGroup.extend({
   //     })
   //   });
   // },
-  // buildYLabel: function(pos, label) {
-  //   var bounds = this._map.getBounds().pad(-0.001);
-  //   pos.lng = bounds.getWest();
-  //   return L.marker(pos, {
-  //     interactive: false,
-  //     clickable: false, //legacy support
-  //     icon: L.divIcon({
-  //       iconSize: [0,0],
-  //       iconAnchor: [-5,15],
-  //       className: 'leaflet-grid-label',
-  //       html: '<div style="'+ this.options.gridLetterStyle + '">' + label + '</div>'
-  //     })
-  //   });
-  // },
+  buildYLabel: function buildYLabel(pos, label) {
+    var bounds = this._map.getBounds().pad(-0.001);
+
+    pos.lng = bounds.getWest();
+    return _leaflet.default.marker(pos, {
+      interactive: false,
+      clickable: false,
+      // legacy support
+      icon: _leaflet.default.divIcon({
+        iconSize: [0, 0],
+        iconAnchor: [-5, 12],
+        className: 'leaflet-grid-label',
+        html: "<div class=\"grid-label-1000m\" style=\"".concat(this.options.gridLetterStyle, "\">").concat(label, "</div>")
+      })
+    });
+  },
   getPaddingOnZoomLevel1000Meters: function getPaddingOnZoomLevel1000Meters() {
     var zoom = map.getZoom();
 
@@ -18260,7 +18412,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61764" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49425" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
