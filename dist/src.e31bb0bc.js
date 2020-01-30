@@ -17255,6 +17255,12 @@ function Grid1000M(enableLabels) {
 } // const generate1000meterGrids = new Grid1000M(true);
 // generate1000meterGrids.determineGrids();
 //! BEGIN PLUGIN TEST
+// TODO: Add the Switch-case logic for the LEFT side to the EASTING LINES in generateGrids()
+// TODO: Implement the RIGHT side logic into the plugin
+// TODO: Merge all directions. Ensure that LEFT RIGHT and UNDEFINED directions can fire off
+// TODO: Fix grid labels. They are still kinda off and it gets worse as you zoom in. This seems to be an issue with the current latitude. For instance, near FDNY your labels are not aligned with the grid lines. However, the further south you go, say Florida, they look okay. This is probably going to be a royal pain in the ass...
+// TODO: Implement toggle switch for 1000m grid labels and grid lines
+// TODO: Rename this.empty to something descriptive. Come on Jim get your head out of your ass
 // *********************************************************************************** //
 // * TEST PLUGIN                                                                     * //
 // *********************************************************************************** //
@@ -17351,23 +17357,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     this.empty = [];
 
     if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
-      // get all corners
-      var NEBounds = (0, _mgrs.LLtoUTM)({
-        lat: this._bounds.getNorth(),
-        lon: this._bounds.getEast()
-      });
-      var NWBounds = (0, _mgrs.LLtoUTM)({
-        lat: this._bounds.getNorth(),
-        lon: this._bounds.getWest()
-      });
-      var SEBounds = (0, _mgrs.LLtoUTM)({
-        lat: this._bounds.getSouth(),
-        lon: this._bounds.getEast()
-      });
-      var SWBounds = (0, _mgrs.LLtoUTM)({
-        lat: this._bounds.getSouth(),
-        lon: this._bounds.getWest()
-      });
+      // Call the GZD class and get the visible grid zone designators on the map
       gz.viz.forEach(function (visibleGrid) {
         // This will tell us what grid squares are visible on the map
         _this9.empty.push(visibleGrid);
@@ -17378,11 +17368,13 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         acc[grid] = acc[grid] || [];
         acc[grid].push(_this9.empty[k]);
         return acc;
-      }, {}); // console.log(this.uniqueVisibleGrids);
+      }, {});
 
       if (this.empty.length <= 1) {
+        // If there is no other GZD visible on the map, then just run it
         this.generateGrids(this.options.splitGZD = false);
       } else {
+        //! Implement promises or async/await here IOT generate both sides
         this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
       }
     }
@@ -17495,21 +17487,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     var minimumBounds = this.getMinimumBounds();
     var gridCounts = this.getLineCounts();
     var gridLines = [];
-    var gridLabels = []; // let endEastingLine;
-    // let beginEastingLine;
-    // if (splitGZD) {
-    //   switch (direction) {
-    //     case 'left':
-    //       endEastingLine = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[0].right - 0.00001 }).easting;
-    //       break;
-    //     case 'right':
-    //       beginEastingLine = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left + 0.00001 }).easting;
-    //       break;
-    //     default:
-    //       break;
-    //   }
-    // }
-    //* * Easting Lines **//
+    var gridLabels = []; //* * Easting Lines **//
 
     for (var i = 0; i <= gridCounts.easting; i += 1) {
       var adjustedEasting = minimumBounds.easting + this.options.gridInterval * i;
@@ -17546,6 +17524,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       switch (this.options.direction) {
         case undefined:
           {
+            //! replacing easting with minimumBounds.easting. This works but is it elegant? Probably not.
             beginEastingLineForNorthings = minimumBounds.easting;
             endEastingLineForNorthings = easting + gridCounts.easting * this.options.gridInterval;
             break;

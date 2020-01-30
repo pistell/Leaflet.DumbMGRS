@@ -1283,6 +1283,12 @@ function Grid1000M(enableLabels) {
 // generate1000meterGrids.determineGrids();
 
 //! BEGIN PLUGIN TEST
+// TODO: Add the Switch-case logic for the LEFT side to the EASTING LINES in generateGrids()
+// TODO: Implement the RIGHT side logic into the plugin
+// TODO: Merge all directions. Ensure that LEFT RIGHT and UNDEFINED directions can fire off
+// TODO: Fix grid labels. They are still kinda off and it gets worse as you zoom in. This seems to be an issue with the current latitude. For instance, near FDNY your labels are not aligned with the grid lines. However, the further south you go, say Florida, they look okay. This is probably going to be a royal pain in the ass...
+// TODO: Implement toggle switch for 1000m grid labels and grid lines
+// TODO: Rename this.empty to something descriptive. Come on Jim get your head out of your ass
 // *********************************************************************************** //
 // * TEST PLUGIN                                                                     * //
 // *********************************************************************************** //
@@ -1365,17 +1371,11 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       return this.eachLayer(this.removeLayer, this);
     }
     this._bounds = this._map.getBounds().pad(this.getPaddingOnZoomLevel1000Meters());
-
     this.clearLayers();
     this.empty = [];
+
     if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
-      // get all corners
-      const NEBounds = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getEast() });
-      const NWBounds = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
-      const SEBounds = LLtoUTM({ lat: this._bounds.getSouth(), lon: this._bounds.getEast() });
-      const SWBounds = LLtoUTM({ lat: this._bounds.getSouth(), lon: this._bounds.getWest() });
-
-
+      // Call the GZD class and get the visible grid zone designators on the map
       gz.viz.forEach((visibleGrid) => {
         // This will tell us what grid squares are visible on the map
         this.empty.push(visibleGrid);
@@ -1387,11 +1387,12 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         acc[grid].push(this.empty[k]);
         return acc;
       }, {});
-      // console.log(this.uniqueVisibleGrids);
 
       if (this.empty.length <= 1) {
+        // If there is no other GZD visible on the map, then just run it
         this.generateGrids(this.options.splitGZD = false);
       } else {
+        //! Implement promises or async/await here IOT generate both sides
         this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
       }
     }
@@ -1473,21 +1474,6 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     const gridCounts = this.getLineCounts();
     const gridLines = [];
     const gridLabels = [];
-    // let endEastingLine;
-    // let beginEastingLine;
-    // if (splitGZD) {
-    //   switch (direction) {
-    //     case 'left':
-    //       endEastingLine = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[0].right - 0.00001 }).easting;
-    //       break;
-    //     case 'right':
-    //       beginEastingLine = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left + 0.00001 }).easting;
-    //       break;
-    //     default:
-    //       break;
-    //   }
-    // }
-
 
     //* * Easting Lines **//
     for (let i = 0; i <= gridCounts.easting; i += 1) {
@@ -1528,6 +1514,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
       switch (this.options.direction) {
         case undefined: {
+          //! replacing easting with minimumBounds.easting. This works but is it elegant? Probably not.
           beginEastingLineForNorthings = minimumBounds.easting;
           endEastingLineForNorthings = easting + (gridCounts.easting * this.options.gridInterval);
           break;
