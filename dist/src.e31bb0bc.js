@@ -15748,8 +15748,8 @@ var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 var quito = [0.17578097424708533, -77.84912109375];
 
 var map = _leaflet.default.map('map').setView({
-  lat: 44.06588017158586,
-  lng: -76.11911773681642
+  lat: 43.84443209873527,
+  lng: -78.0018997192383
 }, 13);
 
 exports.map = map;
@@ -17267,7 +17267,9 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
-    gridLetterStyle: 'color: black; font-size:12px;'
+    gridLetterStyle: 'color: black; font-size:12px;',
+    splitGZD: false,
+    direction: undefined
   },
   lineStyle: {
     color: 'black',
@@ -17282,6 +17284,33 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     lineCap: 'butt',
     lineJoin: 'miter-clip'
   },
+
+  // line style for debugging
+  get orangeLine() {
+    var propertyToModify = {
+      color: 'orange',
+      weight: 8,
+      opacity: 0.25
+    };
+
+    var modifiedTarget = _objectSpread({}, this.lineStyle, {}, propertyToModify);
+
+    return modifiedTarget;
+  },
+
+  // line style for debugging
+  get redLine() {
+    var propertyToModify = {
+      color: 'red',
+      weight: 2,
+      opacity: 0.75
+    };
+
+    var modifiedTarget = _objectSpread({}, this.lineStyle, {}, propertyToModify);
+
+    return modifiedTarget;
+  },
+
   initialize: function initialize(options) {
     _leaflet.default.LayerGroup.prototype.initialize.call(this);
 
@@ -17308,6 +17337,8 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     this.regenerate();
   },
   regenerate: function regenerate() {
+    var _this9 = this;
+
     var currentZoom = this._map.getZoom();
 
     if (currentZoom < 12) {
@@ -17315,8 +17346,9 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       return this.eachLayer(this.removeLayer, this);
     }
 
-    this._bounds = this._map.getBounds().pad(getPaddingOnZoomLevel1000Meters());
+    this._bounds = this._map.getBounds().pad(this.getPaddingOnZoomLevel1000Meters());
     this.clearLayers();
+    this.empty = [];
 
     if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
       // get all corners
@@ -17336,19 +17368,68 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         lat: this._bounds.getSouth(),
         lon: this._bounds.getWest()
       });
-      this.generateGrids(this._bounds);
+      gz.viz.forEach(function (visibleGrid) {
+        // This will tell us what grid squares are visible on the map
+        _this9.empty.push(visibleGrid);
+      }); // This just creates a neater object where I can parse the data easier
+
+      this.uniqueVisibleGrids = Object.keys(this.empty).reduce(function (acc, k) {
+        var grid = _this9.empty[k].id;
+        acc[grid] = acc[grid] || [];
+        acc[grid].push(_this9.empty[k]);
+        return acc;
+      }, {}); // console.log(this.uniqueVisibleGrids);
+
+      if (this.empty.length <= 1) {
+        this.generateGrids(this.options.splitGZD = false);
+      } else {
+        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
+      }
     }
 
     return this;
   },
   // Gets the minimum easting and northing of each 1000 meter grid line
   getMinimumBounds: function getMinimumBounds() {
-    // rounds up to nearest multiple of x
-    var nw = (0, _mgrs.LLtoUTM)({
-      lat: this._bounds.getNorth(),
-      lon: this._bounds.getWest()
-    });
+    var nw;
+
+    switch (this.options.direction) {
+      case undefined:
+        {
+          nw = (0, _mgrs.LLtoUTM)({
+            lat: this._bounds.getNorth(),
+            lon: this._bounds.getWest()
+          });
+          break;
+        }
+
+      case 'left':
+        {
+          nw = (0, _mgrs.LLtoUTM)({
+            lat: this._bounds.getNorth(),
+            lon: this._bounds.getWest()
+          });
+          break;
+        }
+
+      case 'right':
+        {
+          //! this might not be right
+          nw = (0, _mgrs.LLtoUTM)({
+            lat: this._bounds.getNorth(),
+            lon: this.empty[1].left + 0.00001
+          });
+          break;
+        }
+
+      default:
+        {
+          break;
+        }
+    }
+
     return {
+      // rounds up to nearest multiple of x
       easting: Math.floor(nw.easting / this.options.gridInterval) * this.options.gridInterval,
       northing: Math.floor(nw.northing / this.options.gridInterval) * this.options.gridInterval,
       zoneNumber: nw.zoneNumber,
@@ -17357,17 +17438,48 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   },
   // Gets the number of easting and northing lines we need to draw on the map
   getLineCounts: function getLineCounts() {
+    var east;
+    var west;
+
+    switch (this.options.direction) {
+      case undefined:
+        {
+          east = this._bounds.getEast();
+          west = this._bounds.getWest();
+          break;
+        }
+
+      case 'left':
+        {
+          east = this.empty[0].right - 0.00001;
+          west = this._bounds.getWest();
+          break;
+        }
+
+      case 'right':
+        {
+          east = this._bounds.getEast();
+          west = this.empty[1].left + 0.00001;
+          break;
+        }
+
+      default:
+        {
+          break;
+        }
+    }
+
     var nw = (0, _mgrs.LLtoUTM)({
       lat: this._bounds.getNorth(),
-      lon: this._bounds.getWest()
+      lon: west
     });
     var ne = (0, _mgrs.LLtoUTM)({
       lat: this._bounds.getNorth(),
-      lon: this._bounds.getEast()
+      lon: east
     });
     var sw = (0, _mgrs.LLtoUTM)({
       lat: this._bounds.getSouth(),
-      lon: this._bounds.getWest()
+      lon: west
     });
     return {
       easting: Math.ceil((ne.easting - nw.easting) / this.options.gridInterval),
@@ -17376,31 +17488,49 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   },
   // Where the magic happens
   generateGrids: function generateGrids() {
+    var splitGZD = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+    var direction = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
+    this.options.splitGZD = splitGZD;
+    this.options.direction = direction;
     var minimumBounds = this.getMinimumBounds();
     var gridCounts = this.getLineCounts();
     var gridLines = [];
-    var gridLabels = []; //* * Easting Lines **//
+    var gridLabels = []; // let endEastingLine;
+    // let beginEastingLine;
+    // if (splitGZD) {
+    //   switch (direction) {
+    //     case 'left':
+    //       endEastingLine = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[0].right - 0.00001 }).easting;
+    //       break;
+    //     case 'right':
+    //       beginEastingLine = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left + 0.00001 }).easting;
+    //       break;
+    //     default:
+    //       break;
+    //   }
+    // }
+    //* * Easting Lines **//
 
     for (var i = 0; i <= gridCounts.easting; i += 1) {
       var adjustedEasting = minimumBounds.easting + this.options.gridInterval * i;
       var northing = minimumBounds.northing;
-      var topLL = (0, _mgrs.UTMtoLL)({
+      var northLine = (0, _mgrs.UTMtoLL)({
         northing: northing,
         easting: adjustedEasting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var bottomLL = (0, _mgrs.UTMtoLL)({
+      var southLine = (0, _mgrs.UTMtoLL)({
         northing: northing - gridCounts.northing * this.options.gridInterval,
         easting: adjustedEasting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var line = new _leaflet.default.Polyline([bottomLL, topLL], this.lineStyle);
-      gridLines.push(line);
+      var eastingLine = new _leaflet.default.Polyline([southLine, northLine], this.lineStyle);
+      gridLines.push(eastingLine);
 
       if (this.options.showLabels) {
-        gridLabels.push(this.generateEastingLabel(bottomLL, adjustedEasting.toString().slice(1, -3)));
+        gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3)));
       }
     } //* * Northing Lines **//
 
@@ -17408,19 +17538,78 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     for (var _i = 0; _i <= gridCounts.northing; _i += 1) {
       var easting = minimumBounds.easting;
       var adjustedNorthing = minimumBounds.northing - this.options.gridInterval * _i;
+      var endEastingLineForNorthings = void 0;
+      var beginEastingLineForNorthings = void 0; // If we need to get the northern bounds and we are in the southern hemisphere, grab the north, else grab the south
+
+      var northernHemisphereBounds = map.getCenter().lat <= 0 ? this._bounds.getNorth() : this._bounds.getSouth();
+
+      switch (this.options.direction) {
+        case undefined:
+          {
+            beginEastingLineForNorthings = minimumBounds.easting;
+            endEastingLineForNorthings = easting + gridCounts.easting * this.options.gridInterval;
+            break;
+          }
+
+        case 'left':
+          {
+            beginEastingLineForNorthings = minimumBounds.easting;
+            endEastingLineForNorthings = (0, _mgrs.LLtoUTM)({
+              lat: northernHemisphereBounds,
+              lon: this.empty[0].right - 0.00001
+            }).easting;
+            break;
+          }
+
+        case 'right':
+          {
+            beginEastingLineForNorthings = (0, _mgrs.LLtoUTM)({
+              lat: northernHemisphereBounds,
+              lon: this.empty[1].left + 0.00001
+            }).easting;
+            endEastingLineForNorthings = easting + gridCounts.easting * this.options.gridInterval;
+            break;
+          }
+
+        default:
+          {
+            break;
+          }
+      }
+
       var westLine = (0, _mgrs.UTMtoLL)({
         northing: adjustedNorthing,
-        easting: easting,
+        easting: beginEastingLineForNorthings,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
       var eastLine = (0, _mgrs.UTMtoLL)({
         northing: adjustedNorthing,
-        easting: easting + gridCounts.easting * this.options.gridInterval,
+        easting: endEastingLineForNorthings,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var northingLine = new _leaflet.default.Polyline([westLine, eastLine], this.lineStyle);
+      var northingLine = new _leaflet.default.Polyline([westLine, eastLine], this.redLine); // This will ensure that the northing lines do not go past their GZD boundaries
+
+      switch (this.options.direction) {
+        case undefined:
+          break;
+
+        case 'left':
+          northingLine.setLatLngs([westLine, {
+            lat: eastLine.lat,
+            lng: this.empty[0].right - 0.00001
+          }]);
+          break;
+
+        case 'right':
+          console.log('right');
+          break;
+
+        default:
+          break;
+      }
+
       gridLines.push(northingLine);
 
       if (this.options.showLabels) {

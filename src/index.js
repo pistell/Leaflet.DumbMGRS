@@ -31,7 +31,7 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView({ lat: 44.06588017158586, lng: -76.11911773681642 }, 13);
+const map = L.map('map').setView({ lat: 43.84443209873527, lng: -78.0018997192383 }, 13);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -1294,6 +1294,8 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     maxZoom: 18,
     minZoom: 12,
     gridLetterStyle: 'color: black; font-size:12px;',
+    splitGZD: false,
+    direction: undefined,
   },
 
   lineStyle: {
@@ -1307,6 +1309,26 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     smoothFactor: 4,
     lineCap: 'butt',
     lineJoin: 'miter-clip',
+  },
+  // line style for debugging
+  get orangeLine() {
+    const propertyToModify = {
+      color: 'orange',
+      weight: 8,
+      opacity: 0.25,
+    };
+    const modifiedTarget = { ...this.lineStyle, ...propertyToModify };
+    return modifiedTarget;
+  },
+  // line style for debugging
+  get redLine() {
+    const propertyToModify = {
+      color: 'red',
+      weight: 2,
+      opacity: 0.75,
+    };
+    const modifiedTarget = { ...this.lineStyle, ...propertyToModify };
+    return modifiedTarget;
   },
 
   initialize(options) {
@@ -1342,16 +1364,36 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       // Since we don't want to turn off the event listener, run eachLayer() instead of onRemove
       return this.eachLayer(this.removeLayer, this);
     }
-    this._bounds = this._map.getBounds().pad(getPaddingOnZoomLevel1000Meters());
-    this.clearLayers();
+    this._bounds = this._map.getBounds().pad(this.getPaddingOnZoomLevel1000Meters());
 
+    this.clearLayers();
+    this.empty = [];
     if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
       // get all corners
       const NEBounds = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getEast() });
       const NWBounds = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
       const SEBounds = LLtoUTM({ lat: this._bounds.getSouth(), lon: this._bounds.getEast() });
       const SWBounds = LLtoUTM({ lat: this._bounds.getSouth(), lon: this._bounds.getWest() });
-      this.generateGrids(this._bounds);
+
+
+      gz.viz.forEach((visibleGrid) => {
+        // This will tell us what grid squares are visible on the map
+        this.empty.push(visibleGrid);
+      });
+      // This just creates a neater object where I can parse the data easier
+      this.uniqueVisibleGrids = Object.keys(this.empty).reduce((acc, k) => {
+        const grid = this.empty[k].id;
+        acc[grid] = acc[grid] || [];
+        acc[grid].push(this.empty[k]);
+        return acc;
+      }, {});
+      // console.log(this.uniqueVisibleGrids);
+
+      if (this.empty.length <= 1) {
+        this.generateGrids(this.options.splitGZD = false);
+      } else {
+        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
+      }
     }
 
     return this;
@@ -1359,9 +1401,28 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
   // Gets the minimum easting and northing of each 1000 meter grid line
   getMinimumBounds() {
-    // rounds up to nearest multiple of x
-    const nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
+    let nw;
+    switch (this.options.direction) {
+      case undefined: {
+        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
+        break;
+      }
+      case 'left': {
+        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
+        break;
+      }
+      case 'right': {
+        //! this might not be right
+        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left + 0.00001 });
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+
     return {
+      // rounds up to nearest multiple of x
       easting: Math.floor(nw.easting / this.options.gridInterval) * this.options.gridInterval,
       northing: Math.floor(nw.northing / this.options.gridInterval) * this.options.gridInterval,
       zoneNumber: nw.zoneNumber,
@@ -1371,9 +1432,32 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
   // Gets the number of easting and northing lines we need to draw on the map
   getLineCounts() {
-    const nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
-    const ne = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getEast() });
-    const sw = LLtoUTM({ lat: this._bounds.getSouth(), lon: this._bounds.getWest() });
+    let east;
+    let west;
+    switch (this.options.direction) {
+      case undefined: {
+        east = this._bounds.getEast();
+        west = this._bounds.getWest();
+        break;
+      }
+      case 'left': {
+        east = this.empty[0].right - 0.00001;
+        west = this._bounds.getWest();
+        break;
+      }
+      case 'right': {
+        east = this._bounds.getEast();
+        west = this.empty[1].left + 0.00001;
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+
+    const nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: west });
+    const ne = LLtoUTM({ lat: this._bounds.getNorth(), lon: east });
+    const sw = LLtoUTM({ lat: this._bounds.getSouth(), lon: west });
     return {
       easting: Math.ceil((ne.easting - nw.easting) / this.options.gridInterval),
       northing: Math.ceil((nw.northing - sw.northing) / this.options.gridInterval),
@@ -1381,36 +1465,54 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   },
 
   // Where the magic happens
-  generateGrids() {
+  generateGrids(splitGZD = false, direction = undefined) {
+    this.options.splitGZD = splitGZD;
+    this.options.direction = direction;
+
     const minimumBounds = this.getMinimumBounds();
     const gridCounts = this.getLineCounts();
     const gridLines = [];
     const gridLabels = [];
+    // let endEastingLine;
+    // let beginEastingLine;
+    // if (splitGZD) {
+    //   switch (direction) {
+    //     case 'left':
+    //       endEastingLine = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[0].right - 0.00001 }).easting;
+    //       break;
+    //     case 'right':
+    //       beginEastingLine = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left + 0.00001 }).easting;
+    //       break;
+    //     default:
+    //       break;
+    //   }
+    // }
+
 
     //* * Easting Lines **//
     for (let i = 0; i <= gridCounts.easting; i += 1) {
       const adjustedEasting = minimumBounds.easting + (this.options.gridInterval * i);
       const { northing } = minimumBounds;
 
-      const topLL = UTMtoLL({
+      const northLine = UTMtoLL({
         northing,
         easting: adjustedEasting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-      const bottomLL = UTMtoLL({
+      const southLine = UTMtoLL({
         northing: northing - (gridCounts.northing * this.options.gridInterval),
         easting: adjustedEasting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-      const line = new L.Polyline([bottomLL, topLL], this.lineStyle);
-      gridLines.push(line);
+      const eastingLine = new L.Polyline([southLine, northLine], this.lineStyle);
+      gridLines.push(eastingLine);
 
       if (this.options.showLabels) {
-        gridLabels.push(this.generateEastingLabel(bottomLL, adjustedEasting.toString().slice(1, -3)));
+        gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3)));
       }
     }
 
@@ -1419,21 +1521,63 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       const { easting } = minimumBounds;
       const adjustedNorthing = minimumBounds.northing - (this.options.gridInterval * i);
 
+      let endEastingLineForNorthings;
+      let beginEastingLineForNorthings;
+      // If we need to get the northern bounds and we are in the southern hemisphere, grab the north, else grab the south
+      const northernHemisphereBounds = map.getCenter().lat <= 0 ? this._bounds.getNorth() : this._bounds.getSouth();
+
+      switch (this.options.direction) {
+        case undefined: {
+          beginEastingLineForNorthings = minimumBounds.easting;
+          endEastingLineForNorthings = easting + (gridCounts.easting * this.options.gridInterval);
+          break;
+        }
+        case 'left': {
+          beginEastingLineForNorthings = minimumBounds.easting;
+          endEastingLineForNorthings = LLtoUTM({ lat: northernHemisphereBounds, lon: this.empty[0].right - 0.00001 }).easting;
+          break;
+        }
+        case 'right': {
+          beginEastingLineForNorthings = LLtoUTM({ lat: northernHemisphereBounds, lon: this.empty[1].left + 0.00001 }).easting;
+          endEastingLineForNorthings = easting + (gridCounts.easting * this.options.gridInterval);
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+
       const westLine = UTMtoLL({
         northing: adjustedNorthing,
-        easting,
+        easting: beginEastingLineForNorthings,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter,
       });
+
 
       const eastLine = UTMtoLL({
         northing: adjustedNorthing,
-        easting: easting + (gridCounts.easting * this.options.gridInterval),
+        easting: endEastingLineForNorthings,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-      const northingLine = new L.Polyline([westLine, eastLine], this.lineStyle);
+      const northingLine = new L.Polyline([westLine, eastLine], this.redLine);
+
+      // This will ensure that the northing lines do not go past their GZD boundaries
+      switch (this.options.direction) {
+        case undefined:
+          break;
+        case 'left':
+          northingLine.setLatLngs([westLine, { lat: eastLine.lat, lng: this.empty[0].right - 0.00001 }]);
+          break;
+        case 'right':
+          console.log('right');
+          break;
+        default:
+          break;
+      }
+
       gridLines.push(northingLine);
       if (this.options.showLabels) {
         // If adjustedNorthing is 4871000, then slice the first 2 chars off and then remove the last 3 to get "71" as your label
