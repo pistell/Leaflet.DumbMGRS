@@ -1393,7 +1393,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         this.generateGrids(this.options.splitGZD = false);
       } else {
         //! Implement promises or async/await here IOT generate both sides
-        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
+        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'right');
       }
     }
 
@@ -1494,7 +1494,30 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-      const eastingLine = new L.Polyline([southLine, northLine], this.lineStyle);
+      const eastingLine = new L.Polyline([southLine, northLine], this.redLine);
+
+      // slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
+      const slope = (southLine.lat - northLine.lat) / (southLine.lon - northLine.lon);
+
+      // This will ensure that the northing lines do not go past their GZD boundaries
+      switch (this.options.direction) {
+        case undefined:
+          break;
+        case 'left':
+          if (northLine.lon > this.empty[0].right) {
+            const newLatLeft = southLine.lat + (slope * (this.empty[0].right - southLine.lon));
+            eastingLine.setLatLngs([southLine, { lat: newLatLeft, lng: this.empty[0].right - 0.00001 }]);
+          }
+          break;
+        case 'right':
+          if (northLine.lon < this.empty[1].left) {
+            const newLatRight = southLine.lat + (slope * (this.empty[1].left - southLine.lon));
+            eastingLine.setLatLngs([southLine, { lat: newLatRight, lng: this.empty[1].left }]);
+          }
+          break;
+        default:
+          break;
+      }
       gridLines.push(eastingLine);
 
       if (this.options.showLabels) {
@@ -1541,7 +1564,6 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-
       const eastLine = UTMtoLL({
         northing: adjustedNorthing,
         easting: endEastingLineForNorthings,
@@ -1549,7 +1571,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-      const northingLine = new L.Polyline([westLine, eastLine], this.redLine);
+      const northingLine = new L.Polyline([westLine, eastLine], this.lineStyle);
 
       // This will ensure that the northing lines do not go past their GZD boundaries
       switch (this.options.direction) {
@@ -1559,7 +1581,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
           northingLine.setLatLngs([westLine, { lat: eastLine.lat, lng: this.empty[0].right - 0.00001 }]);
           break;
         case 'right':
-          console.log('right');
+          northingLine.setLatLngs([eastLine, { lat: westLine.lat, lng: this.empty[1].left }]);
           break;
         default:
           break;

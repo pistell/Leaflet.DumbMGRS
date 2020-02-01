@@ -17375,7 +17375,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         this.generateGrids(this.options.splitGZD = false);
       } else {
         //! Implement promises or async/await here IOT generate both sides
-        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
+        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'right');
       }
     }
 
@@ -17504,7 +17504,40 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var eastingLine = new _leaflet.default.Polyline([southLine, northLine], this.lineStyle);
+      var eastingLine = new _leaflet.default.Polyline([southLine, northLine], this.redLine); // slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
+
+      var slope = (southLine.lat - northLine.lat) / (southLine.lon - northLine.lon); // This will ensure that the northing lines do not go past their GZD boundaries
+
+      switch (this.options.direction) {
+        case undefined:
+          break;
+
+        case 'left':
+          if (northLine.lon > this.empty[0].right) {
+            var newLatLeft = southLine.lat + slope * (this.empty[0].right - southLine.lon);
+            eastingLine.setLatLngs([southLine, {
+              lat: newLatLeft,
+              lng: this.empty[0].right - 0.00001
+            }]);
+          }
+
+          break;
+
+        case 'right':
+          if (northLine.lon < this.empty[1].left) {
+            var newLatRight = southLine.lat + slope * (this.empty[1].left - southLine.lon);
+            eastingLine.setLatLngs([southLine, {
+              lat: newLatRight,
+              lng: this.empty[1].left
+            }]);
+          }
+
+          break;
+
+        default:
+          break;
+      }
+
       gridLines.push(eastingLine);
 
       if (this.options.showLabels) {
@@ -17568,7 +17601,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var northingLine = new _leaflet.default.Polyline([westLine, eastLine], this.redLine); // This will ensure that the northing lines do not go past their GZD boundaries
+      var northingLine = new _leaflet.default.Polyline([westLine, eastLine], this.lineStyle); // This will ensure that the northing lines do not go past their GZD boundaries
 
       switch (this.options.direction) {
         case undefined:
@@ -17582,7 +17615,10 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
           break;
 
         case 'right':
-          console.log('right');
+          northingLine.setLatLngs([eastLine, {
+            lat: westLine.lat,
+            lng: this.empty[1].left
+          }]);
           break;
 
         default:
@@ -17744,7 +17780,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49425" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54524" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
