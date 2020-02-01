@@ -1380,23 +1380,15 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         // This will tell us what grid squares are visible on the map
         this.empty.push(visibleGrid);
       });
-      // This just creates a neater object where I can parse the data easier
-      this.uniqueVisibleGrids = Object.keys(this.empty).reduce((acc, k) => {
-        const grid = this.empty[k].id;
-        acc[grid] = acc[grid] || [];
-        acc[grid].push(this.empty[k]);
-        return acc;
-      }, {});
 
       if (this.empty.length <= 1) {
         // If there is no other GZD visible on the map, then just run it
         this.generateGrids(this.options.splitGZD = false);
       } else {
-        //! Implement promises or async/await here IOT generate both sides
         this.generateGrids(this.options.splitGZD = true, this.options.direction = 'right');
+        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
       }
     }
-
     return this;
   },
 
@@ -1576,9 +1568,17 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       // This will ensure that the northing lines do not go past their GZD boundaries
       switch (this.options.direction) {
         case undefined:
+          // Putting the grid label options in the switch statement prevents them from duplicating if split GZDs are on screen
+          if (this.options.showLabels) {
+            // If adjustedNorthing is 4871000, then slice the first 2 chars off and then remove the last 3 to get "71" as your label
+            gridLabels.push(this.generateNorthingLabel(westLine, adjustedNorthing.toString().slice(2, -3)));
+          }
           break;
         case 'left':
           northingLine.setLatLngs([westLine, { lat: eastLine.lat, lng: this.empty[0].right - 0.00001 }]);
+          if (this.options.showLabels) {
+            gridLabels.push(this.generateNorthingLabel(westLine, adjustedNorthing.toString().slice(2, -3)));
+          }
           break;
         case 'right':
           northingLine.setLatLngs([eastLine, { lat: westLine.lat, lng: this.empty[1].left }]);
@@ -1588,10 +1588,6 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       }
 
       gridLines.push(northingLine);
-      if (this.options.showLabels) {
-        // If adjustedNorthing is 4871000, then slice the first 2 chars off and then remove the last 3 to get "71" as your label
-        gridLabels.push(this.generateNorthingLabel(westLine, adjustedNorthing.toString().slice(2, -3)));
-      }
     }
     //! Previous lines drawn: 480
     //! Current lines drawn: 36!!
@@ -1614,11 +1610,32 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
   generateNorthingLabel(pos, label) {
     const bounds = this._map.getBounds().pad(-0.001);
+    const zoom = this._map.getZoom();
     return new L.Marker({ lat: pos.lat, lng: bounds.getWest() }, {
       interactive: false,
       icon: new L.DivIcon({
-        iconSize: [0, 0],
-        iconAnchor: [-5, 12],
+        get iconAnchor() {
+          if (zoom >= 18) {
+            return [-5, -152];
+          }
+          switch (zoom) {
+            case 17:
+              return [-5, -52];
+            case 16:
+              return [-5, -28];
+            case 15:
+              return [-5, -12];
+            case 14:
+              return [-5, -1];
+            case 13:
+              return [-5, 2];
+            case 12:
+              return [-5, 6];
+            default:
+              break;
+          }
+          return this;
+        },
         className: 'leaflet-grid-label',
         html: `<div class="grid-label-1000m" style="${this.options.gridLetterStyle}">${label}</div>`,
       }),
@@ -1626,7 +1643,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   },
 
   getPaddingOnZoomLevel1000Meters() {
-    const zoom = map.getZoom();
+    const zoom = this._map.getZoom();
     if (zoom >= 18) {
       return 4;
     }

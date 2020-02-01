@@ -17361,21 +17361,14 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       gz.viz.forEach(function (visibleGrid) {
         // This will tell us what grid squares are visible on the map
         _this9.empty.push(visibleGrid);
-      }); // This just creates a neater object where I can parse the data easier
-
-      this.uniqueVisibleGrids = Object.keys(this.empty).reduce(function (acc, k) {
-        var grid = _this9.empty[k].id;
-        acc[grid] = acc[grid] || [];
-        acc[grid].push(_this9.empty[k]);
-        return acc;
-      }, {});
+      });
 
       if (this.empty.length <= 1) {
         // If there is no other GZD visible on the map, then just run it
         this.generateGrids(this.options.splitGZD = false);
       } else {
-        //! Implement promises or async/await here IOT generate both sides
         this.generateGrids(this.options.splitGZD = true, this.options.direction = 'right');
+        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
       }
     }
 
@@ -17605,6 +17598,12 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
       switch (this.options.direction) {
         case undefined:
+          // Putting the grid label options in the switch statement prevents them from duplicating if split GZDs are on screen
+          if (this.options.showLabels) {
+            // If adjustedNorthing is 4871000, then slice the first 2 chars off and then remove the last 3 to get "71" as your label
+            gridLabels.push(this.generateNorthingLabel(westLine, adjustedNorthing.toString().slice(2, -3)));
+          }
+
           break;
 
         case 'left':
@@ -17612,6 +17611,11 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
             lat: eastLine.lat,
             lng: this.empty[0].right - 0.00001
           }]);
+
+          if (this.options.showLabels) {
+            gridLabels.push(this.generateNorthingLabel(westLine, adjustedNorthing.toString().slice(2, -3)));
+          }
+
           break;
 
         case 'right':
@@ -17626,11 +17630,6 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       }
 
       gridLines.push(northingLine);
-
-      if (this.options.showLabels) {
-        // If adjustedNorthing is 4871000, then slice the first 2 chars off and then remove the last 3 to get "71" as your label
-        gridLabels.push(this.generateNorthingLabel(westLine, adjustedNorthing.toString().slice(2, -3)));
-      }
     } //! Previous lines drawn: 480
     //! Current lines drawn: 36!!
 
@@ -17657,21 +17656,52 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   generateNorthingLabel: function generateNorthingLabel(pos, label) {
     var bounds = this._map.getBounds().pad(-0.001);
 
+    var zoom = this._map.getZoom();
+
     return new _leaflet.default.Marker({
       lat: pos.lat,
       lng: bounds.getWest()
     }, {
       interactive: false,
       icon: new _leaflet.default.DivIcon({
-        iconSize: [0, 0],
-        iconAnchor: [-5, 12],
+        get iconAnchor() {
+          if (zoom >= 18) {
+            return [-5, -152];
+          }
+
+          switch (zoom) {
+            case 17:
+              return [-5, -52];
+
+            case 16:
+              return [-5, -28];
+
+            case 15:
+              return [-5, -12];
+
+            case 14:
+              return [-5, -1];
+
+            case 13:
+              return [-5, 2];
+
+            case 12:
+              return [-5, 6];
+
+            default:
+              break;
+          }
+
+          return this;
+        },
+
         className: 'leaflet-grid-label',
         html: "<div class=\"grid-label-1000m\" style=\"".concat(this.options.gridLetterStyle, "\">").concat(label, "</div>")
       })
     });
   },
   getPaddingOnZoomLevel1000Meters: function getPaddingOnZoomLevel1000Meters() {
-    var zoom = map.getZoom();
+    var zoom = this._map.getZoom();
 
     if (zoom >= 18) {
       return 4;
