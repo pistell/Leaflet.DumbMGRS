@@ -17503,6 +17503,10 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
       switch (this.options.direction) {
         case undefined:
+          if (this.options.showLabels) {
+            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
+          }
+
           break;
 
         case 'left':
@@ -17512,6 +17516,8 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
               lat: newLatLeft,
               lng: this.empty[0].right - 0.00001
             }]);
+          } else if (this.options.showLabels) {
+            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
           }
 
           break;
@@ -17523,6 +17529,8 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
               lat: newLatRight,
               lng: this.empty[1].left
             }]);
+          } else if (this.options.showLabels) {
+            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
           }
 
           break;
@@ -17532,10 +17540,6 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       }
 
       gridLines.push(eastingLine);
-
-      if (this.options.showLabels) {
-        gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3)));
-      }
     } //* * Northing Lines **//
 
 
@@ -17637,8 +17641,12 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     gridLines.forEach(this.addLayer, this);
     gridLabels.forEach(this.addLayer, this);
   },
-  generateEastingLabel: function generateEastingLabel(pos, label) {
+  generateEastingLabel: function generateEastingLabel(pos, label, direction) {
+    var dir = direction;
+
     var bounds = this._map.getBounds().pad(-0.001);
+
+    var zoom = this._map.getZoom();
 
     return new _leaflet.default.Marker({
       lat: bounds.getSouth(),
@@ -17646,8 +17654,105 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     }, {
       interactive: false,
       icon: new _leaflet.default.DivIcon({
-        iconSize: [0, 0],
-        iconAnchor: [13, 22],
+        get iconAnchor() {
+          switch (dir) {
+            case undefined:
+              if (zoom >= 18) {
+                return [-200, 22];
+              }
+
+              switch (zoom) {
+                case 17:
+                  return [-73, 22];
+
+                case 16:
+                  return [-33, 22];
+
+                case 15:
+                  return [-12, 22];
+
+                case 14:
+                  return [-3, 22];
+
+                case 13:
+                  return [5, 22];
+
+                case 12:
+                  return [10, 22];
+
+                default:
+                  break;
+              }
+
+              break;
+
+            case 'left':
+              if (zoom >= 18) {
+                return [-70, 22];
+              }
+
+              switch (zoom) {
+                case 17:
+                  return [-50, 22];
+
+                case 16:
+                  return [-33, 22];
+
+                case 15:
+                  return [-13, 22];
+
+                case 14:
+                  return [-1, 22];
+
+                case 13:
+                  return [4, 22];
+
+                case 12:
+                  return [8, 22];
+
+                default:
+                  break;
+              }
+
+              break;
+
+            case 'right':
+              if (zoom >= 18) {
+                return [83, 22];
+              }
+
+              switch (zoom) {
+                case 17:
+                  return [73, 22];
+
+                case 16:
+                  return [55, 22];
+
+                case 15:
+                  return [38, 22];
+
+                case 14:
+                  return [22, 22];
+
+                case 13:
+                  return [18, 22];
+
+                case 12:
+                  return [15, 22];
+
+                default:
+                  break;
+              }
+
+              break;
+
+            default:
+              break;
+          }
+
+          return this;
+        },
+
         className: 'leaflet-grid-label',
         html: "<div class=\"grid-label-1000m\" style=\"".concat(this.options.gridLetterStyle, "\">").concat(label, "</div>")
       })

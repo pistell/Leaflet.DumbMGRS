@@ -1494,27 +1494,31 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       // This will ensure that the northing lines do not go past their GZD boundaries
       switch (this.options.direction) {
         case undefined:
+          if (this.options.showLabels) {
+            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
+          }
           break;
         case 'left':
           if (northLine.lon > this.empty[0].right) {
             const newLatLeft = southLine.lat + (slope * (this.empty[0].right - southLine.lon));
             eastingLine.setLatLngs([southLine, { lat: newLatLeft, lng: this.empty[0].right - 0.00001 }]);
+          } else if (this.options.showLabels) {
+            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
           }
           break;
         case 'right':
           if (northLine.lon < this.empty[1].left) {
             const newLatRight = southLine.lat + (slope * (this.empty[1].left - southLine.lon));
             eastingLine.setLatLngs([southLine, { lat: newLatRight, lng: this.empty[1].left }]);
+          } else if (this.options.showLabels) {
+            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
           }
           break;
         default:
           break;
       }
-      gridLines.push(eastingLine);
 
-      if (this.options.showLabels) {
-        gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3)));
-      }
+      gridLines.push(eastingLine);
     }
 
     //* * Northing Lines **//
@@ -1595,13 +1599,84 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     gridLabels.forEach(this.addLayer, this);
   },
 
-  generateEastingLabel(pos, label) {
+  generateEastingLabel(pos, label, direction) {
+    const dir = direction;
     const bounds = this._map.getBounds().pad(-0.001);
+    const zoom = this._map.getZoom();
     return new L.Marker({ lat: bounds.getSouth(), lng: pos.lon }, {
       interactive: false,
       icon: new L.DivIcon({
-        iconSize: [0, 0],
-        iconAnchor: [13, 22],
+        get iconAnchor() {
+          switch (dir) {
+            case undefined:
+              if (zoom >= 18) {
+                return [-200, 22];
+              }
+              switch (zoom) {
+                case 17:
+                  return [-73, 22];
+                case 16:
+                  return [-33, 22];
+                case 15:
+                  return [-12, 22];
+                case 14:
+                  return [-3, 22];
+                case 13:
+                  return [5, 22];
+                case 12:
+                  return [10, 22];
+                default:
+                  break;
+              }
+              break;
+            case 'left':
+              if (zoom >= 18) {
+                return [-70, 22];
+              }
+              switch (zoom) {
+                case 17:
+                  return [-50, 22];
+                case 16:
+                  return [-33, 22];
+                case 15:
+                  return [-13, 22];
+                case 14:
+                  return [-1, 22];
+                case 13:
+                  return [4, 22];
+                case 12:
+                  return [8, 22];
+                default:
+                  break;
+              }
+              break;
+            case 'right':
+              if (zoom >= 18) {
+                return [83, 22];
+              }
+              switch (zoom) {
+                case 17:
+                  return [73, 22];
+                case 16:
+                  return [55, 22];
+                case 15:
+                  return [38, 22];
+                case 14:
+                  return [22, 22];
+                case 13:
+                  return [18, 22];
+                case 12:
+                  return [15, 22];
+                default:
+                  break;
+              }
+              break;
+            default:
+              break;
+          }
+
+          return this;
+        },
         className: 'leaflet-grid-label',
         html: `<div class="grid-label-1000m" style="${this.options.gridLetterStyle}">${label}</div>`,
       }),
