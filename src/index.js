@@ -31,7 +31,9 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView({ lat: 43.84443209873527, lng: -78.0018997192383 }, 13);
+// all lines left: {lat: 43.84727957287894, lng: -78.01271438598634}
+// missing 1 line left: { lat: 43.84777477189846, lng: -78.00722122192383 }
+const map = L.map('map').setView({ lat: 43.84777477189846, lng: -78.00722122192383 }, 13);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -1468,7 +1470,8 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     const gridLabels = [];
 
     //* * Easting Lines **//
-    for (let i = 0; i <= gridCounts.easting; i += 1) {
+    // Adding +1 on gridCounts.easting to fix error with connecting grid lines not showing up
+    for (let i = 0; i <= gridCounts.easting + 1; i += 1) {
       const adjustedEasting = minimumBounds.easting + (this.options.gridInterval * i);
       const { northing } = minimumBounds;
 
@@ -1486,38 +1489,47 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-      const eastingLine = new L.Polyline([southLine, northLine], this.redLine);
+      const labelCoords = UTMtoLL({
+        northing: LLtoUTM({ lat: map.getBounds().getSouth(), lon: southLine.lon }).northing,
+        easting: adjustedEasting,
+        zoneNumber: minimumBounds.zoneNumber,
+        zoneLetter: minimumBounds.zoneLetter,
+      });
 
-      // slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
+      const eastingLine = new L.Polyline([southLine, northLine], this.lineStyle);
+
+      // Slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
+      // Used for any grid line that converges to the GZD boundaries
       const slope = (southLine.lat - northLine.lat) / (southLine.lon - northLine.lon);
 
       // This will ensure that the northing lines do not go past their GZD boundaries
       switch (this.options.direction) {
         case undefined:
           if (this.options.showLabels) {
-            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
+            gridLabels.push(this.generateEastingLabel(labelCoords, adjustedEasting.toString().slice(1, -3)));
           }
           break;
         case 'left':
-          if (northLine.lon > this.empty[0].right) {
+          if (northLine.lon >= this.empty[0].right) {
             const newLatLeft = southLine.lat + (slope * (this.empty[0].right - southLine.lon));
             eastingLine.setLatLngs([southLine, { lat: newLatLeft, lng: this.empty[0].right - 0.00001 }]);
-          } else if (this.options.showLabels) {
-            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
+          }
+          if (labelCoords.lon <= this.empty[0].right && this.options.showLabels) {
+            gridLabels.push(this.generateEastingLabel(labelCoords, adjustedEasting.toString().slice(1, -3)));
           }
           break;
         case 'right':
-          if (northLine.lon < this.empty[1].left) {
+          if (northLine.lon <= this.empty[1].left) {
             const newLatRight = southLine.lat + (slope * (this.empty[1].left - southLine.lon));
             eastingLine.setLatLngs([southLine, { lat: newLatRight, lng: this.empty[1].left }]);
-          } else if (this.options.showLabels) {
-            gridLabels.push(this.generateEastingLabel(southLine, adjustedEasting.toString().slice(1, -3), this.options.direction));
+          }
+          if (labelCoords.lon >= this.empty[1].left && this.options.showLabels) {
+            gridLabels.push(this.generateEastingLabel(labelCoords, adjustedEasting.toString().slice(1, -3)));
           }
           break;
         default:
           break;
       }
-
       gridLines.push(eastingLine);
     }
 
@@ -1533,13 +1545,12 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
       switch (this.options.direction) {
         case undefined: {
-          //! replacing easting with minimumBounds.easting. This works but is it elegant? Probably not.
-          beginEastingLineForNorthings = minimumBounds.easting;
+          beginEastingLineForNorthings = easting;
           endEastingLineForNorthings = easting + (gridCounts.easting * this.options.gridInterval);
           break;
         }
         case 'left': {
-          beginEastingLineForNorthings = minimumBounds.easting;
+          beginEastingLineForNorthings = easting;
           endEastingLineForNorthings = LLtoUTM({ lat: northernHemisphereBounds, lon: this.empty[0].right - 0.00001 }).easting;
           break;
         }
@@ -1567,6 +1578,15 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter,
       });
 
+      // These coordinates are the absolute western edge of the visible map
+      const labelCoords = UTMtoLL({
+        northing: adjustedNorthing,
+        easting: LLtoUTM({ lat: westLine.lat, lon: map.getBounds().getWest() }).easting,
+        zoneNumber: minimumBounds.zoneNumber,
+        zoneLetter: minimumBounds.zoneLetter,
+      });
+
+
       const northingLine = new L.Polyline([westLine, eastLine], this.lineStyle);
 
       // This will ensure that the northing lines do not go past their GZD boundaries
@@ -1575,13 +1595,13 @@ L.MGRS1000Meters = L.LayerGroup.extend({
           // Putting the grid label options in the switch statement prevents them from duplicating if split GZDs are on screen
           if (this.options.showLabels) {
             // If adjustedNorthing is 4871000, then slice the first 2 chars off and then remove the last 3 to get "71" as your label
-            gridLabels.push(this.generateNorthingLabel(westLine, adjustedNorthing.toString().slice(2, -3)));
+            gridLabels.push(this.generateNorthingLabel(labelCoords, adjustedNorthing.toString().slice(2, -3)));
           }
           break;
         case 'left':
           northingLine.setLatLngs([westLine, { lat: eastLine.lat, lng: this.empty[0].right - 0.00001 }]);
           if (this.options.showLabels) {
-            gridLabels.push(this.generateNorthingLabel(westLine, adjustedNorthing.toString().slice(2, -3)));
+            gridLabels.push(this.generateNorthingLabel(labelCoords, adjustedNorthing.toString().slice(2, -3)));
           }
           break;
         case 'right':
@@ -1599,84 +1619,12 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     gridLabels.forEach(this.addLayer, this);
   },
 
-  generateEastingLabel(pos, label, direction) {
-    const dir = direction;
+  generateEastingLabel(pos, label) {
     const bounds = this._map.getBounds().pad(-0.001);
-    const zoom = this._map.getZoom();
     return new L.Marker({ lat: bounds.getSouth(), lng: pos.lon }, {
       interactive: false,
       icon: new L.DivIcon({
-        get iconAnchor() {
-          switch (dir) {
-            case undefined:
-              if (zoom >= 18) {
-                return [-200, 22];
-              }
-              switch (zoom) {
-                case 17:
-                  return [-73, 22];
-                case 16:
-                  return [-33, 22];
-                case 15:
-                  return [-12, 22];
-                case 14:
-                  return [-3, 22];
-                case 13:
-                  return [5, 22];
-                case 12:
-                  return [10, 22];
-                default:
-                  break;
-              }
-              break;
-            case 'left':
-              if (zoom >= 18) {
-                return [-70, 22];
-              }
-              switch (zoom) {
-                case 17:
-                  return [-50, 22];
-                case 16:
-                  return [-33, 22];
-                case 15:
-                  return [-13, 22];
-                case 14:
-                  return [-1, 22];
-                case 13:
-                  return [4, 22];
-                case 12:
-                  return [8, 22];
-                default:
-                  break;
-              }
-              break;
-            case 'right':
-              if (zoom >= 18) {
-                return [83, 22];
-              }
-              switch (zoom) {
-                case 17:
-                  return [73, 22];
-                case 16:
-                  return [55, 22];
-                case 15:
-                  return [38, 22];
-                case 14:
-                  return [22, 22];
-                case 13:
-                  return [18, 22];
-                case 12:
-                  return [15, 22];
-                default:
-                  break;
-              }
-              break;
-            default:
-              break;
-          }
-
-          return this;
-        },
+        iconAnchor: [11, 22],
         className: 'leaflet-grid-label',
         html: `<div class="grid-label-1000m" style="${this.options.gridLetterStyle}">${label}</div>`,
       }),
@@ -1685,32 +1633,10 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
   generateNorthingLabel(pos, label) {
     const bounds = this._map.getBounds().pad(-0.001);
-    const zoom = this._map.getZoom();
     return new L.Marker({ lat: pos.lat, lng: bounds.getWest() }, {
       interactive: false,
       icon: new L.DivIcon({
-        get iconAnchor() {
-          if (zoom >= 18) {
-            return [-5, -152];
-          }
-          switch (zoom) {
-            case 17:
-              return [-5, -52];
-            case 16:
-              return [-5, -28];
-            case 15:
-              return [-5, -12];
-            case 14:
-              return [-5, -1];
-            case 13:
-              return [-5, 2];
-            case 12:
-              return [-5, 6];
-            default:
-              break;
-          }
-          return this;
-        },
+        iconAnchor: [0, 8],
         className: 'leaflet-grid-label',
         html: `<div class="grid-label-1000m" style="${this.options.gridLetterStyle}">${label}</div>`,
       }),
