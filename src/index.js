@@ -33,7 +33,9 @@ const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
 // all lines left: {lat: 43.84727957287894, lng: -78.01271438598634}
 // missing 1 line left: { lat: 43.84777477189846, lng: -78.00722122192383 }
-const map = L.map('map').setView({ lat: 43.84777477189846, lng: -78.00722122192383 }, 13);
+// blank grid: { lat: 43.720621518680396, lng: -78.08670043945314 }
+// full grid: { lat: 43.72248243242106, lng: -78.13888549804689 }
+const map = L.map('map').setView({ lat: 43.62961444423518, lng: -78.06627273559572 }, 13);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -1347,7 +1349,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   onAdd(map) {
     this._map = map;
     const grids1000Meters = this.regenerate();
-    this._map.on(`viewreset ${this.options.redraw}`, grids1000Meters.regenerate, grids1000Meters);
+    this._map.on(`viewreset ${this.options.redraw} moveend`, grids1000Meters.regenerate, grids1000Meters);
     this.eachLayer(map.addLayer, map);
   },
 
@@ -1407,8 +1409,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         break;
       }
       case 'right': {
-        //! this might not be right
-        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left + 0.00001 });
+        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left });
         break;
       }
       default: {
@@ -1431,8 +1432,10 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     let west;
     switch (this.options.direction) {
       case undefined: {
-        east = this._bounds.getEast();
-        west = this._bounds.getWest();
+        // This will fix a bug where the GZD boundary is barely out of view
+        // it adjusts the value so it grabs the furthest east/west boundary without going outside of the GZD
+        east = this.empty[0].right > this._bounds.getEast() ? this._bounds.getEast() : this.empty[0].right - 0.00001;
+        west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left;
         break;
       }
       case 'left': {
@@ -1585,7 +1588,6 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter,
       });
-
 
       const northingLine = new L.Polyline([westLine, eastLine], this.lineStyle);
 

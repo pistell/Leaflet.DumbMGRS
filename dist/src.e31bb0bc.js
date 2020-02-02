@@ -15747,10 +15747,12 @@ var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
 var quito = [0.17578097424708533, -77.84912109375]; // all lines left: {lat: 43.84727957287894, lng: -78.01271438598634}
 // missing 1 line left: { lat: 43.84777477189846, lng: -78.00722122192383 }
+// blank grid: { lat: 43.720621518680396, lng: -78.08670043945314 }
+// full grid: { lat: 43.72248243242106, lng: -78.13888549804689 }
 
 var map = _leaflet.default.map('map').setView({
-  lat: 43.84777477189846,
-  lng: -78.00722122192383
+  lat: 43.62961444423518,
+  lng: -78.06627273559572
 }, 13);
 
 exports.map = map;
@@ -17327,7 +17329,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     this._map = map;
     var grids1000Meters = this.regenerate();
 
-    this._map.on("viewreset ".concat(this.options.redraw), grids1000Meters.regenerate, grids1000Meters);
+    this._map.on("viewreset ".concat(this.options.redraw, " moveend"), grids1000Meters.regenerate, grids1000Meters);
 
     this.eachLayer(map.addLayer, map);
   },
@@ -17400,10 +17402,9 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
       case 'right':
         {
-          //! this might not be right
           nw = (0, _mgrs.LLtoUTM)({
             lat: this._bounds.getNorth(),
-            lon: this.empty[1].left + 0.00001
+            lon: this.empty[1].left
           });
           break;
         }
@@ -17430,8 +17431,10 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     switch (this.options.direction) {
       case undefined:
         {
-          east = this._bounds.getEast();
-          west = this._bounds.getWest();
+          // This will fix a bug where the GZD boundary is barely out of view
+          // it adjusts the value so it grabs the furthest east/west boundary without going outside of the GZD
+          east = this.empty[0].right > this._bounds.getEast() ? this._bounds.getEast() : this.empty[0].right - 0.00001;
+          west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left;
           break;
         }
 
