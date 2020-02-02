@@ -135,73 +135,73 @@ svg {
 }
 
 //* 1000 Meter Toggle Switch */
-.toggleSwitches {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: 1fr;
-  grid-column-gap: 15px;
-  grid-row-gap: 0px;
-  width: 480px;
-  outline-style: inset;
-  padding: 10px;
-  .onoffswitch {
-    position: relative;
-    width: 55px;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    transition: 0.4s;
-    grid-area: 1 / 1 / 2 / 3;
+// .toggleSwitches {
+//   display: grid;
+//   grid-template-columns: repeat(2, 1fr);
+//   grid-template-rows: 1fr;
+//   grid-column-gap: 15px;
+//   grid-row-gap: 0px;
+//   width: 480px;
+//   outline-style: inset;
+//   padding: 10px;
+//   .grids1000Meters {
+//     position: relative;
+//     width: 55px;
+//     -webkit-user-select: none;
+//     -moz-user-select: none;
+//     -ms-user-select: none;
+//     transition: 0.4s;
+//     grid-area: 1 / 1 / 2 / 3;
 
-    .onoffswitch-checkbox {
-      display: none;
-    }
-    .onoffswitch-label {
-      display: block;
-      overflow: hidden;
-      cursor: pointer;
-      height: 20px;
-      padding: 0;
-      line-height: 20px;
-      border: 0px solid #ffffff;
-      border-radius: 30px;
-      background-color: #9e9e9e;
-    }
-    .onoffswitch-label:before {
-      content: '';
-      display: block;
-      width: 30px;
-      margin: -5px;
-      background: #ffffff;
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      right: 31px;
-      border-radius: 30px;
-      box-shadow: 0 6px 12px 0px #757575;
-      transition: 0.4s;
-    }
-    .onoffswitch-checkbox:checked + .onoffswitch-label {
-      background-color: #42a5f5;
-    }
-    .onoffswitch-checkbox:checked + .onoffswitch-label,
-    .onoffswitch-checkbox:checked + .onoffswitch-label:before {
-      border-color: #42a5f5;
-    }
-    .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
-      margin-left: 0;
-    }
-    .onoffswitch-checkbox:checked + .onoffswitch-label:before {
-      right: 0px;
-      background-color: #2196f3;
-      box-shadow: 3px 6px 18px 0px rgba(0, 0, 0, 0.2);
-    }
-  }
-  .info {
-    font-family: $fontFamily;
-    grid-area: 1 / 2 / 1 / 23;
-  }
-}
+//     .grids1000Meters-labels-checkbox {
+//       display: none;
+//     }
+//     .onoffswitch-label {
+//       display: block;
+//       overflow: hidden;
+//       cursor: pointer;
+//       height: 20px;
+//       padding: 0;
+//       line-height: 20px;
+//       border: 0px solid #ffffff;
+//       border-radius: 30px;
+//       background-color: #9e9e9e;
+//     }
+//     .onoffswitch-label:before {
+//       content: '';
+//       display: block;
+//       width: 30px;
+//       margin: -5px;
+//       background: #ffffff;
+//       position: absolute;
+//       top: 0;
+//       bottom: 0;
+//       right: 31px;
+//       border-radius: 30px;
+//       box-shadow: 0 6px 12px 0px #757575;
+//       transition: 0.4s;
+//     }
+//     .grids1000Meters-labels-checkbox:checked + .onoffswitch-label {
+//       background-color: #42a5f5;
+//     }
+//     .grids1000Meters-labels-checkbox:checked + .onoffswitch-label,
+//     .grids1000Meters-labels-checkbox:checked + .onoffswitch-label:before {
+//       border-color: #42a5f5;
+//     }
+//     .grids1000Meters-labels-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
+//       margin-left: 0;
+//     }
+//     .grids1000Meters-labels-checkbox:checked + .onoffswitch-label:before {
+//       right: 0px;
+//       background-color: #2196f3;
+//       box-shadow: 3px 6px 18px 0px rgba(0, 0, 0, 0.2);
+//     }
+//   }
+//   .info {
+//     font-family: $fontFamily;
+//     grid-area: 1 / 2 / 1 / 23;
+//   }
+// }
 
 //* Grid Labels */
 .leaflet-grid-label {
@@ -225,5 +225,157 @@ svg {
     display: inline;
     padding: 5px;
     border-radius: 50%;
+  }
+}
+
+//* 1000 Meter Toggle Switch */
+$sw-height: 30px;
+$sw-width: 51px;
+
+input {
+  &.sw {
+    opacity: 0;
+    position: absolute;
+    left: -9999px;
+    & + label {
+      user-select: none;
+      transition: 0.2s ease;
+      display: inline-block;
+      height: $sw-height;
+      width: $sw-width;
+      position: relative;
+      box-shadow: inset 0 0 0px 2px #e4e4e4;
+      border-radius: 60px;
+      &:before {
+        content: '';
+        position: absolute;
+        display: block;
+        height: $sw-height;
+        width: $sw-height;
+        top: 0;
+        left: 0;
+        border-radius: $sw-height/2;
+        background: rgba(76, 217, 100, 0);
+        transition: 0.2s cubic-bezier(0.24, 0, 0.5, 1);
+      }
+
+      /* White toggle */
+      &:after {
+        content: '';
+        position: absolute;
+        display: block;
+        height: 28px;
+        width: 28px;
+        top: 50%;
+        margin-top: -14px;
+        left: 1px;
+        border-radius: 60px;
+        background: #fff;
+        box-shadow: 0 0 0 1px hsla(0, 0%, 0%, 0.1), 0 4px 0px 0 hsla(0, 0%, 0%, 0.04), 0 4px 9px hsla(0, 0%, 0%, 0.13), 0 3px 3px hsla(0, 0%, 0%, 0.05);
+        transition: 0.35s cubic-bezier(0.54, 1.6, 0.5, 1);
+      }
+      span {
+        white-space: nowrap;
+        height: $sw-height;
+        line-height: $sw-height;
+        margin-left: $sw-width;
+        padding-left: 16px;
+        font-family: $fontFamily;
+      }
+    }
+    &:checked {
+      & + label:before {
+        width: $sw-width;
+        background: rgba(76, 217, 100, 1);
+        transition: width 0.2s cubic-bezier(0, 0, 0, 0.1) !important;
+      }
+
+      & + label:after {
+        left: $sw-width - $sw-height + 1;
+      }
+
+      & + label {
+        box-shadow: inset 0 0 0px 25px #e4e4e4;
+        transition: box-shadow 2.5s cubic-bezier(0, 1.2, 0.94, 0.95);
+      }
+    }
+  }
+}
+
+.toggleSwitches {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr;
+  grid-column-gap: 15px;
+  grid-row-gap: 0px;
+  width: 1015px;
+
+  // Mouse Cursor Coordinates
+  .grids1000Meters {
+    grid-area: 1 / 1 / 2 / 2;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 15px;
+    width: 500px;
+    margin-top: 10px;
+    font-family: $fontFamily;
+    outline-style: outset;
+    strong {
+      font-size: 1.2rem;
+    }
+    .info {
+      font-size: 1.2rem;
+      padding-left: 5px;
+    }
+    > div {
+      outline-style: inset;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      text-align: center;
+    }
+
+    // 1000 meter row
+    .div3 {
+      grid-area: 1 / 1 / 2 / 3;
+    }
+    .div4 {
+      grid-area: 1 / 3 / 2 / 6;
+    }
+    .div5 {
+      grid-area: 1 / 6 / 2 / 8;
+    }
+    .div6 {
+      grid-area: 1 / 8 / 2 / 11;
+    }
+
+    // 100k row
+    .div7 {
+      grid-area: 2 / 1 / 3 / 3;
+    }
+    .div8 {
+      grid-area: 2 / 3 / 3 / 6;
+    }
+    .div9 {
+      grid-area: 2 / 6 / 3 / 8;
+    }
+    .div10 {
+      grid-area: 2 / 8 / 3 / 11;
+    }
+
+    // GZD row
+    .div11 {
+      grid-area: 3 / 1 / 4 / 3;
+    }
+    .div12 {
+      grid-area: 3 / 3 / 4 /6;
+    }
+    .div13 {
+      grid-area: 3 / 6 / 4 / 8;
+    }
+    .div14 {
+      grid-area: 3 / 8 / 4 / 11;
+    }
   }
 }

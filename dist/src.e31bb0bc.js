@@ -17273,6 +17273,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   options: {
     gridInterval: 1000,
     showLabels: true,
+    hidden: false,
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
@@ -17337,7 +17338,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     map.off("viewreset ".concat(this.options.redraw), this.map);
     this.eachLayer(this.removeLayer, this);
   },
-  hideGrid: function hideGrid() {
+  hideGrids: function hideGrids() {
     this.options.hidden = true;
     this.regenerate();
   },
@@ -17345,7 +17346,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     this.options.showLabels = false;
     this.regenerate();
   },
-  showGrid: function showGrid() {
+  showGrids: function showGrids() {
     this.options.hidden = false;
     this.regenerate();
   },
@@ -17488,7 +17489,12 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     var splitGZD = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
     var direction = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
     this.options.splitGZD = splitGZD;
-    this.options.direction = direction;
+    this.options.direction = direction; // Do not run this function if the grids hidden open is enabled
+
+    if (this.options.hidden) {
+      return;
+    }
+
     var minimumBounds = this.getMinimumBounds();
     var gridCounts = this.getLineCounts();
     var gridLines = [];
@@ -17748,7 +17754,8 @@ _leaflet.default.mgrs1000meters = function (options) {
 
 
 var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
-  showLabels: false
+  showLabels: false,
+  hidden: true
 });
 generate1000meterGrids.addTo(map); //! END PLUGIN TEST
 // *********************************************************************************** //
@@ -17757,10 +17764,7 @@ generate1000meterGrids.addTo(map); //! END PLUGIN TEST
 
 map.addEventListener('moveend', function () {
   // removes and adds the 100k grids to the map on moveend
-  generate100KGrids.regenerate(); // removes and adds the 100m meter grids to the map on moveend
-  // generate1000meterGrids.regenerate();
-  // const generate1000meterGrids3 = (val) => new Grid1000M(val);
-  // generate1000meterGrids3(document.querySelector('#myonoffswitch').hasAttribute('checked')).determineGrids();
+  generate100KGrids.regenerate(); // generate1000meterGrids3(document.querySelector('#grids1000Meters-labels').hasAttribute('checked')).determineGrids();
 
   setTimeout(function () {
     document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
@@ -17777,17 +17781,29 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
     document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
   }, 300);
-}); //! Bug: When ticked, the grid labels will be removed. However when a user moves a map, the labels show up again.
+}); // Toggle labels on 1000 meter grids
 
-document.querySelector('#myonoffswitch').addEventListener('change', function (event) {
-  var checkbox = event.target; //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
+document.querySelector('#grids1000Meters-labels').addEventListener('change', function (event) {
+  var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+    document.querySelector('#grids1000Meters-labels').toggleAttribute('checked');
     generate1000meterGrids.showLabels();
   } else {
-    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+    document.querySelector('#grids1000Meters-labels').toggleAttribute('checked');
     generate1000meterGrids.hideLabels();
+  }
+}); // Toggle 1000 meter grids
+
+document.querySelector('#grids1000Meters-grids').addEventListener('change', function (event) {
+  var checkbox = event.target;
+
+  if (checkbox.checked) {
+    document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
+    generate1000meterGrids.showGrids();
+  } else {
+    document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
+    generate1000meterGrids.hideGrids();
   }
 });
 },{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {

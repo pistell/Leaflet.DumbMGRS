@@ -1300,6 +1300,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   options: {
     gridInterval: 1000,
     showLabels: true,
+    hidden: false,
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
@@ -1358,7 +1359,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     this.eachLayer(this.removeLayer, this);
   },
 
-  hideGrid() {
+  hideGrids() {
     this.options.hidden = true;
     this.regenerate();
   },
@@ -1368,7 +1369,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     this.regenerate();
   },
 
-  showGrid() {
+  showGrids() {
     this.options.hidden = false;
     this.regenerate();
   },
@@ -1476,6 +1477,11 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   generateGrids(splitGZD = false, direction = undefined) {
     this.options.splitGZD = splitGZD;
     this.options.direction = direction;
+
+    // Do not run this function if the grids hidden open is enabled
+    if (this.options.hidden) {
+      return;
+    }
 
     const minimumBounds = this.getMinimumBounds();
     const gridCounts = this.getLineCounts();
@@ -1627,6 +1633,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     }
     //! Previous lines drawn: 480
     //! Current lines drawn: 36!!
+
     gridLines.forEach(this.addLayer, this);
     gridLabels.forEach(this.addLayer, this);
   },
@@ -1685,7 +1692,10 @@ L.mgrs1000meters = function (options) {
 };
 
 // Testing options, color: red does not do anything
-const generate1000meterGrids = new L.mgrs1000meters({ showLabels: false });
+const generate1000meterGrids = new L.mgrs1000meters({
+  showLabels: false,
+  hidden: true,
+});
 generate1000meterGrids.addTo(map);
 //! END PLUGIN TEST
 
@@ -1696,10 +1706,7 @@ generate1000meterGrids.addTo(map);
 map.addEventListener('moveend', () => {
   // removes and adds the 100k grids to the map on moveend
   generate100KGrids.regenerate();
-  // removes and adds the 100m meter grids to the map on moveend
-  // generate1000meterGrids.regenerate();
-  // const generate1000meterGrids3 = (val) => new Grid1000M(val);
-  // generate1000meterGrids3(document.querySelector('#myonoffswitch').hasAttribute('checked')).determineGrids();
+  // generate1000meterGrids3(document.querySelector('#grids1000Meters-labels').hasAttribute('checked')).determineGrids();
   setTimeout(() => {
     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
     document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
@@ -1716,18 +1723,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 300);
 });
 
-//! Bug: When ticked, the grid labels will be removed. However when a user moves a map, the labels show up again.
-document.querySelector('#myonoffswitch').addEventListener('change', (event) => {
+// Toggle labels on 1000 meter grids
+document.querySelector('#grids1000Meters-labels').addEventListener('change', (event) => {
   const checkbox = event.target;
-  //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
   if (checkbox.checked) {
-    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+    document.querySelector('#grids1000Meters-labels').toggleAttribute('checked');
     generate1000meterGrids.showLabels();
   } else {
-    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+    document.querySelector('#grids1000Meters-labels').toggleAttribute('checked');
     generate1000meterGrids.hideLabels();
   }
 });
 
+// Toggle 1000 meter grids
+document.querySelector('#grids1000Meters-grids').addEventListener('change', (event) => {
+  const checkbox = event.target;
+  if (checkbox.checked) {
+    document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
+    generate1000meterGrids.showGrids();
+  } else {
+    document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
+    generate1000meterGrids.hideGrids();
+  }
+});
 
 export { map };
