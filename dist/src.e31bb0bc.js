@@ -15745,15 +15745,9 @@ var iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements 
 
 var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
-var quito = [0.17578097424708533, -77.84912109375]; // all lines left: {lat: 43.84727957287894, lng: -78.01271438598634}
-// missing 1 line left: { lat: 43.84777477189846, lng: -78.00722122192383 }
-// blank grid: { lat: 43.720621518680396, lng: -78.08670043945314 }
-// full grid: { lat: 43.72248243242106, lng: -78.13888549804689 }
+var quito = [0.17578097424708533, -77.84912109375];
 
-var map = _leaflet.default.map('map').setView({
-  lat: 43.62961444423518,
-  lng: -78.06627273559572
-}, 13);
+var map = _leaflet.default.map('map').setView(southNY, 7);
 
 exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
@@ -16052,7 +16046,7 @@ function (_L$LayerGroup) {
 var gz = new GZD(_gzdObject.eastingDict, _gzdObject.northingDict);
 exports.gz = gz;
 gz.addTo(map); // *********************************************************************************** //
-// * Leaflet DumbMGRS Plugin - 100k Grids (this sorta works?)                        * //
+// * 100k Grids (this sorta works?)                                                  * //
 // *********************************************************************************** //
 // If there is a high zoom level, we need to add more padding so the grids generate throughout the whole screen
 
@@ -16105,7 +16099,7 @@ function getPaddingOnZoomLevel() {
       break;
   }
 } // TODO: Create a grid label toggle
-// TODO: combine the 1mil, 100k, and 1000m grids into one class...
+// TODO: Convert this constructor function into a proper Leaflet plugin
 
 
 function Grid100K() {
@@ -16762,7 +16756,7 @@ function Grid100K() {
 var generate100KGrids = new Grid100K(new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel())); // Run the class on page load
 
 generate100KGrids.getVizGrids(); // *********************************************************************************** //
-// * 1000 Meter Grids                                                                * //
+// * 1000 Meter Grids (This works perfectly)                                         * //
 // *********************************************************************************** //
 // TODO: Rename this.empty to something descriptive. Come on Jim get your head out of your ass
 
@@ -16856,7 +16850,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
     var currentZoom = this._map.getZoom();
 
-    if (currentZoom < 12) {
+    if (currentZoom < this.options.minZoom) {
       // Since we don't want to turn off the event listener, run eachLayer() instead of onRemove
       return this.eachLayer(this.removeLayer, this);
     }
@@ -17212,7 +17206,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   getPaddingOnZoomLevel1000Meters: function getPaddingOnZoomLevel1000Meters() {
     var zoom = this._map.getZoom();
 
-    if (zoom >= 18) {
+    if (zoom >= this.options.maxZoom) {
       return 4;
     }
 
@@ -17297,6 +17291,26 @@ document.querySelector('#grids1000Meters-grids').addEventListener('change', func
   } else {
     document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
     generate1000meterGrids.hideGrids();
+  }
+}); // Toggle labels on 100k grids
+
+document.querySelector('#grids100k-labels').addEventListener('change', function (event) {
+  var checkbox = event.target;
+
+  if (checkbox.checked) {
+    document.querySelector('#grids100k-labels').toggleAttribute('checked'); // generate1000meterGrids.showLabels();
+  } else {
+    document.querySelector('#grids100k-labels').toggleAttribute('checked'); // generate1000meterGrids.hideLabels();
+  }
+}); // Toggle 100k grids
+
+document.querySelector('#grids100k-grids').addEventListener('change', function (event) {
+  var checkbox = event.target;
+
+  if (checkbox.checked) {
+    document.querySelector('#grids100k-grids').toggleAttribute('checked'); // generate1000meterGrids.showLabels();
+  } else {
+    document.querySelector('#grids100k-grids').toggleAttribute('checked'); // generate1000meterGrids.hideLabels();
   }
 });
 },{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {

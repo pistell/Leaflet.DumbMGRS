@@ -31,11 +31,7 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-// all lines left: {lat: 43.84727957287894, lng: -78.01271438598634}
-// missing 1 line left: { lat: 43.84777477189846, lng: -78.00722122192383 }
-// blank grid: { lat: 43.720621518680396, lng: -78.08670043945314 }
-// full grid: { lat: 43.72248243242106, lng: -78.13888549804689 }
-const map = L.map('map').setView({ lat: 43.62961444423518, lng: -78.06627273559572 }, 13);
+const map = L.map('map').setView(southNY, 7);
 const cc = document.querySelector('.cursorCoordinates');
 window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
@@ -286,7 +282,7 @@ gz.addTo(map);
 
 
 // *********************************************************************************** //
-// * Leaflet DumbMGRS Plugin - 100k Grids (this sorta works?)                        * //
+// * 100k Grids (this sorta works?)                                                  * //
 // *********************************************************************************** //
 // If there is a high zoom level, we need to add more padding so the grids generate throughout the whole screen
 function getPaddingOnZoomLevel() {
@@ -328,7 +324,7 @@ function getPaddingOnZoomLevel() {
 }
 
 // TODO: Create a grid label toggle
-// TODO: combine the 1mil, 100k, and 1000m grids into one class...
+// TODO: Convert this constructor function into a proper Leaflet plugin
 function Grid100K() {
   // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
   this.constructor = function () {
@@ -879,7 +875,7 @@ const generate100KGrids = new Grid100K(new L.latLngBounds(map.getBounds()).pad(g
 generate100KGrids.getVizGrids();
 
 // *********************************************************************************** //
-// * 1000 Meter Grids                                                                * //
+// * 1000 Meter Grids (This works perfectly)                                         * //
 // *********************************************************************************** //
 // TODO: Rename this.empty to something descriptive. Come on Jim get your head out of your ass
 L.MGRS1000Meters = L.LayerGroup.extend({
@@ -967,7 +963,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
   regenerate() {
     const currentZoom = this._map.getZoom();
-    if (currentZoom < 12) {
+    if (currentZoom < this.options.minZoom) {
       // Since we don't want to turn off the event listener, run eachLayer() instead of onRemove
       return this.eachLayer(this.removeLayer, this);
     }
@@ -1248,7 +1244,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
   getPaddingOnZoomLevel1000Meters() {
     const zoom = this._map.getZoom();
-    if (zoom >= 18) {
+    if (zoom >= this.options.maxZoom) {
       return 4;
     }
     switch (zoom) {
@@ -1279,7 +1275,9 @@ const generate1000meterGrids = new L.mgrs1000meters({
   showLabels: false,
   hidden: true,
 });
+
 generate1000meterGrids.addTo(map);
+
 
 // *********************************************************************************** //
 // * Event Listeners                                                                 * //
@@ -1325,6 +1323,30 @@ document.querySelector('#grids1000Meters-grids').addEventListener('change', (eve
   } else {
     document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
     generate1000meterGrids.hideGrids();
+  }
+});
+
+// Toggle labels on 100k grids
+document.querySelector('#grids100k-labels').addEventListener('change', (event) => {
+  const checkbox = event.target;
+  if (checkbox.checked) {
+    document.querySelector('#grids100k-labels').toggleAttribute('checked');
+    // generate1000meterGrids.showLabels();
+  } else {
+    document.querySelector('#grids100k-labels').toggleAttribute('checked');
+    // generate1000meterGrids.hideLabels();
+  }
+});
+
+// Toggle 100k grids
+document.querySelector('#grids100k-grids').addEventListener('change', (event) => {
+  const checkbox = event.target;
+  if (checkbox.checked) {
+    document.querySelector('#grids100k-grids').toggleAttribute('checked');
+    // generate1000meterGrids.showLabels();
+  } else {
+    document.querySelector('#grids100k-grids').toggleAttribute('checked');
+    // generate1000meterGrids.hideLabels();
   }
 });
 
