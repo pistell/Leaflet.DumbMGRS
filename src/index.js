@@ -325,7 +325,7 @@ function getPaddingOnZoomLevel() {
 
 // TODO: Create a grid label toggle
 // TODO: Convert this constructor function into a proper Leaflet plugin
-// TODO: THIS NOW COMPLETELY FAILS ON THE ENTIRE GZD ROWS FOR 30 and 31!!!!!!!!!!!!!!!!!!!!
+//! THIS NOW COMPLETELY FAILS ON THE ENTIRE GZD ROWS FOR 30 and 31!!!!!!!!!!!!!!!!!!!!
 function Grid100K() {
   // Note: any comment with the word GZD means "Grid Zone Designator". It's a 1 million by 1 million grid
   this.constructor = function () {
