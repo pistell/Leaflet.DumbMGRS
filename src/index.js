@@ -1358,13 +1358,23 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     this.eachLayer(this.removeLayer, this);
   },
 
-  hide() {
+  hideGrid() {
     this.options.hidden = true;
     this.regenerate();
   },
 
-  show() {
+  hideLabels() {
+    this.options.showLabels = false;
+    this.regenerate();
+  },
+
+  showGrid() {
     this.options.hidden = false;
+    this.regenerate();
+  },
+
+  showLabels() {
+    this.options.showLabels = true;
     this.regenerate();
   },
 
@@ -1675,8 +1685,8 @@ L.mgrs1000meters = function (options) {
 };
 
 // Testing options, color: red does not do anything
-L.mgrs1000meters({ color: 'red' }).addTo(map);
-
+const generate1000meterGrids = new L.mgrs1000meters({ showLabels: false });
+generate1000meterGrids.addTo(map);
 //! END PLUGIN TEST
 
 
@@ -1703,22 +1713,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;
     document.querySelector('.numberOfLayers > .div4').innerHTML = `${map.getZoom()}`;
     document.querySelector('.numberOfLayers > .div6').innerHTML = `${document.querySelectorAll('.leaflet-grid-label').length}`;
-    document.querySelector('#myonoffswitch').toggleAttribute('checked');
   }, 300);
 });
 
 //! Bug: When ticked, the grid labels will be removed. However when a user moves a map, the labels show up again.
-// document.querySelector('#myonoffswitch').addEventListener('change', (event) => {
-//   const checkbox = event.target;
-//   //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
-//   const generate1000meterGrids2 = (val) => new Grid1000M(val);
-//   generate1000meterGrids2(checkbox.checked).cleaner();
-//   if (checkbox.checked) {
-//     document.querySelector('#myonoffswitch').toggleAttribute('checked');
-//   } else {
-//     document.querySelector('#myonoffswitch').toggleAttribute('checked');
-//   }
-// });
+document.querySelector('#myonoffswitch').addEventListener('change', (event) => {
+  const checkbox = event.target;
+  //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
+  if (checkbox.checked) {
+    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+    generate1000meterGrids.showLabels();
+  } else {
+    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+    generate1000meterGrids.hideLabels();
+  }
+});
 
 
 export { map };

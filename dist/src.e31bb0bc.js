@@ -17337,12 +17337,20 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     map.off("viewreset ".concat(this.options.redraw), this.map);
     this.eachLayer(this.removeLayer, this);
   },
-  hide: function hide() {
+  hideGrid: function hideGrid() {
     this.options.hidden = true;
     this.regenerate();
   },
-  show: function show() {
+  hideLabels: function hideLabels() {
+    this.options.showLabels = false;
+    this.regenerate();
+  },
+  showGrid: function showGrid() {
     this.options.hidden = false;
+    this.regenerate();
+  },
+  showLabels: function showLabels() {
+    this.options.showLabels = true;
     this.regenerate();
   },
   regenerate: function regenerate() {
@@ -17739,13 +17747,13 @@ _leaflet.default.mgrs1000meters = function (options) {
 }; // Testing options, color: red does not do anything
 
 
-_leaflet.default.mgrs1000meters({
-  color: 'red'
-}).addTo(map); //! END PLUGIN TEST
+var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
+  showLabels: false
+});
+generate1000meterGrids.addTo(map); //! END PLUGIN TEST
 // *********************************************************************************** //
 // * Event Listeners                                                                 * //
 // *********************************************************************************** //
-
 
 map.addEventListener('moveend', function () {
   // removes and adds the 100k grids to the map on moveend
@@ -17768,20 +17776,20 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
     document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
     document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
-    document.querySelector('#myonoffswitch').toggleAttribute('checked');
   }, 300);
 }); //! Bug: When ticked, the grid labels will be removed. However when a user moves a map, the labels show up again.
-// document.querySelector('#myonoffswitch').addEventListener('change', (event) => {
-//   const checkbox = event.target;
-//   //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
-//   const generate1000meterGrids2 = (val) => new Grid1000M(val);
-//   generate1000meterGrids2(checkbox.checked).cleaner();
-//   if (checkbox.checked) {
-//     document.querySelector('#myonoffswitch').toggleAttribute('checked');
-//   } else {
-//     document.querySelector('#myonoffswitch').toggleAttribute('checked');
-//   }
-// });
+
+document.querySelector('#myonoffswitch').addEventListener('change', function (event) {
+  var checkbox = event.target; //! I wonder if it is because I am instantiating a new class that the labels keep showing up.
+
+  if (checkbox.checked) {
+    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+    generate1000meterGrids.showLabels();
+  } else {
+    document.querySelector('#myonoffswitch').toggleAttribute('checked');
+    generate1000meterGrids.hideLabels();
+  }
+});
 },{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
