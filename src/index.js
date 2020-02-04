@@ -871,14 +871,552 @@ function Grid100K() {
   };
 }
 // Create a new class and give it some boundaries
-const generate100KGrids = new Grid100K(new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
+// const generate100KGrids = new Grid100K(new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
 // Run the class on page load
-generate100KGrids.getVizGrids();
+// generate100KGrids.getVizGrids();
+
+//! BEGIN TEST 100K
+// The following code creates a LayerGroup plugin with a class named L.MGRS100K
+L.MGRS100K = L.LayerGroup.extend({
+  // Default options
+  options: {
+    showLabels: true,
+    showGrids: true,
+    maxZoom: 18,
+    minZoom: 6,
+    redraw: 'moveend',
+    gridLetterStyle: 'color: #216fff; font-size:12px;',
+  },
+  // default line style for 100K grids
+  lineStyle: {
+    color: 'black',
+    weight: 4,
+    opacity: 0.5,
+    interactive: false,
+    fill: false,
+    noClip: true,
+    smoothFactor: 4,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip',
+  },
+
+  blueLine: {
+    color: 'blue',
+    weight: 8,
+    opacity: 0.5,
+    interactive: false,
+    fill: false,
+    noClip: true,
+    smoothFactor: 4,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip',
+  },
+
+  // Same as constructor
+  initialize(options) {
+    this._map = map;
+    // In the following initialize method, we call L.Util.setOptions to combine the values of the default settings (specified by the options object parameter passed to the L.Class.extend method) with the values of the settings for this instance of the plugin, which are specified by the options object passed as a parameter to the initialize method.
+    // This is the same as saying this.options = options
+    // L.Util.setOptions(this, options);
+    L.LayerGroup.prototype.initialize.call(this);
+    // Get the North/South/East/West visible bounds and add padding
+    this.north = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getNorth();
+    this.south = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getSouth();
+    this.east = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getEast();
+    this.west = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getWest();
+    // The eastingArray and northingArray will hold the latlngs for our grids
+    this.eastingArray = [];
+    this.northingArray = [];
+    // gridInterval set at 100k meters, ideally this should be adjustable so I can use it for the 1000 meter grids
+    this.gridInterval = 100000;
+    // dumb name, but this temporarily holds the visible grids so I can iterate over them
+    this.empty = [];
+    // visible grid zones from this.empty will be dumped in here
+    this.uniqueVisibleGrids = {};
+    // Create a new layergroup to hold the grid lines
+    // this.layerGroup100k = new L.LayerGroup([]);
+    // These next 2 are for the 100k grid labels
+    this.labelN = [];
+    this.labelS = [];
+    //! test
+    this.testEmpty = [];
+  },
+
+  // Happens after added to map
+  onAdd(map) {
+    // you could probably add some event listeners, deal with the UI, insert some DOM elements
+    // Should contain code that creates DOM elements for the layer, adds them to `map panes` where they should belong and puts listeners on relevant map events. Called on [`map.addLayer(layer)`](#map-addlayer).
+    this._map = map;
+
+    const graticule = this.getVizGrids();
+    this._map.on(`viewreset ${this.options.redraw}`, graticule.getVizGrids, graticule);
+  },
+
+  // When removed
+  onRemove(map) {
+    // Remove event listerns and other shit to prevent memory leaks
+    // Should contain all clean up code that removes the layer's elements from the DOM and removes listeners previously added in [`onAdd`](#layer-onadd). Called on [`map.removeLayer(layer)`](#map-removelayer).
+    this._map = map;
+    this._map.off(`viewreset ${this.options.redraw}`, this._map);
+  },
+
+  getVizGrids() {
+    this.clearLayers();
+
+    const currentZoom = this._map.getZoom();
+    if ((currentZoom >= this.options.minZoom) && (currentZoom <= this.options.maxZoom)) {
+      // empty the empty array (I really need a new name for this)
+      this.empty = [];
+      this.eastingArray = [];
+      this.northingArray = [];
+      this.labelN = [];
+      this.labelS = [];
+      this.north = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getNorth();
+      this.south = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getSouth();
+      this.east = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getEast();
+      this.west = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getWest();
+      // GZ is the variable name for the GZD class I instantiated earlier
+      gz.viz.forEach((visibleGrid) => {
+      // This will tell us what grid squares are visible on the map
+        this.empty.push(visibleGrid);
+      });
+      // This just creates a neater object where I can parse the data easier
+      this.uniqueVisibleGrids = Object.keys(this.empty).reduce((acc, k) => {
+        const grid = this.empty[k].id;
+        acc[grid] = acc[grid] || [];
+        acc[grid].push(this.empty[k]);
+        return acc;
+      }, {});
+      this.prepGrids(this.uniqueVisibleGrids);
+    }
+
+
+    return this;
+  },
+
+  prepGrids(uniqueVisibleGrids) {
+    this.uniqueVisibleGrids = uniqueVisibleGrids;
+    const visibleGridsIterator = new Map(Object.entries(this.uniqueVisibleGrids));
+
+    // Not sure how useful this promise is. It works fine with just a forEach loop
+    //! use async/await or just a forEach loop?
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    visibleGridsIterator.forEach((grid) => {
+      delay(20)
+        .then(() => {
+          // This is where all the grids are generated.
+          this.generateGrids(grid);
+          return delay(3000);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    });
+  },
+
+  generateGrids(data) {
+    this.data = data;
+    const buffer = 0.00001;
+    Object.values(this.data).forEach((x) => {
+      // Get the corners of the visible grids and convert them from latlon to UTM
+      const sw = LLtoUTM({ lat: x.bottom + buffer, lon: x.left + buffer });
+      const se = LLtoUTM({ lat: x.bottom + buffer, lon: x.right - buffer });
+      const ne = LLtoUTM({ lat: x.top - buffer, lon: x.right - buffer });
+      const nw = LLtoUTM({ lat: x.top - buffer, lon: x.left + buffer });
+
+      const hemisphere = map.getCenter().lat <= 0 ? 'South' : 'North';
+      let northingIteratorNorthHemisphere = sw.northing;
+      let eastingIteratorNorthHemisphere = sw.easting;
+      let northingIteratorSouthHemisphere = sw.northing;
+      let eastingIteratorSouthHemisphere = nw.easting;
+
+      // Check which hemisphere the user is in and make adjustments
+      switch (hemisphere) {
+        case 'North':
+          // Find all northing grids that are divisible by 100,000
+          if (sw.zoneLetter === ne.zoneLetter) {
+            while (northingIteratorNorthHemisphere <= ne.northing) {
+              // This loop basically checks to make sure the easting grid is divisible by 100K
+              if (northingIteratorNorthHemisphere % this.gridInterval === 0) {
+                this.northingArray.push({
+                  northing: northingIteratorNorthHemisphere,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter,
+                });
+              } else if (northingIteratorNorthHemisphere % (this.gridInterval / 2) === 0) {
+                // Push the coordinates for the 100k grid labels
+                this.labelN.push({
+                  northing: northingIteratorNorthHemisphere,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter,
+                });
+              }
+
+              northingIteratorNorthHemisphere += 1;
+            }
+          }
+          // Find all easting grids that are divisible by 100,000
+          if (sw.zoneLetter === se.zoneLetter) {
+            while (eastingIteratorNorthHemisphere <= se.easting) {
+              if (eastingIteratorNorthHemisphere % this.gridInterval === 0) {
+                this.eastingArray.push({
+                  easting: eastingIteratorNorthHemisphere,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter,
+                });
+                // IOT find smaller grids, just divide this.gridInterval in half
+              } else if (eastingIteratorNorthHemisphere % (this.gridInterval / 2) === 0) {
+                // Push the coordinates for the 100k grid labels
+                this.labelS.push({
+                  easting: eastingIteratorNorthHemisphere,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter,
+                });
+              }
+              eastingIteratorNorthHemisphere += 1;
+            }
+          }
+          break;
+        case 'South':
+          // Find all northing grids that are divisible by 100,000
+          if (sw.zoneLetter === ne.zoneLetter) {
+            while (northingIteratorSouthHemisphere <= ne.northing) {
+              // This loop basically checks to make sure the easting grid is divisible by 100K
+              if (northingIteratorSouthHemisphere % this.gridInterval === 0) {
+                this.northingArray.push({
+                  northing: northingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter,
+                });
+              } else if (northingIteratorSouthHemisphere % (this.gridInterval / 2) === 0) {
+                this.labelN.push({
+                  northing: northingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter,
+                });
+              }
+              northingIteratorSouthHemisphere += 1;
+            }
+          }
+          // Find all easting grids that are divisible by 100,000
+          if (nw.zoneLetter === ne.zoneLetter) {
+            while (eastingIteratorSouthHemisphere <= ne.easting) {
+              if (eastingIteratorSouthHemisphere % this.gridInterval === 0) {
+                this.eastingArray.push({
+                  easting: eastingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter,
+                });
+              } else if (eastingIteratorSouthHemisphere % (this.gridInterval / 2) === 0) {
+                this.labelS.push({
+                  easting: eastingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter,
+                });
+              }
+              eastingIteratorSouthHemisphere += 1;
+            }
+          }
+          break;
+        default:
+          break;
+      }
+    });
+
+
+    //* Build the northing grid lines *//
+    Object.entries(this.northingArray).forEach((na) => {
+      const northingGridsArray = [];
+      const bottomNorthing = na[1];
+      const southWestCorner = new L.latLng({ lat: this.south, lon: this.west });
+      const northEastCorner = new L.latLng({ lat: this.north, lon: this.east });
+      const bounds = new L.latLngBounds(southWestCorner, northEastCorner);
+      const bottomRow = this.eastingArray.map((j) => {
+        if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
+          return [j, bottomNorthing];
+        }
+      });
+
+      // Since bottomRow now contains grids from this.northingArray and this.eastingArray, we can add them to the empty array to loop over later
+      bottomRow.forEach((k) => {
+        if (k) {
+          const northingGrids = UTMtoLL({
+            northing: k[1].northing,
+            easting: k[0].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter,
+          });
+          // If the northingGrids are within the visible boundaries of the map, then push them to the array
+          if (bounds.contains(northingGrids)) {
+            northingGridsArray.push(northingGrids);
+          }
+        }
+      });
+
+      const len = northingGridsArray.length;
+      for (let index = 0; index < len; index += 1) {
+        const element = [northingGridsArray[index], northingGridsArray[index + 1]];
+        const northingLine = new L.Polyline([element], this.lineStyle);
+        // Create a special grid for oddball grid zones like Norway and Svalbard
+        // this.handleSpecialZones(element);
+        // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
+        if (element[1]) {
+          // If the user is scrolled all the way up to the X zone, then just run cleanLine
+          if (this.data[0].letterID === 'X') {
+            this.cleanLine(northingLine, this.data[0].left, this.data[0].right);
+          }
+          // If element[1]'s longitude is less than the right GZD boundary longitude and greater than the left GZD boundary
+          if (element[1].lon <= this.data[0].right && element[0].lon >= this.data[0].left) {
+            // This is where the northingLine grids will be output from
+            // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
+            this.cleanLine(northingLine, this.data[0].left, this.data[0].right);
+            // This will "connect" the 100k grid to the east and west end of the GZD
+            // let count = 0;
+            // while (count < this.data.length) {
+            //   // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
+            //   // Convert element[0] to a LatLng so we can use the distanceTo() method
+            //   const connectingNorthingLineWest = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+            //   this.connectingNorthingLine(connectingNorthingLineWest, element, 0, this.data, count, 'left');
+            //   const connectingNorthingLineEast = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
+            //   this.connectingNorthingLine(connectingNorthingLineEast, element, 1, this.data, count, 'right');
+            //   count += 1;
+            //   break;
+            // }
+          }
+        }
+      }
+    });
+
+    //* Build the easting grid lines *//
+    Object.entries(this.eastingArray).forEach((ea) => {
+      const emlat = [];
+      const emlng = [];
+      // This empty array will hold all latlngs generated from the "bottomRow" forEach loop.
+      const eastingGridsArray = [];
+      const bottomEasting = ea[1];
+      const southWestCorner = new L.latLng({ lat: this.south, lon: this.west });
+      const northEastCorner = new L.latLng({ lat: this.north, lon: this.east });
+      const bounds = new L.latLngBounds(southWestCorner, northEastCorner);
+      const bottomRow = this.northingArray.map((j) => {
+        // match grid zones and grid IDs together
+        if (j.zoneNumber === bottomEasting.zoneNumber && j.zoneLetter === bottomEasting.zoneLetter) {
+          return [j, bottomEasting];
+        }
+      });
+
+      // Since bottomRow now contains grids from this.northingArray and this.eastingArray, we can add them to the empty array to loop over later
+      bottomRow.forEach((k) => {
+        if (k) {
+          const eastingGrids = UTMtoLL({
+            northing: k[0].northing,
+            easting: k[1].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter,
+          });
+
+          // If the eastingGrids are within the visible boundaries of the map, then push them to the array
+          if (bounds.contains(eastingGrids)) {
+            eastingGridsArray.push(eastingGrids);
+          }
+        }
+      });
+
+      // I was told that setting the length of the loop like this has better performance than just array.length
+      const len = eastingGridsArray.length;
+      for (let index = 0; index < len; index += 1) {
+        const element = [eastingGridsArray[index], eastingGridsArray[index + 1]];
+
+
+        // console.log(LLtoUTM(element[0]).northing === Math.floor(LLtoUTM(element[0]).northing / this.gridInterval) * this.gridInterval);
+
+
+        const eastingLine = new L.Polyline([element], this.blueLine);
+        // this.handleSpecialZones(element);
+        // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
+        if (element[1]) {
+          emlat.push(eastingLine.getBounds().getNorthEast().lat);
+          emlng.push(eastingLine.getBounds().getNorthEast().lng);
+
+          emlat.push(eastingLine.getBounds().getSouthEast().lat);
+          emlng.push(eastingLine.getBounds().getSouthEast().lng);
+
+          // this.fudge({ south: eastingLine.getBounds().getSouthEast(), north: eastingLine.getBounds().getNorthEast() });
+          // this.fudge([eastingLine.getBounds().getSouthEast().lat, eastingLine.getBounds().getSouthEast().lng], [eastingLine.getBounds().getNorthEast().lat, eastingLine.getBounds().getNorthEast().lng]);
+          // console.log(eastingLine.getBounds().getNorthEast().lat);
+          // If element[1]'s longitude is less than the left boundary and greater than the right boundary
+          if (element[0].lon > this.data[0].left && element[0].lon < this.data[0].right) {
+            // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
+            // this.cleanLine(eastingLine, this.data[0].left, this.data[0].right);
+            // Connect the easting lines to the north and south parts of the GZD
+            // IOT get the bottom latitude for each grid we need to loop over it
+            // let count = 0;
+            // while (count < this.data.length) {
+            //   // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
+            //   const connectingEastingLineSouth = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+            //   this.connectingEastingLine(connectingEastingLineSouth, element, 0, this.data, count, 'bottom');
+            //   const connectingEastingLineNorth = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
+            //   this.connectingEastingLine(connectingEastingLineNorth, element, 1, this.data, count, 'top');
+            //   count += 1;
+            // }
+          }
+        }
+      }
+
+      const ff = {
+        north: {
+          lat: Math.max(...emlat),
+          lng: Math.max(...emlng),
+        },
+        south: {
+          lat: Math.min(...emlat),
+          lng: Math.min(...emlng),
+        },
+      };
+
+      let northBounds;
+      let northLine;
+      let southBounds;
+      let southLine;
+      Object.entries(ff).forEach((elem) => {
+        if (Number.isFinite(elem[1].lat)) {
+          switch (elem[0]) {
+            case 'north':
+              northBounds = LLtoUTM({ lat: elem[1].lat, lon: elem[1].lng });
+              northLine = UTMtoLL({
+                northing: northBounds.northing,
+                easting: Math.round(northBounds.easting / this.gridInterval) * this.gridInterval,
+                zoneNumber: northBounds.zoneNumber,
+                zoneLetter: northBounds.zoneLetter,
+              });
+              break;
+            case 'south':
+              southBounds = LLtoUTM({ lat: elem[1].lat, lon: elem[1].lng });
+              southLine = UTMtoLL({
+                northing: southBounds.northing,
+                easting: Math.round(southBounds.easting / this.gridInterval) * this.gridInterval,
+                zoneNumber: southBounds.zoneNumber,
+                zoneLetter: southBounds.zoneLetter,
+              });
+              break;
+            default:
+              break;
+          }
+
+          let count = 0;
+          while (count < this.data.length) {
+            if (northLine && southLine) {
+              if (this.data[count].left < southLine.lon && this.data[count].right > southLine.lon) {
+                const eastingLine = new L.Polyline([northLine, southLine], this.lineStyle);
+                this.addLayer(eastingLine);
+                count += 1;
+              }
+            }
+            count += 1;
+          }
+        }
+      });
+    });
+  },
+
+
+  cleanLine(line, leftLongitudeLimit, rightLongitudeLimit) {
+    // Line is going to be the eastingLine/northingLine variable the gets passed in
+    const lineToClean = line.getLatLngs();
+    // line style options passed in from eastingLine/northingLine
+    const { options } = line;
+    // pt1 is element[0]
+    let pt1 = lineToClean[0][0];
+    // pt2 is element[1]
+    let pt2 = lineToClean[0][1];
+    // slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
+    const slope = (pt1.lat - pt2.lat) / (pt1.lng - pt2.lng);
+    // adding some space to the longitude so lines are more accurate
+    const lngBuffer = 0.00125;
+
+    if (pt1.lng < leftLongitudeLimit) {
+      const newLat = pt1.lat + (slope * (leftLongitudeLimit - pt1.lng) + lngBuffer);
+      pt1 = new L.latLng(newLat, leftLongitudeLimit);
+    }
+
+    if (pt2.lng > rightLongitudeLimit) {
+      const newLat = pt1.lat + (slope * (rightLongitudeLimit - pt1.lng) + lngBuffer);
+      pt2 = new L.latLng(newLat, rightLongitudeLimit);
+    }
+
+    if (pt2.lng < leftLongitudeLimit) {
+      const newLat = pt1.lat + (slope * (leftLongitudeLimit - pt1.lng) + lngBuffer);
+      pt2 = new L.latLng(newLat, leftLongitudeLimit);
+    }
+
+    const newLine = new L.Polyline([pt1, pt2], options);
+    if (pt2.lat > this.south) {
+      this.addLayer(newLine);
+    }
+  },
+
+
+  getPaddingOnZoomLevel(map) {
+    this._map = map;
+    const northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.2 : 0;
+    const zoom = this._map.getZoom();
+
+    if (zoom >= 18) {
+      return 800;
+    }
+
+    switch (zoom) {
+      case 17:
+        return 400;
+      case 16:
+        return 200;
+      case 15:
+        return 100;
+      case 14:
+        return 50;
+      case 13:
+        return 25;
+      case 12:
+        return 12;
+      case 11:
+        return 6;
+      case 10:
+        return 3 + northBuffer;
+      case 9:
+        return 0.7 + northBuffer;
+      case 8:
+        return 0.3 + northBuffer;
+      case 7:
+        return 0.2 + northBuffer;
+      case 6:
+        return 0.1 + northBuffer;
+      default:
+        break;
+    }
+    return this;
+  },
+});
+
+// The standard Leaflet plugin creation pattern is to implement a factory function that enables the creation of the plugin to be chained with other function calls
+// The common convention is to name the factory function after the class of the plugin but make the first letter lower case.
+L.mgrs100k = function (options) {
+  return new L.MGRS100K(options);
+};
+
+const generate100kGrids = new L.mgrs100k({
+  showLabels: false,
+  hidden: true,
+});
+
+generate100kGrids.addTo(map);
+// OLD constructor function layers on southNY: 341
+//! END TEST 100K
 
 // *********************************************************************************** //
 // * 1000 Meter Grids (This works perfectly)                                         * //
 // *********************************************************************************** //
 // TODO: Rename this.empty to something descriptive. Come on Jim get your head out of your ass
+// TODO: anything named "map" should be changed to this._map
 L.MGRS1000Meters = L.LayerGroup.extend({
   options: {
     gridInterval: 1000,
@@ -927,6 +1465,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
   initialize(options) {
     L.LayerGroup.prototype.initialize.call(this);
+    //! setOptions might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
     L.Util.setOptions(this, options);
   },
 
@@ -934,11 +1473,14 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     this._map = map;
     const grids1000Meters = this.regenerate();
     this._map.on(`viewreset ${this.options.redraw} moveend`, grids1000Meters.regenerate, grids1000Meters);
+    //! eachLayer might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
     this.eachLayer(map.addLayer, map);
   },
 
   onRemove(map) {
-    map.off(`viewreset ${this.options.redraw}`, this.map);
+    this._map = map;
+    this._map.off(`viewreset ${this.options.redraw}`, this._map);
+    //! eachLayer might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
     this.eachLayer(this.removeLayer, this);
   },
 
@@ -1285,7 +1827,7 @@ generate1000meterGrids.addTo(map);
 // *********************************************************************************** //
 map.addEventListener('moveend', () => {
   // removes and adds the 100k grids to the map on moveend
-  generate100KGrids.regenerate();
+  // generate100KGrids.regenerate();
   // generate1000meterGrids3(document.querySelector('#grids1000Meters-labels').hasAttribute('checked')).determineGrids();
   setTimeout(() => {
     document.querySelector('.numberOfLayers > .div2').innerHTML = `${document.querySelector('.leaflet-zoom-animated > g').childElementCount}`;

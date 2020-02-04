@@ -16752,14 +16752,599 @@ function Grid100K() {
     }
   };
 } // Create a new class and give it some boundaries
+// const generate100KGrids = new Grid100K(new L.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel()));
+// Run the class on page load
+// generate100KGrids.getVizGrids();
+//! BEGIN TEST 100K
+// The following code creates a LayerGroup plugin with a class named L.MGRS100K
 
 
-var generate100KGrids = new Grid100K(new _leaflet.default.latLngBounds(map.getBounds()).pad(getPaddingOnZoomLevel())); // Run the class on page load
+_leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
+  // Default options
+  options: {
+    showLabels: true,
+    showGrids: true,
+    maxZoom: 18,
+    minZoom: 6,
+    redraw: 'moveend',
+    gridLetterStyle: 'color: #216fff; font-size:12px;'
+  },
+  // default line style for 100K grids
+  lineStyle: {
+    color: 'black',
+    weight: 4,
+    opacity: 0.5,
+    interactive: false,
+    fill: false,
+    noClip: true,
+    smoothFactor: 4,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip'
+  },
+  blueLine: {
+    color: 'blue',
+    weight: 8,
+    opacity: 0.5,
+    interactive: false,
+    fill: false,
+    noClip: true,
+    smoothFactor: 4,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip'
+  },
+  // Same as constructor
+  initialize: function initialize(options) {
+    this._map = map; // In the following initialize method, we call L.Util.setOptions to combine the values of the default settings (specified by the options object parameter passed to the L.Class.extend method) with the values of the settings for this instance of the plugin, which are specified by the options object passed as a parameter to the initialize method.
+    // This is the same as saying this.options = options
+    // L.Util.setOptions(this, options);
 
-generate100KGrids.getVizGrids(); // *********************************************************************************** //
+    _leaflet.default.LayerGroup.prototype.initialize.call(this); // Get the North/South/East/West visible bounds and add padding
+
+
+    this.north = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getNorth();
+    this.south = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getSouth();
+    this.east = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getEast();
+    this.west = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getWest(); // The eastingArray and northingArray will hold the latlngs for our grids
+
+    this.eastingArray = [];
+    this.northingArray = []; // gridInterval set at 100k meters, ideally this should be adjustable so I can use it for the 1000 meter grids
+
+    this.gridInterval = 100000; // dumb name, but this temporarily holds the visible grids so I can iterate over them
+
+    this.empty = []; // visible grid zones from this.empty will be dumped in here
+
+    this.uniqueVisibleGrids = {}; // Create a new layergroup to hold the grid lines
+    // this.layerGroup100k = new L.LayerGroup([]);
+    // These next 2 are for the 100k grid labels
+
+    this.labelN = [];
+    this.labelS = []; //! test
+
+    this.testEmpty = [];
+  },
+  // Happens after added to map
+  onAdd: function onAdd(map) {
+    // you could probably add some event listeners, deal with the UI, insert some DOM elements
+    // Should contain code that creates DOM elements for the layer, adds them to `map panes` where they should belong and puts listeners on relevant map events. Called on [`map.addLayer(layer)`](#map-addlayer).
+    this._map = map;
+    var graticule = this.getVizGrids();
+
+    this._map.on("viewreset ".concat(this.options.redraw), graticule.getVizGrids, graticule);
+  },
+  // When removed
+  onRemove: function onRemove(map) {
+    // Remove event listerns and other shit to prevent memory leaks
+    // Should contain all clean up code that removes the layer's elements from the DOM and removes listeners previously added in [`onAdd`](#layer-onadd). Called on [`map.removeLayer(layer)`](#map-removelayer).
+    this._map = map;
+
+    this._map.off("viewreset ".concat(this.options.redraw), this._map);
+  },
+  getVizGrids: function getVizGrids() {
+    var _this7 = this;
+
+    this.clearLayers();
+
+    var currentZoom = this._map.getZoom();
+
+    if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
+      // empty the empty array (I really need a new name for this)
+      this.empty = [];
+      this.eastingArray = [];
+      this.northingArray = [];
+      this.labelN = [];
+      this.labelS = [];
+      this.north = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getNorth();
+      this.south = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getSouth();
+      this.east = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getEast();
+      this.west = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getWest(); // GZ is the variable name for the GZD class I instantiated earlier
+
+      gz.viz.forEach(function (visibleGrid) {
+        // This will tell us what grid squares are visible on the map
+        _this7.empty.push(visibleGrid);
+      }); // This just creates a neater object where I can parse the data easier
+
+      this.uniqueVisibleGrids = Object.keys(this.empty).reduce(function (acc, k) {
+        var grid = _this7.empty[k].id;
+        acc[grid] = acc[grid] || [];
+        acc[grid].push(_this7.empty[k]);
+        return acc;
+      }, {});
+      this.prepGrids(this.uniqueVisibleGrids);
+    }
+
+    return this;
+  },
+  prepGrids: function prepGrids(uniqueVisibleGrids) {
+    var _this8 = this;
+
+    this.uniqueVisibleGrids = uniqueVisibleGrids;
+    var visibleGridsIterator = new Map(Object.entries(this.uniqueVisibleGrids)); // Not sure how useful this promise is. It works fine with just a forEach loop
+    //! use async/await or just a forEach loop?
+
+    var delay = function delay(ms) {
+      return new Promise(function (resolve) {
+        return setTimeout(resolve, ms);
+      });
+    };
+
+    visibleGridsIterator.forEach(function (grid) {
+      delay(20).then(function () {
+        // This is where all the grids are generated.
+        _this8.generateGrids(grid);
+
+        return delay(3000);
+      }).catch(function (err) {
+        console.error(err);
+      });
+    });
+  },
+  generateGrids: function generateGrids(data) {
+    var _this9 = this;
+
+    this.data = data;
+    var buffer = 0.00001;
+    Object.values(this.data).forEach(function (x) {
+      // Get the corners of the visible grids and convert them from latlon to UTM
+      var sw = (0, _mgrs.LLtoUTM)({
+        lat: x.bottom + buffer,
+        lon: x.left + buffer
+      });
+      var se = (0, _mgrs.LLtoUTM)({
+        lat: x.bottom + buffer,
+        lon: x.right - buffer
+      });
+      var ne = (0, _mgrs.LLtoUTM)({
+        lat: x.top - buffer,
+        lon: x.right - buffer
+      });
+      var nw = (0, _mgrs.LLtoUTM)({
+        lat: x.top - buffer,
+        lon: x.left + buffer
+      });
+      var hemisphere = map.getCenter().lat <= 0 ? 'South' : 'North';
+      var northingIteratorNorthHemisphere = sw.northing;
+      var eastingIteratorNorthHemisphere = sw.easting;
+      var northingIteratorSouthHemisphere = sw.northing;
+      var eastingIteratorSouthHemisphere = nw.easting; // Check which hemisphere the user is in and make adjustments
+
+      switch (hemisphere) {
+        case 'North':
+          // Find all northing grids that are divisible by 100,000
+          if (sw.zoneLetter === ne.zoneLetter) {
+            while (northingIteratorNorthHemisphere <= ne.northing) {
+              // This loop basically checks to make sure the easting grid is divisible by 100K
+              if (northingIteratorNorthHemisphere % _this9.gridInterval === 0) {
+                _this9.northingArray.push({
+                  northing: northingIteratorNorthHemisphere,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter
+                });
+              } else if (northingIteratorNorthHemisphere % (_this9.gridInterval / 2) === 0) {
+                // Push the coordinates for the 100k grid labels
+                _this9.labelN.push({
+                  northing: northingIteratorNorthHemisphere,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter
+                });
+              }
+
+              northingIteratorNorthHemisphere += 1;
+            }
+          } // Find all easting grids that are divisible by 100,000
+
+
+          if (sw.zoneLetter === se.zoneLetter) {
+            while (eastingIteratorNorthHemisphere <= se.easting) {
+              if (eastingIteratorNorthHemisphere % _this9.gridInterval === 0) {
+                _this9.eastingArray.push({
+                  easting: eastingIteratorNorthHemisphere,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter
+                }); // IOT find smaller grids, just divide this.gridInterval in half
+
+              } else if (eastingIteratorNorthHemisphere % (_this9.gridInterval / 2) === 0) {
+                // Push the coordinates for the 100k grid labels
+                _this9.labelS.push({
+                  easting: eastingIteratorNorthHemisphere,
+                  zoneNumber: sw.zoneNumber,
+                  zoneLetter: sw.zoneLetter
+                });
+              }
+
+              eastingIteratorNorthHemisphere += 1;
+            }
+          }
+
+          break;
+
+        case 'South':
+          // Find all northing grids that are divisible by 100,000
+          if (sw.zoneLetter === ne.zoneLetter) {
+            while (northingIteratorSouthHemisphere <= ne.northing) {
+              // This loop basically checks to make sure the easting grid is divisible by 100K
+              if (northingIteratorSouthHemisphere % _this9.gridInterval === 0) {
+                _this9.northingArray.push({
+                  northing: northingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter
+                });
+              } else if (northingIteratorSouthHemisphere % (_this9.gridInterval / 2) === 0) {
+                _this9.labelN.push({
+                  northing: northingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter
+                });
+              }
+
+              northingIteratorSouthHemisphere += 1;
+            }
+          } // Find all easting grids that are divisible by 100,000
+
+
+          if (nw.zoneLetter === ne.zoneLetter) {
+            while (eastingIteratorSouthHemisphere <= ne.easting) {
+              if (eastingIteratorSouthHemisphere % _this9.gridInterval === 0) {
+                _this9.eastingArray.push({
+                  easting: eastingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter
+                });
+              } else if (eastingIteratorSouthHemisphere % (_this9.gridInterval / 2) === 0) {
+                _this9.labelS.push({
+                  easting: eastingIteratorSouthHemisphere,
+                  zoneNumber: nw.zoneNumber,
+                  zoneLetter: nw.zoneLetter
+                });
+              }
+
+              eastingIteratorSouthHemisphere += 1;
+            }
+          }
+
+          break;
+
+        default:
+          break;
+      }
+    }); //* Build the northing grid lines *//
+
+    Object.entries(this.northingArray).forEach(function (na) {
+      var northingGridsArray = [];
+      var bottomNorthing = na[1];
+      var southWestCorner = new _leaflet.default.latLng({
+        lat: _this9.south,
+        lon: _this9.west
+      });
+      var northEastCorner = new _leaflet.default.latLng({
+        lat: _this9.north,
+        lon: _this9.east
+      });
+      var bounds = new _leaflet.default.latLngBounds(southWestCorner, northEastCorner);
+
+      var bottomRow = _this9.eastingArray.map(function (j) {
+        if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
+          return [j, bottomNorthing];
+        }
+      }); // Since bottomRow now contains grids from this.northingArray and this.eastingArray, we can add them to the empty array to loop over later
+
+
+      bottomRow.forEach(function (k) {
+        if (k) {
+          var northingGrids = (0, _mgrs.UTMtoLL)({
+            northing: k[1].northing,
+            easting: k[0].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter
+          }); // If the northingGrids are within the visible boundaries of the map, then push them to the array
+
+          if (bounds.contains(northingGrids)) {
+            northingGridsArray.push(northingGrids);
+          }
+        }
+      });
+      var len = northingGridsArray.length;
+
+      for (var index = 0; index < len; index += 1) {
+        var element = [northingGridsArray[index], northingGridsArray[index + 1]];
+        var northingLine = new _leaflet.default.Polyline([element], _this9.lineStyle); // Create a special grid for oddball grid zones like Norway and Svalbard
+        // this.handleSpecialZones(element);
+        // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
+
+        if (element[1]) {
+          // If the user is scrolled all the way up to the X zone, then just run cleanLine
+          if (_this9.data[0].letterID === 'X') {
+            _this9.cleanLine(northingLine, _this9.data[0].left, _this9.data[0].right);
+          } // If element[1]'s longitude is less than the right GZD boundary longitude and greater than the left GZD boundary
+
+
+          if (element[1].lon <= _this9.data[0].right && element[0].lon >= _this9.data[0].left) {
+            // This is where the northingLine grids will be output from
+            // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
+            _this9.cleanLine(northingLine, _this9.data[0].left, _this9.data[0].right); // This will "connect" the 100k grid to the east and west end of the GZD
+            // let count = 0;
+            // while (count < this.data.length) {
+            //   // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
+            //   // Convert element[0] to a LatLng so we can use the distanceTo() method
+            //   const connectingNorthingLineWest = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+            //   this.connectingNorthingLine(connectingNorthingLineWest, element, 0, this.data, count, 'left');
+            //   const connectingNorthingLineEast = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
+            //   this.connectingNorthingLine(connectingNorthingLineEast, element, 1, this.data, count, 'right');
+            //   count += 1;
+            //   break;
+            // }
+
+          }
+        }
+      }
+    }); //* Build the easting grid lines *//
+
+    Object.entries(this.eastingArray).forEach(function (ea) {
+      var emlat = [];
+      var emlng = []; // This empty array will hold all latlngs generated from the "bottomRow" forEach loop.
+
+      var eastingGridsArray = [];
+      var bottomEasting = ea[1];
+      var southWestCorner = new _leaflet.default.latLng({
+        lat: _this9.south,
+        lon: _this9.west
+      });
+      var northEastCorner = new _leaflet.default.latLng({
+        lat: _this9.north,
+        lon: _this9.east
+      });
+      var bounds = new _leaflet.default.latLngBounds(southWestCorner, northEastCorner);
+
+      var bottomRow = _this9.northingArray.map(function (j) {
+        // match grid zones and grid IDs together
+        if (j.zoneNumber === bottomEasting.zoneNumber && j.zoneLetter === bottomEasting.zoneLetter) {
+          return [j, bottomEasting];
+        }
+      }); // Since bottomRow now contains grids from this.northingArray and this.eastingArray, we can add them to the empty array to loop over later
+
+
+      bottomRow.forEach(function (k) {
+        if (k) {
+          var eastingGrids = (0, _mgrs.UTMtoLL)({
+            northing: k[0].northing,
+            easting: k[1].easting,
+            zoneNumber: k[0].zoneNumber,
+            zoneLetter: k[0].zoneLetter
+          }); // If the eastingGrids are within the visible boundaries of the map, then push them to the array
+
+          if (bounds.contains(eastingGrids)) {
+            eastingGridsArray.push(eastingGrids);
+          }
+        }
+      }); // I was told that setting the length of the loop like this has better performance than just array.length
+
+      var len = eastingGridsArray.length;
+
+      for (var index = 0; index < len; index += 1) {
+        var element = [eastingGridsArray[index], eastingGridsArray[index + 1]]; // console.log(LLtoUTM(element[0]).northing === Math.floor(LLtoUTM(element[0]).northing / this.gridInterval) * this.gridInterval);
+
+        var eastingLine = new _leaflet.default.Polyline([element], _this9.blueLine); // this.handleSpecialZones(element);
+        // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
+
+        if (element[1]) {
+          emlat.push(eastingLine.getBounds().getNorthEast().lat);
+          emlng.push(eastingLine.getBounds().getNorthEast().lng);
+          emlat.push(eastingLine.getBounds().getSouthEast().lat);
+          emlng.push(eastingLine.getBounds().getSouthEast().lng); // this.fudge({ south: eastingLine.getBounds().getSouthEast(), north: eastingLine.getBounds().getNorthEast() });
+          // this.fudge([eastingLine.getBounds().getSouthEast().lat, eastingLine.getBounds().getSouthEast().lng], [eastingLine.getBounds().getNorthEast().lat, eastingLine.getBounds().getNorthEast().lng]);
+          // console.log(eastingLine.getBounds().getNorthEast().lat);
+          // If element[1]'s longitude is less than the left boundary and greater than the right boundary
+
+          if (element[0].lon > _this9.data[0].left && element[0].lon < _this9.data[0].right) {// Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
+            // this.cleanLine(eastingLine, this.data[0].left, this.data[0].right);
+            // Connect the easting lines to the north and south parts of the GZD
+            // IOT get the bottom latitude for each grid we need to loop over it
+            // let count = 0;
+            // while (count < this.data.length) {
+            //   // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
+            //   const connectingEastingLineSouth = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
+            //   this.connectingEastingLine(connectingEastingLineSouth, element, 0, this.data, count, 'bottom');
+            //   const connectingEastingLineNorth = new L.latLng({ lat: element[1].lat, lng: element[1].lon });
+            //   this.connectingEastingLine(connectingEastingLineNorth, element, 1, this.data, count, 'top');
+            //   count += 1;
+            // }
+          }
+        }
+      }
+
+      var ff = {
+        north: {
+          lat: Math.max.apply(Math, emlat),
+          lng: Math.max.apply(Math, emlng)
+        },
+        south: {
+          lat: Math.min.apply(Math, emlat),
+          lng: Math.min.apply(Math, emlng)
+        }
+      };
+      var northBounds;
+      var northLine;
+      var southBounds;
+      var southLine;
+      Object.entries(ff).forEach(function (elem) {
+        if (Number.isFinite(elem[1].lat)) {
+          switch (elem[0]) {
+            case 'north':
+              northBounds = (0, _mgrs.LLtoUTM)({
+                lat: elem[1].lat,
+                lon: elem[1].lng
+              });
+              northLine = (0, _mgrs.UTMtoLL)({
+                northing: northBounds.northing,
+                easting: Math.round(northBounds.easting / _this9.gridInterval) * _this9.gridInterval,
+                zoneNumber: northBounds.zoneNumber,
+                zoneLetter: northBounds.zoneLetter
+              });
+              break;
+
+            case 'south':
+              southBounds = (0, _mgrs.LLtoUTM)({
+                lat: elem[1].lat,
+                lon: elem[1].lng
+              });
+              southLine = (0, _mgrs.UTMtoLL)({
+                northing: southBounds.northing,
+                easting: Math.round(southBounds.easting / _this9.gridInterval) * _this9.gridInterval,
+                zoneNumber: southBounds.zoneNumber,
+                zoneLetter: southBounds.zoneLetter
+              });
+              break;
+
+            default:
+              break;
+          }
+
+          var count = 0;
+
+          while (count < _this9.data.length) {
+            if (northLine && southLine) {
+              if (_this9.data[count].left < southLine.lon && _this9.data[count].right > southLine.lon) {
+                var _eastingLine = new _leaflet.default.Polyline([northLine, southLine], _this9.lineStyle);
+
+                _this9.addLayer(_eastingLine);
+
+                count += 1;
+              }
+            }
+
+            count += 1;
+          }
+        }
+      });
+    });
+  },
+  cleanLine: function cleanLine(line, leftLongitudeLimit, rightLongitudeLimit) {
+    // Line is going to be the eastingLine/northingLine variable the gets passed in
+    var lineToClean = line.getLatLngs(); // line style options passed in from eastingLine/northingLine
+
+    var options = line.options; // pt1 is element[0]
+
+    var pt1 = lineToClean[0][0]; // pt2 is element[1]
+
+    var pt2 = lineToClean[0][1]; // slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
+
+    var slope = (pt1.lat - pt2.lat) / (pt1.lng - pt2.lng); // adding some space to the longitude so lines are more accurate
+
+    var lngBuffer = 0.00125;
+
+    if (pt1.lng < leftLongitudeLimit) {
+      var newLat = pt1.lat + (slope * (leftLongitudeLimit - pt1.lng) + lngBuffer);
+      pt1 = new _leaflet.default.latLng(newLat, leftLongitudeLimit);
+    }
+
+    if (pt2.lng > rightLongitudeLimit) {
+      var _newLat3 = pt1.lat + (slope * (rightLongitudeLimit - pt1.lng) + lngBuffer);
+
+      pt2 = new _leaflet.default.latLng(_newLat3, rightLongitudeLimit);
+    }
+
+    if (pt2.lng < leftLongitudeLimit) {
+      var _newLat4 = pt1.lat + (slope * (leftLongitudeLimit - pt1.lng) + lngBuffer);
+
+      pt2 = new _leaflet.default.latLng(_newLat4, leftLongitudeLimit);
+    }
+
+    var newLine = new _leaflet.default.Polyline([pt1, pt2], options);
+
+    if (pt2.lat > this.south) {
+      this.addLayer(newLine);
+    }
+  },
+  getPaddingOnZoomLevel: function getPaddingOnZoomLevel(map) {
+    this._map = map;
+    var northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.2 : 0;
+
+    var zoom = this._map.getZoom();
+
+    if (zoom >= 18) {
+      return 800;
+    }
+
+    switch (zoom) {
+      case 17:
+        return 400;
+
+      case 16:
+        return 200;
+
+      case 15:
+        return 100;
+
+      case 14:
+        return 50;
+
+      case 13:
+        return 25;
+
+      case 12:
+        return 12;
+
+      case 11:
+        return 6;
+
+      case 10:
+        return 3 + northBuffer;
+
+      case 9:
+        return 0.7 + northBuffer;
+
+      case 8:
+        return 0.3 + northBuffer;
+
+      case 7:
+        return 0.2 + northBuffer;
+
+      case 6:
+        return 0.1 + northBuffer;
+
+      default:
+        break;
+    }
+
+    return this;
+  }
+}); // The standard Leaflet plugin creation pattern is to implement a factory function that enables the creation of the plugin to be chained with other function calls
+// The common convention is to name the factory function after the class of the plugin but make the first letter lower case.
+
+_leaflet.default.mgrs100k = function (options) {
+  return new _leaflet.default.MGRS100K(options);
+};
+
+var generate100kGrids = new _leaflet.default.mgrs100k({
+  showLabels: false,
+  hidden: true
+});
+generate100kGrids.addTo(map); // OLD constructor function layers on southNY: 341
+//! END TEST 100K
+// *********************************************************************************** //
 // * 1000 Meter Grids (This works perfectly)                                         * //
 // *********************************************************************************** //
 // TODO: Rename this.empty to something descriptive. Come on Jim get your head out of your ass
+// TODO: anything named "map" should be changed to this._map
 
 _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   options: {
@@ -16814,7 +17399,8 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   },
 
   initialize: function initialize(options) {
-    _leaflet.default.LayerGroup.prototype.initialize.call(this);
+    _leaflet.default.LayerGroup.prototype.initialize.call(this); //! setOptions might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
+
 
     _leaflet.default.Util.setOptions(this, options);
   },
@@ -16822,12 +17408,17 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     this._map = map;
     var grids1000Meters = this.regenerate();
 
-    this._map.on("viewreset ".concat(this.options.redraw, " moveend"), grids1000Meters.regenerate, grids1000Meters);
+    this._map.on("viewreset ".concat(this.options.redraw, " moveend"), grids1000Meters.regenerate, grids1000Meters); //! eachLayer might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
+
 
     this.eachLayer(map.addLayer, map);
   },
   onRemove: function onRemove(map) {
-    map.off("viewreset ".concat(this.options.redraw), this.map);
+    this._map = map;
+
+    this._map.off("viewreset ".concat(this.options.redraw), this._map); //! eachLayer might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
+
+
     this.eachLayer(this.removeLayer, this);
   },
   hideGrids: function hideGrids() {
@@ -16847,7 +17438,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     this.regenerate();
   },
   regenerate: function regenerate() {
-    var _this7 = this;
+    var _this10 = this;
 
     var currentZoom = this._map.getZoom();
 
@@ -16864,7 +17455,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       // Call the GZD class and get the visible grid zone designators on the map
       gz.viz.forEach(function (visibleGrid) {
         // This will tell us what grid squares are visible on the map
-        _this7.empty.push(visibleGrid);
+        _this10.empty.push(visibleGrid);
       });
 
       if (this.empty.length <= 1) {
@@ -17252,8 +17843,8 @@ generate1000meterGrids.addTo(map); // ******************************************
 
 map.addEventListener('moveend', function () {
   // removes and adds the 100k grids to the map on moveend
-  generate100KGrids.regenerate(); // generate1000meterGrids3(document.querySelector('#grids1000Meters-labels').hasAttribute('checked')).determineGrids();
-
+  // generate100KGrids.regenerate();
+  // generate1000meterGrids3(document.querySelector('#grids1000Meters-labels').hasAttribute('checked')).determineGrids();
   setTimeout(function () {
     document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
     document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
@@ -17342,7 +17933,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54524" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56703" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
