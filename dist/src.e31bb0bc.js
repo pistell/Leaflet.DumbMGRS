@@ -16964,6 +16964,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
     if (currentZoom < this.options.minZoom) {
       // Since we don't want to turn off the event listener, run eachLayer() instead of onRemove
+      //! should just be this.clearLayers()
       return this.eachLayer(this.removeLayer, this);
     }
 

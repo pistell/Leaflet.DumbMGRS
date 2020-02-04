@@ -1053,6 +1053,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     const currentZoom = this._map.getZoom();
     if (currentZoom < this.options.minZoom) {
       // Since we don't want to turn off the event listener, run eachLayer() instead of onRemove
+      //! should just be this.clearLayers()
       return this.eachLayer(this.removeLayer, this);
     }
     this._bounds = this._map.getBounds().pad(this.getPaddingOnZoomLevel1000Meters());

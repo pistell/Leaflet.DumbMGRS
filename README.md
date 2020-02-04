@@ -1,6 +1,6 @@
 # Leaflet.DumbMGRS
 
-An MGRS grid overlay plugin for your leaflet application... But dumber!
+An MGRS grid overlay plugin for your leaflet application. This plugin will enable you to display the Grid Zone Designators (1 million meters by 1 million meters), the 100K grid zones, and a 1000 meter grid interval 😎
 
 ![screenshot](./src/img/screenshot_27JAN_2.png)
 
@@ -46,9 +46,9 @@ I am trying to generate 3 types of grids
 
 1. A Grid Zone Designator - 1 million by 1 million meter grid. The GZD is outlined in red and has a grid label in the center of it. This actually works as I intended it to. See class GZD in index.js for the code.
 
-2. A 100K grid - 100k by 100k meter grid. This is filled with bugs and inefficient code. See constructor function Grid100K in index.js for the code.
+2. A 100K grid - 100k by 100k meter grid. This is filled with bugs and inefficient code.
 
-3. A 1000M grid - 1000m by 1000m grid. I have a working version of this in the grid1000meters.js file
+3. A 1000M grid - 1000m by 1000m grid.
 
 ## Issues
 

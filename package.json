@@ -1,7 +1,7 @@
 {
   "name": "leaflet-dumbmgrs",
   "version": "1.0.0",
-  "description": "An MGRS grid overlay plugin for your leaflet application... But dumber!",
+  "description": "An MGRS grid overlay plugin for your leaflet application.",
   "main": "./src/index.js",
   "scripts": {
     "clean": "rm dist/bundle.js",
