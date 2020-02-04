@@ -2,6 +2,8 @@
 $primary-color: white;
 $bg: #204a79;
 $fontFamily: 'Roboto';
+$sw-height: 30px;
+$sw-width: 51px;
 
 #map {
   height: 1000px;
@@ -160,9 +162,6 @@ svg {
 }
 
 //* Grid and Label Toggle Switches */
-$sw-height: 30px;
-$sw-width: 51px;
-
 input {
   &.sw {
     opacity: 0;
