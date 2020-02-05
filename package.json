@@ -5,8 +5,7 @@
   "main": "./src/index.js",
   "scripts": {
     "clean": "rm dist/bundle.js",
-    "dev": "parcel src/index.html",
-    "start": "npx parcel src/index.html --open",
+    "start": "parcel src/index.html",
     "build-prod": "parcel build src/index.html"
   },
   "repository": {
