@@ -15827,6 +15827,7 @@ map.addEventListener('mousemove', function (event) {
 // TODO: Convert this to a proper leaflet plugin
 // TODO: Split the plugin off into its own JS file (with the eastingDict/northingDict)
 // TODO: Add the showLabels, hideLabels, showGrids, and hideGrids methods and wire them up to the switches
+// TODO: Tree shake mgrs.js
 
 var GZD =
 /*#__PURE__*/
@@ -17451,7 +17452,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56703" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58170" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
