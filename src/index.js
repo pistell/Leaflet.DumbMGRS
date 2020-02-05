@@ -15,6 +15,7 @@ import {
 } from './mgrs';
 import { northingDict, eastingDict } from './gzdObject';
 
+
 // *********************************************************************************** //
 // * Global Vars/Leaflet setup/Predefined coordinates                                * //
 // *********************************************************************************** //
@@ -52,6 +53,7 @@ function mark(element) {
   return marker.addTo(map);
 }
 
+
 // *********************************************************************************** //
 // * Enable default images in the marker                                             * //
 // *********************************************************************************** //
@@ -67,6 +69,7 @@ const DefaultIcon = L.icon({
 // Set the default marker icon to the constants provided above
 L.Marker.prototype.options.icon = DefaultIcon;
 
+
 // *********************************************************************************** //
 // * Add the Leaflet map to the page                                                 * //
 // *********************************************************************************** //
@@ -74,6 +77,7 @@ L.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 18,
   id: 'osm_map',
 }).addTo(map);
+
 
 // *********************************************************************************** //
 // * Update the MGRS coordinates when the mouse cursor moves (For accuracy checking) * //
@@ -96,6 +100,7 @@ map.addEventListener('mousemove', (event) => {
 // TODO: Convert this to a proper leaflet plugin
 // TODO: Split the plugin off into its own JS file (with the eastingDict/northingDict)
 // TODO: Add the showLabels, hideLabels, showGrids, and hideGrids methods and wire them up to the switches
+// TODO: Tree shake mgrs.js
 class GZD extends L.LayerGroup {
   constructor(northObj, eastObj) {
     super();
@@ -936,7 +941,7 @@ L.MGRS100K = L.LayerGroup.extend({
       case 7:
         return 0.15 + northBuffer;
       case 6:
-        return 0.05 + northBuffer;
+        return 0.07 + northBuffer;
       default:
         break;
     }
@@ -954,6 +959,7 @@ const generate100kGrids = new L.mgrs100k({
 });
 
 generate100kGrids.addTo(map);
+
 
 // *********************************************************************************** //
 // * Leaflet DumbMGRS Plugin - 1000 Meter Grids                                      * //

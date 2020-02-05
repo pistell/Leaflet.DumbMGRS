@@ -16840,7 +16840,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         return 0.15 + northBuffer;
 
       case 6:
-        return 0.05 + northBuffer;
+        return 0.07 + northBuffer;
 
       default:
         break;
