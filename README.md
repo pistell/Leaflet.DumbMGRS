@@ -2,6 +2,8 @@
 
 An MGRS grid overlay plugin for your leaflet application. This plugin will enable you to display the Grid Zone Designators (1 million meters by 1 million meters), the 100K grid zones, and a 1000 meter grid interval 😎
 
+[Demo](https://pistell.github.io/Leaflet.DumbMGRS/dist/index.html)
+
 ![screenshot](./src/img/screenshot_27JAN_2.png)
 
 ![screenshot](./src/img/4square.jpg)
