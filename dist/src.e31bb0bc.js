@@ -134,112 +134,7 @@ function _defineProperty(obj, key, value) {
 }
 
 module.exports = _defineProperty;
-},{}],"../node_modules/@babel/runtime/helpers/classCallCheck.js":[function(require,module,exports) {
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
-module.exports = _classCallCheck;
-},{}],"../node_modules/@babel/runtime/helpers/createClass.js":[function(require,module,exports) {
-function _defineProperties(target, props) {
-  for (var i = 0; i < props.length; i++) {
-    var descriptor = props[i];
-    descriptor.enumerable = descriptor.enumerable || false;
-    descriptor.configurable = true;
-    if ("value" in descriptor) descriptor.writable = true;
-    Object.defineProperty(target, descriptor.key, descriptor);
-  }
-}
-
-function _createClass(Constructor, protoProps, staticProps) {
-  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-  if (staticProps) _defineProperties(Constructor, staticProps);
-  return Constructor;
-}
-
-module.exports = _createClass;
-},{}],"../node_modules/@babel/runtime/helpers/typeof.js":[function(require,module,exports) {
-function _typeof(obj) {
-  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-    module.exports = _typeof = function _typeof(obj) {
-      return typeof obj;
-    };
-  } else {
-    module.exports = _typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-  }
-
-  return _typeof(obj);
-}
-
-module.exports = _typeof;
-},{}],"../node_modules/@babel/runtime/helpers/assertThisInitialized.js":[function(require,module,exports) {
-function _assertThisInitialized(self) {
-  if (self === void 0) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return self;
-}
-
-module.exports = _assertThisInitialized;
-},{}],"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js":[function(require,module,exports) {
-var _typeof = require("../helpers/typeof");
-
-var assertThisInitialized = require("./assertThisInitialized");
-
-function _possibleConstructorReturn(self, call) {
-  if (call && (_typeof(call) === "object" || typeof call === "function")) {
-    return call;
-  }
-
-  return assertThisInitialized(self);
-}
-
-module.exports = _possibleConstructorReturn;
-},{"../helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","./assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js"}],"../node_modules/@babel/runtime/helpers/getPrototypeOf.js":[function(require,module,exports) {
-function _getPrototypeOf(o) {
-  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-    return o.__proto__ || Object.getPrototypeOf(o);
-  };
-  return _getPrototypeOf(o);
-}
-
-module.exports = _getPrototypeOf;
-},{}],"../node_modules/@babel/runtime/helpers/setPrototypeOf.js":[function(require,module,exports) {
-function _setPrototypeOf(o, p) {
-  module.exports = _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-    o.__proto__ = p;
-    return o;
-  };
-
-  return _setPrototypeOf(o, p);
-}
-
-module.exports = _setPrototypeOf;
-},{}],"../node_modules/@babel/runtime/helpers/inherits.js":[function(require,module,exports) {
-var setPrototypeOf = require("./setPrototypeOf");
-
-function _inherits(subClass, superClass) {
-  if (typeof superClass !== "function" && superClass !== null) {
-    throw new TypeError("Super expression must either be null or a function");
-  }
-
-  subClass.prototype = Object.create(superClass && superClass.prototype, {
-    constructor: {
-      value: subClass,
-      writable: true,
-      configurable: true
-    }
-  });
-  if (superClass) setPrototypeOf(subClass, superClass);
-}
-
-module.exports = _inherits;
-},{"./setPrototypeOf":"../node_modules/@babel/runtime/helpers/setPrototypeOf.js"}],"../node_modules/leaflet/dist/images/marker-icon.png":[function(require,module,exports) {
+},{}],"../node_modules/leaflet/dist/images/marker-icon.png":[function(require,module,exports) {
 module.exports="/marker-icon.28bcaf97.png";
 },{}],"../node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
@@ -15690,19 +15585,9 @@ exports.eastingDict = eastingDict;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.map = exports.gz = void 0;
+exports.default = void 0;
 
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
-
-var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
-
-var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
-
-var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
-
-var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
-
-var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
 
 require("./styles.scss");
 
@@ -15749,7 +15634,6 @@ var quito = [0.17578097424708533, -77.84912109375];
 
 var map = _leaflet.default.map('map').setView(southFL, 7);
 
-exports.map = map;
 var cc = document.querySelector('.cursorCoordinates');
 window.map = map; // Just a quicker way to add a marker, used for debugging purposes
 
@@ -15822,41 +15706,80 @@ map.addEventListener('mousemove', function (event) {
     lon: event.latlng.lng
   }).northing);
 }); // *********************************************************************************** //
-// * Leaflet DumbMGRS Plugin - Grid Zone Designators (This works just fine)          * //
+// * Leaflet.DumbMGRS - Grid Zone Designators                                        * //
 // *********************************************************************************** //
-// TODO: Convert this to a proper leaflet plugin
 // TODO: Split the plugin off into its own JS file (with the eastingDict/northingDict)
-// TODO: Add the showLabels, hideLabels, showGrids, and hideGrids methods and wire them up to the switches
 // TODO: Tree shake mgrs.js
 
-var GZD =
-/*#__PURE__*/
-function (_L$LayerGroup) {
-  (0, _inherits2.default)(GZD, _L$LayerGroup);
+_leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
+  // Default options
+  options: {
+    showLabels: false,
+    showGrids: false,
+    maxZoom: 18,
+    minZoom: 4,
+    redraw: 'moveend'
+  },
+  // default line style for 100K grids
+  lineStyle: {
+    color: 'red',
+    weight: 5,
+    opacity: 0.5,
+    smoothFactor: 1,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip',
+    noClip: true,
+    // Keep interactive false, else the symbols cannot be dropped on polylines
+    interactive: false
+  },
+  initialize: function initialize(options) {
+    this._map = map; // Not sure what this does but the plugin will fail without it
 
-  function GZD(northObj, eastObj) {
-    var _this;
+    _leaflet.default.LayerGroup.prototype.initialize.call(this);
 
-    (0, _classCallCheck2.default)(this, GZD);
-    _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(GZD).call(this));
-    _this.northObj = northObj;
-    _this.eastObj = eastObj;
-    _this.viz = [];
-    return (0, _possibleConstructorReturn2.default)(_this, _this.getInBoundsGZDs());
-  } // Find all the Grid Zone Designators that are in your view
+    this.northObj = _gzdObject.northingDict;
+    this.eastObj = _gzdObject.eastingDict;
+    this.viz = [];
+  },
+  onAdd: function onAdd(map) {
+    this._map = map;
+    var graticule = this.getInBoundsGZDs(); //! Cannot use 'move' event or it will freeze the entire app
+
+    this._map.on("viewreset ".concat(this.options.redraw, " move"), graticule.getInBoundsGZDs, graticule);
+  },
+  onRemove: function onRemove(map) {
+    this._map = map;
+
+    this._map.off("viewreset ".concat(this.options.redraw, " move"), this._map);
+  },
+  hideGrids: function hideGrids() {
+    this.options.showGrids = true;
+    this.getInBoundsGZDs();
+  },
+  hideLabels: function hideLabels() {
+    this.options.showLabels = false;
+    this.getInBoundsGZDs();
+  },
+  showGrids: function showGrids() {
+    this.options.showGrids = false;
+    this.getInBoundsGZDs();
+  },
+  showLabels: function showLabels() {
+    this.options.showLabels = true;
+    this.getInBoundsGZDs();
+  },
+  // Find all the Grid Zone Designators that are in your view
+  getInBoundsGZDs: function getInBoundsGZDs() {
+    var _this = this;
+
+    // Clear every grid off the map
+    this.clearLayers();
+
+    var currentZoom = this._map.getZoom(); // Do not create GZDs if the map is zoomed out at 4 or below
 
 
-  (0, _createClass2.default)(GZD, [{
-    key: "getInBoundsGZDs",
-    value: function getInBoundsGZDs() {
-      var _this2 = this;
-
-      // Do not create GZDs if the map is zoomed out at 4 or below
-      if (map.getZoom() <= 3) {
-        return;
-      } // Combined the northingDict and eastingDict into one object
-
-
+    if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
+      // Combined the northingDict and eastingDict into one object
       var combinedObj = _objectSpread({}, this.northObj, {}, this.eastObj); // Create an array to store the inBounds values for letter,top, and bottom
 
 
@@ -15864,7 +15787,9 @@ function (_L$LayerGroup) {
 
       var inBoundsUTMNumbers = [];
       this.viz = [];
-      var currentVisibleBounds = map.getBounds();
+
+      var currentVisibleBounds = this._map.getBounds();
+
       Object.values(combinedObj).forEach(function (key) {
         var top = key.top;
         var bottom = key.bottom;
@@ -15915,7 +15840,7 @@ function (_L$LayerGroup) {
             id = "0".concat(id);
           }
 
-          _this2.buildGZD({
+          _this.buildGZD({
             top: top,
             bottom: bottom,
             letterID: letterID,
@@ -15926,131 +15851,115 @@ function (_L$LayerGroup) {
         }
       });
     }
-  }, {
-    key: "buildGZD",
-    value: function buildGZD(params) {
-      this.params = params; // Adjust coordinates for special GZDs around Norway and Svalbard
 
-      var exceptionZones = "".concat(this.params.id).concat(this.params.letterID);
+    return this;
+  },
+  buildGZD: function buildGZD(params) {
+    this.params = params; // Adjust coordinates for special GZDs around Norway and Svalbard
 
-      switch (exceptionZones) {
-        case '31X':
-          this.params.right = 9;
-          break;
+    var exceptionZones = "".concat(this.params.id).concat(this.params.letterID);
 
-        case '32X':
-          return;
+    switch (exceptionZones) {
+      case '31X':
+        this.params.right = 9;
+        break;
 
-        case '33X':
-          this.params.left = 9;
-          this.params.right = 21;
-          break;
+      case '32X':
+        return;
 
-        case '34X':
-          return;
+      case '33X':
+        this.params.left = 9;
+        this.params.right = 21;
+        break;
 
-        case '35X':
-          this.params.left = 21;
-          this.params.right = 33;
-          break;
+      case '34X':
+        return;
 
-        case '36X':
-          return;
+      case '35X':
+        this.params.left = 21;
+        this.params.right = 33;
+        break;
 
-        case '37X':
-          this.params.left = 33;
-          break;
+      case '36X':
+        return;
 
-        case '31V':
-          this.params.right = 3;
-          break;
+      case '37X':
+        this.params.left = 33;
+        break;
 
-        case '32V':
-          this.params.left = 3;
-          break;
+      case '31V':
+        this.params.right = 3;
+        break;
 
-        default:
-          break;
-      } // This is where the 100k grids gets it's data from
+      case '32V':
+        this.params.left = 3;
+        break;
+
+      default:
+        break;
+    } // This is where the 100k grids gets it's data from
 
 
-      this.viz.push({
-        top: this.params.top,
-        bottom: this.params.bottom,
-        letterID: this.params.letterID,
-        left: this.params.left,
-        right: this.params.right,
-        id: this.params.id
-      });
-      var topLeft = new _leaflet.default.LatLng(this.params.top, this.params.left);
-      var topRight = new _leaflet.default.LatLng(this.params.top, this.params.right);
-      var bottomRight = new _leaflet.default.LatLng(this.params.bottom, this.params.right); // const bottomLeft = new L.LatLng(this.params.bottom, this.params.left);
-      // We do not need bottomLeft and topLeft on the gzdBox, since they just overlap anyways
+    this.viz.push({
+      top: this.params.top,
+      bottom: this.params.bottom,
+      letterID: this.params.letterID,
+      left: this.params.left,
+      right: this.params.right,
+      id: this.params.id
+    });
+    var topLeft = new _leaflet.default.LatLng(this.params.top, this.params.left);
+    var topRight = new _leaflet.default.LatLng(this.params.top, this.params.right);
+    var bottomRight = new _leaflet.default.LatLng(this.params.bottom, this.params.right); // const bottomLeft = new L.LatLng(this.params.bottom, this.params.left);
+    // We do not need bottomLeft and topLeft on the gzdBox, since they just overlap anyways
 
-      var gzdBox = [topLeft, topRight, bottomRight];
-      var gzdPolylineBox = new _leaflet.default.Polyline(gzdBox, {
-        color: 'red',
-        weight: 5,
-        opacity: 0.5,
-        smoothFactor: 1,
-        lineCap: 'butt',
-        lineJoin: 'miter-clip',
-        noClip: true,
-        // Keep interactive false, else the symbols cannot be dropped on polylines
-        interactive: false // className: `gzd_${this.params.id}${this.params.letterID}`,
+    var gzdBox = [topLeft, topRight, bottomRight];
+    var gzdPolylineBox = new _leaflet.default.Polyline(gzdBox, this.lineStyle);
+    var gzdPolylineBounds = gzdPolylineBox.getBounds();
+    var gzdIdSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); // Once the polylines are added to the map we can begin centering the Grid Zone Designator
 
-      });
-      var gzdPolylineBounds = gzdPolylineBox.getBounds();
-      var gzdIdSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); // Once the polylines are added to the map we can begin centering the Grid Zone Designator
+    gzdIdSVG.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); // Put this into an event listener where if the map zoom is <=7, adjust viewBox to '0 0 200 100' or something
 
-      gzdIdSVG.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); // Put this into an event listener where if the map zoom is <=7, adjust viewBox to '0 0 200 100' or something
+    gzdIdSVG.setAttribute('viewBox', '75 50 50 50');
+    gzdIdSVG.innerHTML = "\n      <rect width=\"200\" height=\"100\" fill=\"salmon\" stroke=\"black\" stroke-width=\"1\" fill-opacity=\"0.5\"/>\n      <text x=\"100\" y=\"50\" fill=\"black\" font-weight=\"bold\" font-family=\"Arial\" font-size=\"80\" text-anchor=\"middle\" dominant-baseline=\"central\">".concat(this.params.id).concat(this.params.letterID, "</text>");
+    gzdIdSVG.setAttributeNS(null, 'class', 'leaflet-grid-label'); // Get the difference between the north east and southwest latitudes/longitudes and divide by 2
 
-      gzdIdSVG.setAttribute('viewBox', '75 50 50 50');
-      gzdIdSVG.innerHTML = "\n        <rect width=\"200\" height=\"100\" fill=\"salmon\" stroke=\"black\" stroke-width=\"1\" fill-opacity=\"0.5\"/>\n        <text x=\"100\" y=\"50\" fill=\"black\" font-weight=\"bold\" font-family=\"Arial\" font-size=\"80\" text-anchor=\"middle\" dominant-baseline=\"central\">".concat(this.params.id).concat(this.params.letterID, "</text>"); // Get the difference between the north east and southwest latitudes/longitudes and divide by 2
+    var halfLat = (gzdPolylineBounds.getNorthEast().lat - gzdPolylineBounds.getSouthWest().lat) / 2; // (eg- 40.000 - 48.000 / 2 = 4)
 
-      var halfLat = (gzdPolylineBounds.getNorthEast().lat - gzdPolylineBounds.getSouthWest().lat) / 2; // (eg- 40.000 - 48.000 / 2 = 4)
+    var halfLng = (gzdPolylineBounds.getNorthEast().lng - gzdPolylineBounds.getSouthWest().lng) / 2; // (eg- -72.000 - -78.000 / 2 = 3)
+    // Now add those values to the southwest latitude/longitude to get the center point of the GZD
 
-      var halfLng = (gzdPolylineBounds.getNorthEast().lng - gzdPolylineBounds.getSouthWest().lng) / 2; // (eg- -72.000 - -78.000 / 2 = 3)
-      // Now add those values to the southwest latitude/longitude to get the center point of the GZD
+    var centerLat = gzdPolylineBounds.getSouthWest().lat + halfLat;
+    var centerLng = gzdPolylineBounds.getSouthWest().lng + halfLng; // Add or subtract a small number on the center latitudes/longitudes, this will give us a legitimate new LatLngBounds
+    // Add the pad() method at the end to add padding on all sides of the new boundaries so the GZD ID label can fit
 
-      var centerLat = gzdPolylineBounds.getSouthWest().lat + halfLat;
-      var centerLng = gzdPolylineBounds.getSouthWest().lng + halfLng; // Add or subtract a small number on the center latitudes/longitudes, this will give us a legitimate new LatLngBounds
-      // Add the pad() method at the end to add padding on all sides of the new boundaries so the GZD ID label can fit
+    var centerBounds = new _leaflet.default.LatLngBounds([centerLat + 0.01, centerLng - 0.01], [centerLat - 0.01, centerLng + 0.01]).pad(10.5); // Now add the GZD overlays to the center of the GZD
 
-      var centerBounds = new _leaflet.default.LatLngBounds([centerLat + 0.01, centerLng - 0.01], [centerLat - 0.01, centerLng + 0.01]).pad(10.5); // Now add the GZD overlays to the center of the GZD
+    var gzdLabels = new _leaflet.default.svgOverlay(gzdIdSVG, centerBounds);
 
-      var gzdLabels = new _leaflet.default.svgOverlay(gzdIdSVG, centerBounds); // combine the polylines and the grid labels into their own group
-
-      var gzdGroup = new _leaflet.default.LayerGroup([gzdPolylineBox, gzdLabels]);
-      gzdGroup.addTo(map);
-      map.addEventListener('moveend', function () {
-        map.removeLayer(gzdGroup);
-      }, {
-        once: true
-      });
-    } // these events will be added and removed from the map with the layer
-
-  }, {
-    key: "getEvents",
-    value: function getEvents() {
-      return {
-        moveend: this.reset
-      };
-    } // Reset the grid on move end
-
-  }, {
-    key: "reset",
-    value: function reset() {
-      this.getInBoundsGZDs();
+    if (this.options.showLabels) {
+      // If the label is in the visible bounds, add it to the map
+      if (this._map.getBounds().pad(0.1).contains(gzdLabels.getBounds().getCenter())) {
+        this.addLayer(gzdLabels);
+      }
     }
-  }]);
-  return GZD;
-}(_leaflet.default.LayerGroup);
 
-var gz = new GZD(_gzdObject.eastingDict, _gzdObject.northingDict);
-exports.gz = gz;
+    if (this.options.showGrids) {
+      this.addLayer(gzdPolylineBox);
+    }
+  }
+});
+
+_leaflet.default.gzd = function (options) {
+  return new _leaflet.default.GZD(options);
+};
+
+var gz = new _leaflet.default.gzd({
+  showLabels: false,
+  showGrids: false
+});
 gz.addTo(map); // *********************************************************************************** //
-// * Leaflet DumbMGRS Plugin - 100k Grids (this sorta works?)                        * //
+// * Leaflet.DumbMGRS - 100k Grids                                                   * //
 // *********************************************************************************** //
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
@@ -16068,8 +15977,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   // default line style for 100K grids
   lineStyle: {
     color: 'black',
-    weight: 4,
-    opacity: 0.5,
+    weight: 2,
+    // opacity: 0.5,
     interactive: false,
     fill: false,
     noClip: true,
@@ -16077,33 +15986,6 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     lineCap: 'butt',
     lineJoin: 'miter-clip'
   },
-
-  // line style for debugging
-  get blueLine() {
-    var propertyToModify = {
-      color: 'blue',
-      weight: 4,
-      opacity: 0.5
-    };
-
-    var modifiedTarget = _objectSpread({}, this.lineStyle, {}, propertyToModify);
-
-    return modifiedTarget;
-  },
-
-  // line style for debugging
-  get orangeLine() {
-    var propertyToModify = {
-      color: 'orange',
-      weight: 8,
-      opacity: 0.25
-    };
-
-    var modifiedTarget = _objectSpread({}, this.lineStyle, {}, propertyToModify);
-
-    return modifiedTarget;
-  },
-
   initialize: function initialize(options) {
     this._map = map; // Not sure what this does but the plugin will fail without it
 
@@ -16136,7 +16018,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     this._map.off("viewreset ".concat(this.options.redraw), this._map);
   },
   hideGrids: function hideGrids() {
-    this.options.showGrids = true;
+    this.options.showGrids = false;
     this.getVizGrids();
   },
   hideLabels: function hideLabels() {
@@ -16144,7 +16026,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     this.getVizGrids();
   },
   showGrids: function showGrids() {
-    this.options.showGrids = false;
+    this.options.showGrids = true;
     this.getVizGrids();
   },
   showLabels: function showLabels() {
@@ -16152,7 +16034,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     this.getVizGrids();
   },
   getVizGrids: function getVizGrids() {
-    var _this3 = this;
+    var _this2 = this;
 
     // Clear every grid off the map
     this.clearLayers();
@@ -16171,13 +16053,13 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       gz.viz.forEach(function (visibleGrid) {
         // This will tell us what grid squares are visible on the map
-        _this3.empty.push(visibleGrid);
+        _this2.empty.push(visibleGrid);
       }); // This just creates a neater object where I can parse the data easier
 
       this.uniqueVisibleGrids = Object.keys(this.empty).reduce(function (acc, k) {
-        var grid = _this3.empty[k].id;
+        var grid = _this2.empty[k].id;
         acc[grid] = acc[grid] || [];
-        acc[grid].push(_this3.empty[k]);
+        acc[grid].push(_this2.empty[k]);
         return acc;
       }, {});
       this.prepGrids(this.uniqueVisibleGrids);
@@ -16186,7 +16068,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     return this;
   },
   prepGrids: function prepGrids(uniqueVisibleGrids) {
-    var _this4 = this;
+    var _this3 = this;
 
     this.uniqueVisibleGrids = uniqueVisibleGrids;
     var visibleGridsIterator = new Map(Object.entries(this.uniqueVisibleGrids)); // Not sure how useful this promise is. It works fine with just a forEach loop
@@ -16201,7 +16083,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     visibleGridsIterator.forEach(function (grid) {
       delay(20).then(function () {
         // This is where all the grids are generated.
-        _this4.generateGrids(grid);
+        _this3.generateGrids(grid);
 
         return delay(3000);
       }).catch(function (err) {
@@ -16210,7 +16092,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     });
   },
   generateGrids: function generateGrids(data) {
-    var _this5 = this;
+    var _this4 = this;
 
     this.data = data;
     var buffer = 0.00001;
@@ -16249,8 +16131,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           if (sw.zoneLetter === ne.zoneLetter) {
             while (northingIteratorNorthHemisphere <= ne.northing) {
               // This loop basically checks to make sure the easting grid is divisible by 100K
-              if (northingIteratorNorthHemisphere % _this5.gridInterval === 0) {
-                _this5.northingArray.push({
+              if (northingIteratorNorthHemisphere % _this4.gridInterval === 0) {
+                _this4.northingArray.push({
                   northing: northingIteratorNorthHemisphere,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter
@@ -16264,8 +16146,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
           if (sw.zoneLetter === se.zoneLetter) {
             while (eastingIteratorNorthHemisphere <= se.easting) {
-              if (eastingIteratorNorthHemisphere % _this5.gridInterval === 0) {
-                _this5.eastingArray.push({
+              if (eastingIteratorNorthHemisphere % _this4.gridInterval === 0) {
+                _this4.eastingArray.push({
                   easting: eastingIteratorNorthHemisphere,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter
@@ -16283,8 +16165,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           if (sw.zoneLetter === ne.zoneLetter) {
             while (northingIteratorSouthHemisphere <= ne.northing) {
               // This loop basically checks to make sure the easting grid is divisible by 100K
-              if (northingIteratorSouthHemisphere % _this5.gridInterval === 0) {
-                _this5.northingArray.push({
+              if (northingIteratorSouthHemisphere % _this4.gridInterval === 0) {
+                _this4.northingArray.push({
                   northing: northingIteratorSouthHemisphere,
                   zoneNumber: nw.zoneNumber,
                   zoneLetter: nw.zoneLetter
@@ -16298,8 +16180,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
           if (nw.zoneLetter === ne.zoneLetter) {
             while (eastingIteratorSouthHemisphere <= ne.easting) {
-              if (eastingIteratorSouthHemisphere % _this5.gridInterval === 0) {
-                _this5.eastingArray.push({
+              if (eastingIteratorSouthHemisphere % _this4.gridInterval === 0) {
+                _this4.eastingArray.push({
                   easting: eastingIteratorSouthHemisphere,
                   zoneNumber: nw.zoneNumber,
                   zoneLetter: nw.zoneLetter
@@ -16321,16 +16203,16 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       var northingGridsArray = [];
       var bottomNorthing = na[1];
       var southWestCorner = new _leaflet.default.latLng({
-        lat: _this5.south,
-        lon: _this5.west
+        lat: _this4.south,
+        lon: _this4.west
       });
       var northEastCorner = new _leaflet.default.latLng({
-        lat: _this5.north,
-        lon: _this5.east
+        lat: _this4.north,
+        lon: _this4.east
       });
       var bounds = new _leaflet.default.latLngBounds(southWestCorner, northEastCorner);
 
-      var bottomRow = _this5.eastingArray.map(function (j) {
+      var bottomRow = _this4.eastingArray.map(function (j) {
         if (j.zoneNumber === bottomNorthing.zoneNumber && j.zoneLetter === bottomNorthing.zoneLetter) {
           return [j, bottomNorthing];
         }
@@ -16346,8 +16228,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
             zoneLetter: k[0].zoneLetter
           }); //! gen grid labels
 
-          if (_this5.options.showLabels) {
-            _this5.genLabels(k[1].northing, k[0].easting, k[0].zoneNumber, k[0].zoneLetter);
+          if (_this4.options.showLabels) {
+            _this4.genLabels(k[1].northing, k[0].easting, k[0].zoneNumber, k[0].zoneLetter);
           } // If the northingGrids are within the visible boundaries of the map, then push them to the array
 
 
@@ -16360,27 +16242,27 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       for (var index = 0; index < len; index += 1) {
         var element = [northingGridsArray[index], northingGridsArray[index + 1]];
-        var northingLine = new _leaflet.default.Polyline([element], _this5.lineStyle); // Create a special grid for oddball grid zones like Norway and Svalbard
+        var northingLine = new _leaflet.default.Polyline([element], _this4.lineStyle); // Create a special grid for oddball grid zones like Norway and Svalbard
 
-        _this5.handleSpecialZones(element); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
+        _this4.handleSpecialZones(element); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
 
 
         if (element[1]) {
           // If the user is scrolled all the way up to the X zone, then just run cleanLine
-          if (_this5.data[0].letterID === 'X') {
-            _this5.cleanLine(northingLine, _this5.data[0].left, _this5.data[0].right);
+          if (_this4.data[0].letterID === 'X') {
+            _this4.cleanLine(northingLine, _this4.data[0].left, _this4.data[0].right);
           } // If element[1]'s longitude is less than the right GZD boundary longitude and greater than the left GZD boundary
 
 
-          if (element[1].lon <= _this5.data[0].right && element[0].lon >= _this5.data[0].left) {
+          if (element[1].lon <= _this4.data[0].right && element[0].lon >= _this4.data[0].left) {
             // This is where the northingLine grids will be output from
             // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
-            _this5.cleanLine(northingLine, _this5.data[0].left, _this5.data[0].right); // This will "connect" the 100k grid to the east and west end of the GZD
+            _this4.cleanLine(northingLine, _this4.data[0].left, _this4.data[0].right); // This will "connect" the 100k grid to the east and west end of the GZD
 
 
             var count = 0;
 
-            while (count < _this5.data.length) {
+            while (count < _this4.data.length) {
               // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
               // Convert element[0] to a LatLng so we can use the distanceTo() method
               var connectingNorthingLineWest = new _leaflet.default.latLng({
@@ -16392,9 +16274,9 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
                 lng: element[1].lon
               });
 
-              _this5.connectingNorthingLine(connectingNorthingLineWest, element, 0, _this5.data, count, 'left');
+              _this4.connectingNorthingLine(connectingNorthingLineWest, element, 0, _this4.data, count, 'left');
 
-              _this5.connectingNorthingLine(connectingNorthingLineEast, element, 1, _this5.data, count, 'right');
+              _this4.connectingNorthingLine(connectingNorthingLineEast, element, 1, _this4.data, count, 'right');
 
               count += 1;
               break;
@@ -16409,16 +16291,16 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       var eastingGridsArray = [];
       var bottomEasting = ea[1];
       var southWestCorner = new _leaflet.default.latLng({
-        lat: _this5.south,
-        lon: _this5.west
+        lat: _this4.south,
+        lon: _this4.west
       });
       var northEastCorner = new _leaflet.default.latLng({
-        lat: _this5.north,
-        lon: _this5.east
+        lat: _this4.north,
+        lon: _this4.east
       });
       var bounds = new _leaflet.default.latLngBounds(southWestCorner, northEastCorner);
 
-      var bottomRow = _this5.northingArray.map(function (j) {
+      var bottomRow = _this4.northingArray.map(function (j) {
         // match grid zones and grid IDs together
         if (j.zoneNumber === bottomEasting.zoneNumber && j.zoneLetter === bottomEasting.zoneLetter) {
           return [j, bottomEasting];
@@ -16445,22 +16327,22 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       for (var index = 0; index < len; index += 1) {
         var element = [eastingGridsArray[index], eastingGridsArray[index + 1]];
-        var eastingLine = new _leaflet.default.Polyline([element], _this5.lineStyle);
+        var eastingLine = new _leaflet.default.Polyline([element], _this4.lineStyle);
 
-        _this5.handleSpecialZones(element); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
+        _this4.handleSpecialZones(element); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
 
 
         if (element[1]) {
           // If element[1]'s longitude is less than the left boundary and greater than the right boundary
-          if (element[0].lon > _this5.data[0].left && element[0].lon < _this5.data[0].right) {
+          if (element[0].lon > _this4.data[0].left && element[0].lon < _this4.data[0].right) {
             // Basically what this.cleanLine aims to do is clip any polylines that go past their GZD boundaries
-            _this5.cleanLine(eastingLine, _this5.data[0].left, _this5.data[0].right); // Connect the easting lines to the north and south parts of the GZD
+            _this4.cleanLine(eastingLine, _this4.data[0].left, _this4.data[0].right); // Connect the easting lines to the north and south parts of the GZD
             // IOT get the bottom latitude for each grid we need to loop over it
 
 
             var count = 0;
 
-            while (count < _this5.data.length) {
+            while (count < _this4.data.length) {
               // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
               var connectingEastingLineSouth = new _leaflet.default.latLng({
                 lat: element[0].lat,
@@ -16471,9 +16353,9 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
                 lng: element[1].lon
               });
 
-              _this5.connectingEastingLine(connectingEastingLineSouth, element, 0, _this5.data, count, 'bottom');
+              _this4.connectingEastingLine(connectingEastingLineSouth, element, 0, _this4.data, count, 'bottom');
 
-              _this5.connectingEastingLine(connectingEastingLineNorth, element, 1, _this5.data, count, 'top');
+              _this4.connectingEastingLine(connectingEastingLineNorth, element, 1, _this4.data, count, 'top');
 
               count += 1;
             }
@@ -16705,108 +16587,110 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       return;
     }
 
-    var labelGrids = (0, _mgrs.UTMtoLL)({
-      northing: northingLabel + this.gridInterval / 2,
-      easting: eastingLabel,
-      zoneNumber: zoneNumberLabel,
-      zoneLetter: zoneLetterLabel
-    });
-    var labelWestOfRightGZD = new _leaflet.default.latLng(labelGrids).distanceTo({
-      lat: labelGrids.lat,
-      lng: this.data[0].right
-    });
-    var labelEastOfRightGZD = new _leaflet.default.latLng(labelGrids).distanceTo({
-      lat: labelGrids.lat,
-      lng: this.data[0].left
-    }); // These are the labels that are right next to the LEFT of the visible GZD line
-
-    if (labelWestOfRightGZD < this.gridInterval && labelWestOfRightGZD > this.gridInterval / 5) {
-      labelGrids = (0, _mgrs.UTMtoLL)({
+    if (this.options.showLabels) {
+      var labelGrids = (0, _mgrs.UTMtoLL)({
         northing: northingLabel + this.gridInterval / 2,
-        easting: eastingLabel + labelWestOfRightGZD / 2,
+        easting: eastingLabel,
         zoneNumber: zoneNumberLabel,
         zoneLetter: zoneLetterLabel
       });
-
-      var _labelGridsUTM = (0, _mgrs.LLtoUTM)(labelGrids);
-
-      if (labelGrids.lon < this.data[0].right && labelGrids.lon > this.data[0].left) {
-        var grid100kLabel = new _leaflet.default.Marker(labelGrids, {
-          interactive: false,
-          icon: new _leaflet.default.DivIcon({
-            className: 'leaflet-grid-label',
-            iconAnchor: new _leaflet.default.Point(10, 10),
-            html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(_labelGridsUTM.easting, _labelGridsUTM.northing, _labelGridsUTM.zoneNumber), "</div>")
-          })
-        });
-
-        if (this._map.getBounds().pad(0.1).contains(labelGrids)) {
-          this.addLayer(grid100kLabel);
-        }
-      }
-    } // These are the labels that are right next to the RIGHT of the visible GZD line
-
-
-    if (labelEastOfRightGZD < this.gridInterval && labelEastOfRightGZD > this.gridInterval / 5) {
-      labelGrids = (0, _mgrs.UTMtoLL)({
-        northing: northingLabel + this.gridInterval / 2,
-        easting: eastingLabel - labelEastOfRightGZD / 2,
-        zoneNumber: zoneNumberLabel,
-        zoneLetter: zoneLetterLabel
+      var labelWestOfRightGZD = new _leaflet.default.latLng(labelGrids).distanceTo({
+        lat: labelGrids.lat,
+        lng: this.data[0].right
       });
-
-      var _labelGridsUTM2 = (0, _mgrs.LLtoUTM)(labelGrids);
-
-      if (labelGrids.lon < this.data[0].right && labelGrids.lon > this.data[0].left) {
-        var _grid100kLabel = new _leaflet.default.Marker(labelGrids, {
-          interactive: false,
-          icon: new _leaflet.default.DivIcon({
-            className: 'leaflet-grid-label',
-            iconAnchor: new _leaflet.default.Point(10, 10),
-            html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(_labelGridsUTM2.easting, _labelGridsUTM2.northing, _labelGridsUTM2.zoneNumber), "</div>")
-          })
-        });
-
-        if (this._map.getBounds().pad(0.1).contains(labelGrids)) {
-          this.addLayer(_grid100kLabel);
-        }
-      }
-    } // These are the labels that are in between of the visible GZD lines
-
-
-    labelGrids = (0, _mgrs.UTMtoLL)({
-      northing: northingLabel + this.gridInterval / 2,
-      easting: eastingLabel + this.gridInterval / 2,
-      zoneNumber: zoneNumberLabel,
-      zoneLetter: zoneLetterLabel
-    });
-    var labelGridsUTM = (0, _mgrs.LLtoUTM)(labelGrids); // This is idiotic but I am going to keep it for now. 4 if statements is embarrassing ffs
-    // Basically this finds all grids that are more than 50K meters from the right and left of the visible GZD lines
-
-    if (new _leaflet.default.latLng(labelGrids).distanceTo({
-      lat: labelGrids.lat,
-      lng: this.data[0].right
-    }) > this.gridInterval / 2) {
-      if (new _leaflet.default.latLng(labelGrids).distanceTo({
+      var labelEastOfRightGZD = new _leaflet.default.latLng(labelGrids).distanceTo({
         lat: labelGrids.lat,
         lng: this.data[0].left
-      }) > this.gridInterval / 2) {
+      }); // These are the labels that are right next to the LEFT of the visible GZD line
+
+      if (labelWestOfRightGZD < this.gridInterval && labelWestOfRightGZD > this.gridInterval / 5) {
+        labelGrids = (0, _mgrs.UTMtoLL)({
+          northing: northingLabel + this.gridInterval / 2,
+          easting: eastingLabel + labelWestOfRightGZD / 2,
+          zoneNumber: zoneNumberLabel,
+          zoneLetter: zoneLetterLabel
+        });
+
+        var _labelGridsUTM = (0, _mgrs.LLtoUTM)(labelGrids);
+
         if (labelGrids.lon < this.data[0].right && labelGrids.lon > this.data[0].left) {
-          // This removes any "weird" eastings that are not divisible by 10. So for instance the easting "637851" would not pass this test
-          // This also prevents labels overlapping
-          if (Math.round(labelGridsUTM.easting / 10) * 10 % this.gridInterval === this.gridInterval / 2) {
-            var _grid100kLabel2 = new _leaflet.default.Marker(labelGrids, {
-              interactive: false,
-              icon: new _leaflet.default.DivIcon({
-                className: 'leaflet-grid-label',
-                iconAnchor: new _leaflet.default.Point(10, 10),
-                html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber), "</div>")
-              })
-            }); // Only add grid labels that the user can see
+          var grid100kLabel = new _leaflet.default.Marker(labelGrids, {
+            interactive: false,
+            icon: new _leaflet.default.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new _leaflet.default.Point(10, 10),
+              html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(_labelGridsUTM.easting, _labelGridsUTM.northing, _labelGridsUTM.zoneNumber), "</div>")
+            })
+          });
+
+          if (this._map.getBounds().pad(0.1).contains(labelGrids)) {
+            this.addLayer(grid100kLabel);
+          }
+        }
+      } // These are the labels that are right next to the RIGHT of the visible GZD line
 
 
-            if (this._map.getBounds().pad(0.1).contains(labelGrids)) {
-              this.addLayer(_grid100kLabel2);
+      if (labelEastOfRightGZD < this.gridInterval && labelEastOfRightGZD > this.gridInterval / 5) {
+        labelGrids = (0, _mgrs.UTMtoLL)({
+          northing: northingLabel + this.gridInterval / 2,
+          easting: eastingLabel - labelEastOfRightGZD / 2,
+          zoneNumber: zoneNumberLabel,
+          zoneLetter: zoneLetterLabel
+        });
+
+        var _labelGridsUTM2 = (0, _mgrs.LLtoUTM)(labelGrids);
+
+        if (labelGrids.lon < this.data[0].right && labelGrids.lon > this.data[0].left) {
+          var _grid100kLabel = new _leaflet.default.Marker(labelGrids, {
+            interactive: false,
+            icon: new _leaflet.default.DivIcon({
+              className: 'leaflet-grid-label',
+              iconAnchor: new _leaflet.default.Point(10, 10),
+              html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(_labelGridsUTM2.easting, _labelGridsUTM2.northing, _labelGridsUTM2.zoneNumber), "</div>")
+            })
+          });
+
+          if (this._map.getBounds().pad(0.1).contains(labelGrids)) {
+            this.addLayer(_grid100kLabel);
+          }
+        }
+      } // These are the labels that are in between of the visible GZD lines
+
+
+      labelGrids = (0, _mgrs.UTMtoLL)({
+        northing: northingLabel + this.gridInterval / 2,
+        easting: eastingLabel + this.gridInterval / 2,
+        zoneNumber: zoneNumberLabel,
+        zoneLetter: zoneLetterLabel
+      });
+      var labelGridsUTM = (0, _mgrs.LLtoUTM)(labelGrids); // This is idiotic but I am going to keep it for now. 4 if statements is embarrassing ffs
+      // Basically this finds all grids that are more than 50K meters from the right and left of the visible GZD lines
+
+      if (new _leaflet.default.latLng(labelGrids).distanceTo({
+        lat: labelGrids.lat,
+        lng: this.data[0].right
+      }) > this.gridInterval / 2) {
+        if (new _leaflet.default.latLng(labelGrids).distanceTo({
+          lat: labelGrids.lat,
+          lng: this.data[0].left
+        }) > this.gridInterval / 2) {
+          if (labelGrids.lon < this.data[0].right && labelGrids.lon > this.data[0].left) {
+            // This removes any "weird" eastings that are not divisible by 10. So for instance the easting "637851" would not pass this test
+            // This also prevents labels overlapping
+            if (Math.round(labelGridsUTM.easting / 10) * 10 % this.gridInterval === this.gridInterval / 2) {
+              var _grid100kLabel2 = new _leaflet.default.Marker(labelGrids, {
+                interactive: false,
+                icon: new _leaflet.default.DivIcon({
+                  className: 'leaflet-grid-label',
+                  iconAnchor: new _leaflet.default.Point(10, 10),
+                  html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber), "</div>")
+                })
+              }); // Only add grid labels that the user can see
+
+
+              if (this._map.getBounds().pad(0.1).contains(labelGrids)) {
+                this.addLayer(_grid100kLabel2);
+              }
             }
           }
         }
@@ -16846,7 +16730,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         return 3;
 
       case 10:
-        return 1 + northBuffer;
+        return 1.5 + northBuffer;
 
       case 9:
         return 0.7 + northBuffer;
@@ -16877,12 +16761,10 @@ var generate100kGrids = new _leaflet.default.mgrs100k({
   showGrids: false
 });
 generate100kGrids.addTo(map); // *********************************************************************************** //
-// * Leaflet DumbMGRS Plugin - 1000 Meter Grids                                      * //
+// * Leaflet.DumbMGRS - 1000 Meter Grids                                             * //
 // *********************************************************************************** //
-// TODO: Rename this.empty to something descriptive. Come on Jim get your head out of your ass
-// TODO: anything named "map" should be changed to this._map
+// TODO: Rename this.empty to something descriptive.
 // TODO: This plugin will get messed up on the southern hemisphere
-// TODO: Remove legacy code (eg- setOptions on initialize)
 
 _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   options: {
@@ -16909,55 +16791,19 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     lineCap: 'butt',
     lineJoin: 'miter-clip'
   },
-
-  // line style for debugging
-  get orangeLine() {
-    var propertyToModify = {
-      color: 'orange',
-      weight: 8,
-      opacity: 0.25
-    };
-
-    var modifiedTarget = _objectSpread({}, this.lineStyle, {}, propertyToModify);
-
-    return modifiedTarget;
-  },
-
-  // line style for debugging
-  get redLine() {
-    var propertyToModify = {
-      color: 'red',
-      weight: 2,
-      opacity: 0.75
-    };
-
-    var modifiedTarget = _objectSpread({}, this.lineStyle, {}, propertyToModify);
-
-    return modifiedTarget;
-  },
-
   initialize: function initialize(options) {
-    _leaflet.default.LayerGroup.prototype.initialize.call(this); //! setOptions might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
-
-
-    _leaflet.default.Util.setOptions(this, options);
+    _leaflet.default.LayerGroup.prototype.initialize.call(this);
   },
   onAdd: function onAdd(map) {
     this._map = map;
     var grids1000Meters = this.regenerate();
 
-    this._map.on("viewreset ".concat(this.options.redraw, " moveend"), grids1000Meters.regenerate, grids1000Meters); //! eachLayer might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
-
-
-    this.eachLayer(map.addLayer, map);
+    this._map.on("viewreset ".concat(this.options.redraw, " moveend"), grids1000Meters.regenerate, grids1000Meters);
   },
   onRemove: function onRemove(map) {
     this._map = map;
 
-    this._map.off("viewreset ".concat(this.options.redraw), this._map); //! eachLayer might not be needed in Leaflet 1.6 since it is already declared in the source code. This was copied from a tutorial using Leaflet 0.7.3
-
-
-    this.eachLayer(this.removeLayer, this);
+    this._map.off("viewreset ".concat(this.options.redraw), this._map);
   },
   hideGrids: function hideGrids() {
     this.options.hidden = true;
@@ -16976,33 +16822,31 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     this.regenerate();
   },
   regenerate: function regenerate() {
-    var _this6 = this;
+    var _this5 = this;
+
+    this.clearLayers();
 
     var currentZoom = this._map.getZoom();
 
-    if (currentZoom < this.options.minZoom) {
-      // Since we don't want to turn off the event listener, run eachLayer() instead of onRemove
-      //! should just be this.clearLayers()
-      return this.eachLayer(this.removeLayer, this);
-    }
-
-    this._bounds = this._map.getBounds().pad(this.getPaddingOnZoomLevel1000Meters());
-    this.clearLayers();
-    this.empty = [];
-
     if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
-      // Call the GZD class and get the visible grid zone designators on the map
-      gz.viz.forEach(function (visibleGrid) {
-        // This will tell us what grid squares are visible on the map
-        _this6.empty.push(visibleGrid);
-      });
+      this._bounds = this._map.getBounds().pad(this.getPaddingOnZoomLevel1000Meters());
+      this.clearLayers();
+      this.empty = [];
 
-      if (this.empty.length <= 1) {
-        // If there is no other GZD visible on the map, then just run it
-        this.generateGrids(this.options.splitGZD = false);
-      } else {
-        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'right');
-        this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
+      if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
+        // Call the GZD class and get the visible grid zone designators on the map
+        gz.viz.forEach(function (visibleGrid) {
+          // This will tell us what grid squares are visible on the map
+          _this5.empty.push(visibleGrid);
+        });
+
+        if (this.empty.length <= 1) {
+          // If there is no other GZD visible on the map, then just run it
+          this.generateGrids(this.options.splitGZD = false);
+        } else {
+          this.generateGrids(this.options.splitGZD = true, this.options.direction = 'right');
+          this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
+        }
       }
     }
 
@@ -17140,7 +16984,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       });
       var labelCoords = (0, _mgrs.UTMtoLL)({
         northing: (0, _mgrs.LLtoUTM)({
-          lat: map.getBounds().getSouth(),
+          lat: this._map.getBounds().getSouth(),
           lon: southLine.lon
         }).northing,
         easting: adjustedEasting,
@@ -17204,7 +17048,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       var endEastingLineForNorthings = void 0;
       var beginEastingLineForNorthings = void 0; // If we need to get the northern bounds and we are in the southern hemisphere, grab the north, else grab the south
 
-      var northernHemisphereBounds = map.getCenter().lat <= 0 ? this._bounds.getNorth() : this._bounds.getSouth();
+      var northernHemisphereBounds = this._map.getCenter().lat <= 0 ? this._bounds.getNorth() : this._bounds.getSouth();
 
       switch (this.options.direction) {
         case undefined:
@@ -17257,7 +17101,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         northing: adjustedNorthing,
         easting: (0, _mgrs.LLtoUTM)({
           lat: westLine.lat,
-          lon: map.getBounds().getWest()
+          lon: this._map.getBounds().getWest()
         }).easting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
@@ -17377,26 +17221,9 @@ var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
   hidden: true
 });
 generate1000meterGrids.addTo(map); // *********************************************************************************** //
-// * Event Listeners                                                                 * //
+// * Event Listeners (Leaflet.DumbMGRS)                                              * //
 // *********************************************************************************** //
-
-map.addEventListener('moveend', function () {
-  setTimeout(function () {
-    document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
-    document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
-    document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
-  }, 300);
-}, {
-  once: true
-}); // Add the layer data when the page loads
-
-document.addEventListener('DOMContentLoaded', function () {
-  setTimeout(function () {
-    document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelector('.leaflet-zoom-animated > g').childElementCount);
-    document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
-    document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
-  }, 300);
-}); // Toggle labels on 1000 meter grids
+// Toggle 1000 meter labels
 
 document.querySelector('#grids1000Meters-labels').addEventListener('change', function (event) {
   var checkbox = event.target;
@@ -17420,7 +17247,7 @@ document.querySelector('#grids1000Meters-grids').addEventListener('change', func
     document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
     generate1000meterGrids.hideGrids();
   }
-}); // Toggle labels on 100k grids
+}); // Toggle 100k labels
 
 document.querySelector('#grids100k-labels').addEventListener('change', function (event) {
   var checkbox = event.target;
@@ -17439,13 +17266,85 @@ document.querySelector('#grids100k-grids').addEventListener('change', function (
 
   if (checkbox.checked) {
     document.querySelector('#grids100k-grids').toggleAttribute('checked');
-    generate100kGrids.hideGrids();
+    generate100kGrids.showGrids();
   } else {
     document.querySelector('#grids100k-grids').toggleAttribute('checked');
-    generate100kGrids.showGrids();
+    generate100kGrids.hideGrids();
   }
+}); // Toggle GZD labels
+
+document.querySelector('#gzd-labels').addEventListener('change', function (event) {
+  var checkbox = event.target;
+
+  if (checkbox.checked) {
+    document.querySelector('#gzd-labels').toggleAttribute('checked');
+    gz.showLabels();
+  } else {
+    document.querySelector('#gzd-labels').toggleAttribute('checked');
+    gz.hideLabels();
+  }
+}); // Toggle GZD grids
+
+document.querySelector('#gzd-grids').addEventListener('change', function (event) {
+  var checkbox = event.target;
+
+  if (checkbox.checked) {
+    document.querySelector('#gzd-grids').toggleAttribute('checked');
+    gz.hideGrids();
+  } else {
+    document.querySelector('#gzd-grids').toggleAttribute('checked');
+    gz.showGrids();
+  }
+}); // *********************************************************************************** //
+// * Event Listeners (Example Info Boxes)                                            * //
+// *********************************************************************************** //
+// Update layer count, marker count, and map zoom when the user stops moving the map
+
+map.addEventListener('moveend', function () {
+  setTimeout(function () {
+    document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
+    document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
+    document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
+  }, 300);
+}, {
+  once: true
+}); // Add the layer data when the page loads
+
+document.addEventListener('DOMContentLoaded', function () {
+  setTimeout(function () {
+    cc.querySelector('.mgrsInfo').innerHTML = "".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
+      lat: map.getCenter().lat,
+      lon: map.getCenter().lng
+    }), 5, true)); // Display cursor coordinates in Latitude/Longitude
+
+    cc.querySelector('.latInfo').innerHTML = "".concat(map.getCenter().lat.toFixed(8));
+    cc.querySelector('.lonInfo').innerHTML = "".concat(map.getCenter().lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
+
+    cc.querySelector('.eastingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+      lat: map.getCenter().lat,
+      lon: map.getCenter().lng
+    }).easting);
+    cc.querySelector('.northingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+      lat: map.getCenter().lat,
+      lon: map.getCenter().lng
+    }).northing);
+    document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
+    document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
+    document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
+  }, 300);
+}); // Automatically update the layers on toggle
+
+document.querySelectorAll('.sw').forEach(function (toggleSwitch) {
+  toggleSwitch.addEventListener('change', function () {
+    setTimeout(function () {
+      document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
+      document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
+    }, 100);
+  });
 });
-},{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+var _default = map;
+exports.default = _default;
+},{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
