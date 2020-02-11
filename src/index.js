@@ -32,9 +32,8 @@ const norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
 const iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
 const northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 const quito = [0.17578097424708533, -77.84912109375];
-const map = L.map('map').setView(southFL, 7);
+const map = L.map('map').setView(southNY, 7);
 const cc = document.querySelector('.cursorCoordinates');
-window.map = map;
 // Just a quicker way to add a marker, used for debugging purposes
 function mark(element) {
   const marker = new L.marker(element);
@@ -99,6 +98,8 @@ map.addEventListener('mousemove', (event) => {
 // *********************************************************************************** //
 // TODO: Split the plugin off into its own JS file (with the eastingDict/northingDict)
 // TODO: Tree shake mgrs.js
+// TODO: find any instance of 'map' and replace with this._map
+// TODO: This is mostly done. Just need to clean up some issues, merge gzdObject.js, tree shake mgrs.js, and wrap it up into an official plugin
 L.GZD = L.LayerGroup.extend({
   // Default options
   options: {
@@ -335,11 +336,13 @@ const gz = new L.gzd({
 
 gz.addTo(map);
 
+
 // *********************************************************************************** //
 // * Leaflet.DumbMGRS - 100k Grids                                                   * //
 // *********************************************************************************** //
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
+// TODO: Finish configuring the special zones exceptions
 L.MGRS100K = L.LayerGroup.extend({
   // Default options
   options: {
@@ -479,7 +482,7 @@ L.MGRS100K = L.LayerGroup.extend({
       const ne = LLtoUTM({ lat: x.top - buffer, lon: x.right - buffer });
       const nw = LLtoUTM({ lat: x.top - buffer, lon: x.left + buffer });
 
-      const hemisphere = map.getCenter().lat <= 0 ? 'South' : 'North';
+      const hemisphere = this._map.getCenter().lat <= 0 ? 'South' : 'North';
       let northingIteratorNorthHemisphere = sw.northing;
       let eastingIteratorNorthHemisphere = sw.easting;
       let northingIteratorSouthHemisphere = sw.northing;
@@ -799,7 +802,6 @@ L.MGRS100K = L.LayerGroup.extend({
     }
   },
 
-  // TODO: Finish configuring the special zones exceptions
   handleSpecialZones(element) {
     const elementUTM = LLtoUTM(element[0]);
     // 31V is that slim GZD between Norway and Britain.
@@ -1009,8 +1011,8 @@ generate100kGrids.addTo(map);
 L.MGRS1000Meters = L.LayerGroup.extend({
   options: {
     gridInterval: 1000,
-    showLabels: true,
-    hidden: false,
+    showLabels: false,
+    hidden: true,
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
@@ -1070,6 +1072,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   regenerate() {
     this.clearLayers();
     const currentZoom = this._map.getZoom();
+
     if ((currentZoom >= this.options.minZoom) && (currentZoom <= this.options.maxZoom)) {
       this._bounds = this._map.getBounds().pad(this.getPaddingOnZoomLevel1000Meters());
       this.clearLayers();
@@ -1093,7 +1096,6 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     }
     return this;
   },
-
   // Gets the minimum easting and northing of each 1000 meter grid line
   getMinimumBounds() {
     let nw;
@@ -1116,7 +1118,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     }
 
     return {
-      // rounds up to nearest multiple of x
+    // rounds up to nearest multiple of x
       easting: Math.floor(nw.easting / this.options.gridInterval) * this.options.gridInterval,
       northing: Math.floor(nw.northing / this.options.gridInterval) * this.options.gridInterval,
       zoneNumber: nw.zoneNumber,
@@ -1130,8 +1132,8 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     let west;
     switch (this.options.direction) {
       case undefined: {
-        // This will fix a bug where the GZD boundary is barely out of view
-        // it adjusts the value so it grabs the furthest east/west boundary without going outside of the GZD
+      // This will fix a bug where the GZD boundary is barely out of view
+      // it adjusts the value so it grabs the furthest east/west boundary without going outside of the GZD
         east = this.empty[0].right > this._bounds.getEast() ? this._bounds.getEast() : this.empty[0].right - 0.00001;
         west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left;
         break;
@@ -1297,9 +1299,9 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       // This will ensure that the northing lines do not go past their GZD boundaries
       switch (this.options.direction) {
         case undefined:
-          // Putting the grid label options in the switch statement prevents them from duplicating if split GZDs are on screen
+        // Putting the grid label options in the switch statement prevents them from duplicating if split GZDs are on screen
           if (this.options.showLabels) {
-            // If adjustedNorthing is 4871000, then slice the first 2 chars off and then remove the last 3 to get "71" as your label
+          // If adjustedNorthing is 4871000, then slice the first 2 chars off and then remove the last 3 to get "71" as your label
             gridLabels.push(this.generateNorthingLabel(labelCoords, adjustedNorthing.toString().slice(2, -3)));
           }
           break;
@@ -1383,6 +1385,7 @@ const generate1000meterGrids = new L.mgrs1000meters({
 
 generate1000meterGrids.addTo(map);
 
+
 // *********************************************************************************** //
 // * Event Listeners (Leaflet.DumbMGRS)                                              * //
 // *********************************************************************************** //
@@ -1458,6 +1461,7 @@ document.querySelector('#gzd-grids').addEventListener('change', (event) => {
   }
 });
 
+
 // *********************************************************************************** //
 // * Event Listeners (Example Info Boxes)                                            * //
 // *********************************************************************************** //
@@ -1494,5 +1498,35 @@ document.querySelectorAll('.sw').forEach((toggleSwitch) => {
     }, 100);
   });
 });
+
+// Automatically disabled switches that cannot be used at certain zoom levels
+map.whenReady(() => {
+  const switchValidator = () => {
+    if (map.getZoom() < 12) {
+      document.querySelector('#grids1000Meters-labels').setAttribute('disabled', true);
+      document.querySelector('#grids1000Meters-grids').setAttribute('disabled', true);
+    } else {
+      document.querySelector('#grids1000Meters-labels').removeAttribute('disabled');
+      document.querySelector('#grids1000Meters-grids').removeAttribute('disabled');
+    }
+    if (map.getZoom() <= 6) {
+      document.querySelector('#grids100k-labels').setAttribute('disabled', true);
+      document.querySelector('#grids100k-grids').setAttribute('disabled', true);
+    } else {
+      document.querySelector('#grids100k-labels').removeAttribute('disabled');
+      document.querySelector('#grids100k-grids').removeAttribute('disabled');
+    }
+    if (map.getZoom() <= 3) {
+      document.querySelector('#gzd-labels').setAttribute('disabled', true);
+      document.querySelector('#gzd-grids').setAttribute('disabled', true);
+    } else {
+      document.querySelector('#gzd-labels').removeAttribute('disabled');
+      document.querySelector('#gzd-grids').removeAttribute('disabled');
+    }
+  };
+  map.on('zoomend', switchValidator);
+  switchValidator();
+});
+
 
 export default map;

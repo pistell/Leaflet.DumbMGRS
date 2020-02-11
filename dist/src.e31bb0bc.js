@@ -15632,10 +15632,9 @@ var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
 var quito = [0.17578097424708533, -77.84912109375];
 
-var map = _leaflet.default.map('map').setView(southFL, 7);
+var map = _leaflet.default.map('map').setView(southNY, 7);
 
-var cc = document.querySelector('.cursorCoordinates');
-window.map = map; // Just a quicker way to add a marker, used for debugging purposes
+var cc = document.querySelector('.cursorCoordinates'); // Just a quicker way to add a marker, used for debugging purposes
 
 function mark(element) {
   var marker = new _leaflet.default.marker(element);
@@ -15710,6 +15709,8 @@ map.addEventListener('mousemove', function (event) {
 // *********************************************************************************** //
 // TODO: Split the plugin off into its own JS file (with the eastingDict/northingDict)
 // TODO: Tree shake mgrs.js
+// TODO: find any instance of 'map' and replace with this._map
+// TODO: This is mostly done. Just need to clean up some issues, merge gzdObject.js, tree shake mgrs.js, and wrap it up into an official plugin
 
 _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
   // Default options
@@ -15963,6 +15964,7 @@ gz.addTo(map); // **************************************************************
 // *********************************************************************************** //
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
+// TODO: Finish configuring the special zones exceptions
 
 _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   // Default options
@@ -16119,7 +16121,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         lat: x.top - buffer,
         lon: x.left + buffer
       });
-      var hemisphere = map.getCenter().lat <= 0 ? 'South' : 'North';
+      var hemisphere = _this4._map.getCenter().lat <= 0 ? 'South' : 'North';
       var northingIteratorNorthHemisphere = sw.northing;
       var eastingIteratorNorthHemisphere = sw.easting;
       var northingIteratorSouthHemisphere = sw.northing;
@@ -16515,7 +16517,6 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       }
     }
   },
-  // TODO: Finish configuring the special zones exceptions
   handleSpecialZones: function handleSpecialZones(element) {
     var elementUTM = (0, _mgrs.LLtoUTM)(element[0]); // 31V is that slim GZD between Norway and Britain.
 
@@ -16769,8 +16770,8 @@ generate100kGrids.addTo(map); // ***********************************************
 _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   options: {
     gridInterval: 1000,
-    showLabels: true,
-    hidden: false,
+    showLabels: false,
+    hidden: true,
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
@@ -17341,6 +17342,37 @@ document.querySelectorAll('.sw').forEach(function (toggleSwitch) {
       document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
     }, 100);
   });
+}); // Automatically disabled switches that cannot be used at certain zoom levels
+
+map.whenReady(function () {
+  var switchValidator = function switchValidator() {
+    if (map.getZoom() < 12) {
+      document.querySelector('#grids1000Meters-labels').setAttribute('disabled', true);
+      document.querySelector('#grids1000Meters-grids').setAttribute('disabled', true);
+    } else {
+      document.querySelector('#grids1000Meters-labels').removeAttribute('disabled');
+      document.querySelector('#grids1000Meters-grids').removeAttribute('disabled');
+    }
+
+    if (map.getZoom() <= 6) {
+      document.querySelector('#grids100k-labels').setAttribute('disabled', true);
+      document.querySelector('#grids100k-grids').setAttribute('disabled', true);
+    } else {
+      document.querySelector('#grids100k-labels').removeAttribute('disabled');
+      document.querySelector('#grids100k-grids').removeAttribute('disabled');
+    }
+
+    if (map.getZoom() <= 3) {
+      document.querySelector('#gzd-labels').setAttribute('disabled', true);
+      document.querySelector('#gzd-grids').setAttribute('disabled', true);
+    } else {
+      document.querySelector('#gzd-labels').removeAttribute('disabled');
+      document.querySelector('#gzd-grids').removeAttribute('disabled');
+    }
+  };
+
+  map.on('zoomend', switchValidator);
+  switchValidator();
 });
 var _default = map;
 exports.default = _default;

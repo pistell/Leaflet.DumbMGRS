@@ -232,6 +232,12 @@ input {
         transition: box-shadow 2.5s cubic-bezier(0, 1.2, 0.94, 0.95);
       }
     }
+    &:disabled {
+      & + label {
+        background: red;
+        opacity: 0.25;
+      }
+    }
   }
 }
 

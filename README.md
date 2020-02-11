@@ -46,7 +46,7 @@ node dist/bundle.js
 
 I am trying to generate 3 types of grids
 
-1. A Grid Zone Designator - 1 million by 1 million meter grid. The GZD is outlined in red and has a grid label in the center of it. This actually works as I intended it to. See class GZD in index.js for the code.
+1. A Grid Zone Designator - 1 million by 1 million meter grid. The GZD is outlined in red and has a grid label in the center of it.
 
 2. A 100K grid - 100k by 100k meter grid. This is filled with bugs and inefficient code.
 
@@ -54,19 +54,19 @@ I am trying to generate 3 types of grids
 
 ## Issues
 
-1. Need to come up with a method that toggles grid labels on and off
+- [x] Need to come up with a method that toggles grid labels on and off
 
-2. 100K grids fail around Antarctica
+- [] 100K grids fail around Antarctica
 
-3. 100K grid labels collide with each other when they start converging near the grid zone designator boundaries
+- [x] 100K grid labels collide with each other when they start converging near the grid zone designator boundaries
 
-4. 100K grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
+- [ ] 100K grids fail on GZD 31U,31V and 32V (These are the "special" case grid zones)
 
-5. 100K grids in GZD 31U does not work when the GZDs to the north of it are in visible range
+- [ ] 100K grids in GZD 31U does not work when the GZDs to the north of it are in visible range
 
-6. 1000m grids are all kinda jacked up in the southern hemisphere.
+- [ ] 1000m grids are all kinda jacked up in the southern hemisphere.
 
-7. Your gh-pages is all messed up. When you run build-prod is creates relative links to files it cannot reach. Your current workaround is manually editing the links to the JS and CSS files. This is stupid and very low IQ. Low priority task.
+- [ ] Your gh-pages is all messed up. When you run build-prod is creates relative links to files it cannot reach. Your current workaround is manually editing the links to the JS and CSS files. This is stupid and very low IQ. Low priority task.
 
 ## Other Stuff
 
