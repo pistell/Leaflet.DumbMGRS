@@ -66,6 +66,8 @@ I am trying to generate 3 types of grids
 
 6. 1000m grids are all kinda jacked up in the southern hemisphere.
 
+7. Your gh-pages is all messed up. When you run build-prod is creates relative links to files it cannot reach. Your current workaround is manually editing the links to the JS and CSS files. This is stupid and very low IQ. Low priority task.
+
 ## Other Stuff
 
 Readme created with [createapp.dev](https://createapp.dev/)

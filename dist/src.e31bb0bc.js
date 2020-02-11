@@ -16263,7 +16263,12 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
                   easting: eastingIteratorNorthHemisphere,
                   zoneNumber: sw.zoneNumber,
                   zoneLetter: sw.zoneLetter
-                }); // IOT find smaller grids, just divide this.gridInterval in half
+                }); // this.labelS.push({
+                //   easting: eastingIteratorNorthHemisphere,
+                //   zoneNumber: sw.zoneNumber,
+                //   zoneLetter: sw.zoneLetter,
+                // });
+                // IOT find smaller grids, just divide this.gridInterval in half
 
               } else if (eastingIteratorNorthHemisphere % (_this5.gridInterval / 2) === 0) {
                 // Push the coordinates for the 100k grid labels
@@ -16358,7 +16363,10 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
             easting: k[0].easting,
             zoneNumber: k[0].zoneNumber,
             zoneLetter: k[0].zoneLetter
-          }); // If the northingGrids are within the visible boundaries of the map, then push them to the array
+          }); //! PL
+
+          _this5.pl(northingGrids, _this5.data, [0, 1], ['left', 'right']); // If the northingGrids are within the visible boundaries of the map, then push them to the array
+
 
           if (bounds.contains(northingGrids)) {
             northingGridsArray.push(northingGrids);
@@ -16437,6 +16445,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       bottomRow.forEach(function (k) {
         if (k) {
+          //! DEL
+          // this.placeLabels(k[1].easting, k[0].northing, k[0].zoneLetter, k[0].zoneNumber);
           var eastingGrids = (0, _mgrs.UTMtoLL)({
             northing: k[0].northing,
             easting: k[1].easting,
@@ -16495,6 +16505,78 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       this.genLabels();
     }
   },
+  pl: function pl(element, data, count, direction) {
+    // const slope = (connector.lat - extendedNorthingLine.lat) / (connector.lng - extendedNorthingLine.lon);
+    // const newLat = connector.lat + (slope * (data[count][direction] - connector.lng));
+    // const pt1 = new L.latLng(newLat, data[count][direction] + connector.distanceTo(extendedNorthingLine) / this.gridInterval / 2);
+    // mark(pt1);
+    // console.log(pt1.distanceTo(extendedNorthingLine) / this.gridInterval / 2);
+    // const grid100kData = LLtoUTM(pt1);
+    // const grid100kLabel = new L.Marker(pt1, {
+    //   interactive: false,
+    //   icon: new L.DivIcon({
+    //     className: 'leaflet-grid-label',
+    //     iconAnchor: new L.Point(10, -20),
+    //     html: `<div class="grid-label">${get100kID(grid100kData.easting, grid100kData.northing, grid100kData.zoneNumber)}</div>`,
+    //   }),
+    // });
+    //   // Only put labels on the map if they are in bounds
+    // if (this._map.getBounds().pad(0.1).contains(connector)) {
+    //   this.addLayer(grid100kLabel);
+    // }
+    // const pt1 = new L.latLng(element.lat, data[count][direction] + new L.latLng(element).distanceTo({ lat: element.lat, lng: data[count][direction] }) / this.gridInterval);
+    var rightDistance = new _leaflet.default.latLng(element).distanceTo({
+      lat: element.lat,
+      lng: this.data[0].right
+    });
+    var leftDistance = new _leaflet.default.latLng(element).distanceTo({
+      lat: element.lat,
+      lng: this.data[0].left
+    });
+
+    if (rightDistance <= this.gridInterval) {
+      var offsetRight = new _leaflet.default.latLng(element).distanceTo({
+        lat: element.lat,
+        lng: this.data[0].right
+      }) / this.gridInterval / 2;
+      var rightOfGZD = new _leaflet.default.latLng(element.lat + offsetRight, this.data[0].right + offsetRight); // mark(rightOfGZD);
+    }
+
+    if (leftDistance <= this.gridInterval) {
+      var offsetLeft = new _leaflet.default.latLng(element).distanceTo({
+        lat: element.lat,
+        lng: this.data[0].left
+      }) / this.gridInterval / 2;
+      var leftOfGZD = new _leaflet.default.latLng(element.lat + offsetLeft, this.data[0].left - offsetLeft); // mark(leftOfGZD);
+    } // markers on left and right: 144
+
+
+    if (leftDistance > this.gridInterval && rightDistance > this.gridInterval) {
+      var offsetMiddle = new _leaflet.default.latLng(element).distanceTo({
+        lat: element.lat,
+        lng: this.data[0].left
+      }) / this.gridInterval / 2;
+
+      var _leftOfGZD = new _leaflet.default.latLng(element.lat + offsetMiddle, this.data[0].left - offsetMiddle);
+
+      var elementUTM = (0, _mgrs.LLtoUTM)(element);
+      var grid100kData = (0, _mgrs.UTMtoLL)({
+        easting: elementUTM.easting,
+        northing: elementUTM.northing + 50000,
+        zoneLetter: elementUTM.zoneLetter,
+        zoneNumber: elementUTM.zoneNumber
+      });
+      var grid100kLabel = new _leaflet.default.Marker(grid100kData, {
+        interactive: false,
+        icon: new _leaflet.default.DivIcon({
+          className: 'leaflet-grid-label',
+          // iconAnchor: new L.Point(0, 0),
+          html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(elementUTM.easting, elementUTM.northing, elementUTM.zoneNumber), "</div>")
+        })
+      });
+      grid100kLabel.addTo(map);
+    }
+  },
   // This function takes an easting or northing line and 2 bounds (left and right)
   // It returns a new line with the same slope but bounded
   // A line is defined by y = slope * x + b
@@ -16542,7 +16624,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   },
   // These next 2 functions will "connect" the northing and easting 100k grid lines to their adjacent GZD
   // CONNECTOR is the connecting line we pass in (eg - connectingEastingLineSouth)
-  // ELEMENT is the grid lines generated from the for loop. The element is an object with 2 arrays containing latlons
+  // ELEMENT is the grid lines generated from the for loop. The element is an object with 2 arrays containing latitudes & longitudes
   // DATA is the GZD data (example, this.data contains info on the corner boundaries of the visible GZDs)
   // COUNT is the index used in the while loop
   // DIRECTION is the information we want to access in "this.data[count].top/bottom/left/right"
@@ -16638,11 +16720,28 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         zoneLetter: _northingGridLineEndpoint2.zoneLetter
       });
 
-      var _connectingNorthingLineToGZD2 = new _leaflet.default.Polyline([connector, _extendedNorthingLine2], this.lineStyle); // since some of them will have easting values of like 5799999, just round up
+      var _connectingNorthingLineToGZD2 = new _leaflet.default.Polyline([connector, _extendedNorthingLine2], this.blueLine); // since some of them will have easting values of like 5799999, just round up
 
 
       if (Math.round((0, _mgrs.LLtoUTM)(_connectingNorthingLineToGZD2.getLatLngs()[0]).easting / 10) * 10 % this.gridInterval === 0) {
-        this.addLayer(_connectingNorthingLineToGZD2);
+        this.addLayer(_connectingNorthingLineToGZD2); // const slope = (connector.lat - extendedNorthingLine.lat) / (connector.lng - extendedNorthingLine.lon);
+        // const newLat = connector.lat + (slope * (data[count][direction] - connector.lng));
+        // const pt1 = new L.latLng(newLat, data[count][direction] + connector.distanceTo(extendedNorthingLine) / this.gridInterval / 2);
+        // mark(pt1);
+        // console.log(pt1.distanceTo(extendedNorthingLine) / this.gridInterval / 2);
+        // const grid100kData = LLtoUTM(pt1);
+        // const grid100kLabel = new L.Marker(pt1, {
+        //   interactive: false,
+        //   icon: new L.DivIcon({
+        //     className: 'leaflet-grid-label',
+        //     iconAnchor: new L.Point(10, -20),
+        //     html: `<div class="grid-label">${get100kID(grid100kData.easting, grid100kData.northing, grid100kData.zoneNumber)}</div>`,
+        //   }),
+        // });
+        //   // Only put labels on the map if they are in bounds
+        // if (this._map.getBounds().pad(0.1).contains(connector)) {
+        //   this.addLayer(grid100kLabel);
+        // }
       }
     }
   },
@@ -16742,6 +16841,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       bottomRow.forEach(function (k) {
         if (k) {
+          //! console.log(k[0].easting, k[1].northing, k[0].zoneNumber);
+          // this.placeLabels(k[0].easting, k[1].northing, k[0].zoneLetter, k[0].zoneNumber);
           var northingGrids = (0, _mgrs.UTMtoLL)({
             northing: k[1].northing,
             easting: k[0].easting,
@@ -16750,7 +16851,12 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           }); // If the northingGrids are within the visible boundaries of the map, then push them to the array
 
           if (bounds.contains(northingGrids)) {
-            labelGridsArray.push(northingGrids);
+            if (new _leaflet.default.latLng(northingGrids).distanceTo({
+              lat: northingGrids.lat,
+              lng: _this6.data[0].right
+            }) >= _this6.gridInterval) {
+              labelGridsArray.push(northingGrids);
+            }
           }
         }
       });
@@ -16779,6 +16885,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           //     }
           //   }
           // }
+          //
+          // if (new L.latLng(element[0]).distanceTo({ lat: element[0].lat, lng: this.data[0].left }) <= this.gridInterval / 2) {
           var grid100kData = (0, _mgrs.LLtoUTM)(element[0]);
           var grid100kLabel = new _leaflet.default.Marker(element[0], {
             interactive: false,
@@ -16789,12 +16897,29 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
             })
           }); // Only put labels on the map if they are in bounds
 
-          if (_this6._map.getBounds().pad(0.1).contains(element[0])) {
-            _this6.addLayer(grid100kLabel);
-          }
+          if (_this6._map.getBounds().pad(0.1).contains(element[0])) {} // this.addLayer(grid100kLabel);
+          // }
+
         }
       }
     });
+  },
+  placeLabels: function placeLabels(easting, northing, zoneLetter, zoneNumber) {
+    var grid100kData = (0, _mgrs.UTMtoLL)({
+      easting: easting,
+      northing: northing + 50000,
+      zoneLetter: zoneLetter,
+      zoneNumber: zoneNumber
+    });
+    var grid100kLabel = new _leaflet.default.Marker(grid100kData, {
+      interactive: false,
+      icon: new _leaflet.default.DivIcon({
+        className: 'leaflet-grid-label',
+        // iconAnchor: new L.Point(0, 0),
+        html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(easting, northing, zoneNumber), "</div>")
+      })
+    });
+    grid100kLabel.addTo(map);
   },
   getPaddingOnZoomLevel: function getPaddingOnZoomLevel(map) {
     this._map = map;
@@ -17452,7 +17577,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58170" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51128" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
