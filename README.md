@@ -56,7 +56,7 @@ I am trying to generate 3 types of grids
 
 - [x] Need to come up with a method that toggles grid labels on and off
 
-- [] 100K grids fail around Antarctica
+- [ ] 100K grids fail around Antarctica
 
 - [x] 100K grid labels collide with each other when they start converging near the grid zone designator boundaries
 

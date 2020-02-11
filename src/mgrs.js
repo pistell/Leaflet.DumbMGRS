@@ -1,5 +1,6 @@
 // This is just a slightly modified version of mgrs.js.
 // Added function UTMtoMGRS, and exported LLtoUTM and UTMtoLL since they weren't before
+// Modified LLtoUTM, and created UTMtoMGRS
 // James Pistell 2020
 // For Leaflet.DumbMGRS
 // https://github.com/pistell/Leaflet.DumbMGRS
