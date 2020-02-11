@@ -292,16 +292,13 @@ gz.addTo(map);
 // *********************************************************************************** //
 // * Leaflet DumbMGRS Plugin - 100k Grids (this sorta works?)                        * //
 // *********************************************************************************** //
-// TODO: Fix the grid labels that are near the GZD bounds, they almost overlap each other
-// TODO: Style the grid labels properly
-// TODO: Add the showLabels, hideLabels, showGrids, and hideGrids methods and wire them up to the switches
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
 L.MGRS100K = L.LayerGroup.extend({
   // Default options
   options: {
-    showLabels: true,
-    showGrids: true,
+    showLabels: false,
+    showGrids: false,
     maxZoom: 18,
     minZoom: 6,
     redraw: 'moveend',
@@ -372,6 +369,26 @@ L.MGRS100K = L.LayerGroup.extend({
     this._map.off(`viewreset ${this.options.redraw}`, this._map);
   },
 
+  hideGrids() {
+    this.options.showGrids = true;
+    this.getVizGrids();
+  },
+
+  hideLabels() {
+    this.options.showLabels = false;
+    this.getVizGrids();
+  },
+
+  showGrids() {
+    this.options.showGrids = false;
+    this.getVizGrids();
+  },
+
+  showLabels() {
+    this.options.showLabels = true;
+    this.getVizGrids();
+  },
+
   getVizGrids() {
     // Clear every grid off the map
     this.clearLayers();
@@ -426,6 +443,9 @@ L.MGRS100K = L.LayerGroup.extend({
   generateGrids(data) {
     this.data = data;
     const buffer = 0.00001;
+    if (!this.options.showGrids) {
+      return;
+    }
     Object.values(this.data).forEach((x) => {
       // Get the corners of the visible grids and convert them from latlon to UTM
       const sw = LLtoUTM({ lat: x.bottom + buffer, lon: x.left + buffer });
@@ -831,6 +851,7 @@ L.MGRS100K = L.LayerGroup.extend({
           interactive: false,
           icon: new L.DivIcon({
             className: 'leaflet-grid-label',
+            iconAnchor: new L.Point(10, 10),
             html: `<div class="grid-label">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
           }),
         });
@@ -853,6 +874,7 @@ L.MGRS100K = L.LayerGroup.extend({
           interactive: false,
           icon: new L.DivIcon({
             className: 'leaflet-grid-label',
+            iconAnchor: new L.Point(10, 10),
             html: `<div class="grid-label">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
           }),
         });
@@ -883,6 +905,7 @@ L.MGRS100K = L.LayerGroup.extend({
               interactive: false,
               icon: new L.DivIcon({
                 className: 'leaflet-grid-label',
+                iconAnchor: new L.Point(10, 10),
                 html: `<div class="grid-label">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
               }),
             });
@@ -944,7 +967,7 @@ L.mgrs100k = function (options) {
 
 const generate100kGrids = new L.mgrs100k({
   showLabels: false,
-  hidden: true,
+  showGrids: false,
 });
 
 generate100kGrids.addTo(map);
@@ -1412,10 +1435,10 @@ document.querySelector('#grids100k-labels').addEventListener('change', (event) =
   const checkbox = event.target;
   if (checkbox.checked) {
     document.querySelector('#grids100k-labels').toggleAttribute('checked');
-    // generate1000meterGrids.showLabels();
+    generate100kGrids.showLabels();
   } else {
     document.querySelector('#grids100k-labels').toggleAttribute('checked');
-    // generate1000meterGrids.hideLabels();
+    generate100kGrids.hideLabels();
   }
 });
 
@@ -1424,10 +1447,10 @@ document.querySelector('#grids100k-grids').addEventListener('change', (event) =>
   const checkbox = event.target;
   if (checkbox.checked) {
     document.querySelector('#grids100k-grids').toggleAttribute('checked');
-    // generate1000meterGrids.showLabels();
+    generate100kGrids.hideGrids();
   } else {
     document.querySelector('#grids100k-grids').toggleAttribute('checked');
-    // generate1000meterGrids.hideLabels();
+    generate100kGrids.showGrids();
   }
 });
 

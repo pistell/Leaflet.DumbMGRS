@@ -140,12 +140,15 @@ svg {
 .leaflet-grid-label {
   .grid-label {
     background-color: yellow;
-    font-size: larger;
-    font-weight: bold;
-    opacity: 0.5;
+    font-size: 13px;
+    //font-weight: bold;
+    opacity: 0.6;
     color: red;
     position: relative;
     display: inline;
+    padding: 1.75px;
+    border: 1px black solid;
+    border-radius: 2px;
   }
   .grid-label-1000m {
     background-color: yellow;

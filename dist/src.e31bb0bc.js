@@ -16052,17 +16052,14 @@ exports.gz = gz;
 gz.addTo(map); // *********************************************************************************** //
 // * Leaflet DumbMGRS Plugin - 100k Grids (this sorta works?)                        * //
 // *********************************************************************************** //
-// TODO: Fix the grid labels that are near the GZD bounds, they almost overlap each other
-// TODO: Style the grid labels properly
-// TODO: Add the showLabels, hideLabels, showGrids, and hideGrids methods and wire them up to the switches
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
 
 _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   // Default options
   options: {
-    showLabels: true,
-    showGrids: true,
+    showLabels: false,
+    showGrids: false,
     maxZoom: 18,
     minZoom: 6,
     redraw: 'moveend',
@@ -16138,6 +16135,22 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
     this._map.off("viewreset ".concat(this.options.redraw), this._map);
   },
+  hideGrids: function hideGrids() {
+    this.options.showGrids = true;
+    this.getVizGrids();
+  },
+  hideLabels: function hideLabels() {
+    this.options.showLabels = false;
+    this.getVizGrids();
+  },
+  showGrids: function showGrids() {
+    this.options.showGrids = false;
+    this.getVizGrids();
+  },
+  showLabels: function showLabels() {
+    this.options.showLabels = true;
+    this.getVizGrids();
+  },
   getVizGrids: function getVizGrids() {
     var _this3 = this;
 
@@ -16201,6 +16214,11 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
     this.data = data;
     var buffer = 0.00001;
+
+    if (!this.options.showGrids) {
+      return;
+    }
+
     Object.values(this.data).forEach(function (x) {
       // Get the corners of the visible grids and convert them from latlon to UTM
       var sw = (0, _mgrs.LLtoUTM)({
@@ -16717,6 +16735,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           interactive: false,
           icon: new _leaflet.default.DivIcon({
             className: 'leaflet-grid-label',
+            iconAnchor: new _leaflet.default.Point(10, 10),
             html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(_labelGridsUTM.easting, _labelGridsUTM.northing, _labelGridsUTM.zoneNumber), "</div>")
           })
         });
@@ -16743,6 +16762,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           interactive: false,
           icon: new _leaflet.default.DivIcon({
             className: 'leaflet-grid-label',
+            iconAnchor: new _leaflet.default.Point(10, 10),
             html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(_labelGridsUTM2.easting, _labelGridsUTM2.northing, _labelGridsUTM2.zoneNumber), "</div>")
           })
         });
@@ -16779,6 +16799,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
               interactive: false,
               icon: new _leaflet.default.DivIcon({
                 className: 'leaflet-grid-label',
+                iconAnchor: new _leaflet.default.Point(10, 10),
                 html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber), "</div>")
               })
             }); // Only add grid labels that the user can see
@@ -16853,7 +16874,7 @@ _leaflet.default.mgrs100k = function (options) {
 
 var generate100kGrids = new _leaflet.default.mgrs100k({
   showLabels: false,
-  hidden: true
+  showGrids: false
 });
 generate100kGrids.addTo(map); // *********************************************************************************** //
 // * Leaflet DumbMGRS Plugin - 1000 Meter Grids                                      * //
@@ -17405,9 +17426,11 @@ document.querySelector('#grids100k-labels').addEventListener('change', function 
   var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#grids100k-labels').toggleAttribute('checked'); // generate1000meterGrids.showLabels();
+    document.querySelector('#grids100k-labels').toggleAttribute('checked');
+    generate100kGrids.showLabels();
   } else {
-    document.querySelector('#grids100k-labels').toggleAttribute('checked'); // generate1000meterGrids.hideLabels();
+    document.querySelector('#grids100k-labels').toggleAttribute('checked');
+    generate100kGrids.hideLabels();
   }
 }); // Toggle 100k grids
 
@@ -17415,9 +17438,11 @@ document.querySelector('#grids100k-grids').addEventListener('change', function (
   var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#grids100k-grids').toggleAttribute('checked'); // generate1000meterGrids.showLabels();
+    document.querySelector('#grids100k-grids').toggleAttribute('checked');
+    generate100kGrids.hideGrids();
   } else {
-    document.querySelector('#grids100k-grids').toggleAttribute('checked'); // generate1000meterGrids.hideLabels();
+    document.querySelector('#grids100k-grids').toggleAttribute('checked');
+    generate100kGrids.showGrids();
   }
 });
 },{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
