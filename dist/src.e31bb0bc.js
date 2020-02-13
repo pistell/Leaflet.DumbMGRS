@@ -16585,6 +16585,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   },
   genLabels: function genLabels(northingLabel, eastingLabel, zoneNumberLabel, zoneLetterLabel) {
     // do not fire off labels when the map is zoomed out
+    //! change 6 to this.options.minZoom
+    //! actually does this even need to be here? I think I specified this in the initialize method
     if (this._map.getZoom() <= 6) {
       return;
     }
@@ -16703,7 +16705,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     this._map = map;
     var northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.4 : 0;
 
-    var zoom = this._map.getZoom();
+    var zoom = this._map.getZoom(); //! change to this.options.maxZoom
+
 
     if (zoom >= 18) {
       return 400;
@@ -17405,7 +17408,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51128" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57289" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -852,6 +852,8 @@ L.MGRS100K = L.LayerGroup.extend({
 
   genLabels(northingLabel, eastingLabel, zoneNumberLabel, zoneLetterLabel) {
     // do not fire off labels when the map is zoomed out
+    //! change 6 to this.options.minZoom
+    //! actually does this even need to be here? I think I specified this in the initialize method
     if (this._map.getZoom() <= 6) {
       return;
     }
@@ -955,6 +957,7 @@ L.MGRS100K = L.LayerGroup.extend({
     const northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.4 : 0;
     const zoom = this._map.getZoom();
 
+    //! change to this.options.maxZoom
     if (zoom >= 18) {
       return 400;
     }
