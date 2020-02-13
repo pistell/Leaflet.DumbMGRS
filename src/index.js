@@ -105,19 +105,20 @@ L.GZD = L.LayerGroup.extend({
     maxZoom: 18,
     minZoom: 4,
     redraw: 'moveend',
+    // default line style for 100K grids
+    lineStyle: {
+      color: 'red',
+      weight: 5,
+      opacity: 0.5,
+      smoothFactor: 1,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+      noClip: true,
+      interactive: false,
+      clickable: false, // legacy support
+    },
   },
-  // default line style for 100K grids
-  lineStyle: {
-    color: 'red',
-    weight: 5,
-    opacity: 0.5,
-    smoothFactor: 1,
-    lineCap: 'butt',
-    lineJoin: 'miter-clip',
-    noClip: true,
-    // Keep interactive false, else the symbols cannot be dropped on polylines
-    interactive: false,
-  },
+
 
   initialize(options) {
     this._map = map;
@@ -288,7 +289,7 @@ L.GZD = L.LayerGroup.extend({
     // const bottomLeft = new L.LatLng(this.params.bottom, this.params.left);
     // We do not need bottomLeft and topLeft on the gzdBox, since they just overlap anyways
     const gzdBox = [topLeft, topRight, bottomRight];
-    const gzdPolylineBox = new L.Polyline(gzdBox, this.lineStyle);
+    const gzdPolylineBox = new L.Polyline(gzdBox, this.options.lineStyle);
 
     const gzdPolylineBounds = gzdPolylineBox.getBounds();
     const gzdIdSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -340,19 +341,21 @@ L.MGRS100K = L.LayerGroup.extend({
     minZoom: 6,
     redraw: 'moveend',
     gridLetterStyle: 'color: #216fff; font-size:12px;',
+    // default line style for 100K grids
+    lineStyle: {
+      color: 'black',
+      weight: 2,
+      opacity: 1,
+      interactive: false,
+      clickable: false, // legacy support
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+    },
   },
-  // default line style for 100K grids
-  lineStyle: {
-    color: 'black',
-    weight: 2,
-    // opacity: 0.5,
-    interactive: false,
-    fill: false,
-    noClip: true,
-    smoothFactor: 4,
-    lineCap: 'butt',
-    lineJoin: 'miter-clip',
-  },
+
 
   initialize(options) {
     this._map = map;
@@ -422,7 +425,7 @@ L.MGRS100K = L.LayerGroup.extend({
       this.east = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getEast();
       this.west = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getWest();
       // GZ is the variable name for the GZD class I instantiated earlier
-      gz.viz.forEach((visibleGrid) => {
+      generateGZDGrids.viz.forEach((visibleGrid) => {
       // This will tell us what grid squares are visible on the map
         this.empty.push(visibleGrid);
       });
@@ -581,7 +584,7 @@ L.MGRS100K = L.LayerGroup.extend({
       const len = northingGridsArray.length;
       for (let index = 0; index < len; index += 1) {
         const element = [northingGridsArray[index], northingGridsArray[index + 1]];
-        const northingLine = new L.Polyline([element], this.lineStyle);
+        const northingLine = new L.Polyline([element], this.options.lineStyle);
         // Create a special grid for oddball grid zones like Norway and Svalbard
         this.handleSpecialZones(element);
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
@@ -648,7 +651,7 @@ L.MGRS100K = L.LayerGroup.extend({
       const len = eastingGridsArray.length;
       for (let index = 0; index < len; index += 1) {
         const element = [eastingGridsArray[index], eastingGridsArray[index + 1]];
-        const eastingLine = new L.Polyline([element], this.lineStyle);
+        const eastingLine = new L.Polyline([element], this.options.lineStyle);
         this.handleSpecialZones(element);
         // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
         if (element[1]) {
@@ -737,7 +740,7 @@ L.MGRS100K = L.LayerGroup.extend({
         zoneLetter: eastingGridLineEndpoint.zoneLetter,
       });
 
-      const connectingEastingLineToGZD = new L.Polyline([connector, extendedEastingLine], this.lineStyle);
+      const connectingEastingLineToGZD = new L.Polyline([connector, extendedEastingLine], this.options.lineStyle);
       // since some of them will have northing values of like 5799999, just round up
       if ((Math.round(LLtoUTM(connectingEastingLineToGZD.getLatLngs()[0]).northing / 10) * 10) % this.gridInterval === 0) {
         this.addLayer(connectingEastingLineToGZD);
@@ -757,7 +760,7 @@ L.MGRS100K = L.LayerGroup.extend({
           zoneNumber: northingGridLineEndpoint.zoneNumber,
           zoneLetter: northingGridLineEndpoint.zoneLetter,
         });
-        const connectingNorthingLineToGZD = new L.Polyline([connector, extendedNorthingLine], this.lineStyle);
+        const connectingNorthingLineToGZD = new L.Polyline([connector, extendedNorthingLine], this.options.lineStyle);
         this.addLayer(connectingNorthingLineToGZD);
       }
       if (connector.distanceTo({ lat: connector.lat, lon: this.data[0].right + 0.0001 }) <= this.gridInterval * southBuffer) {
@@ -768,7 +771,7 @@ L.MGRS100K = L.LayerGroup.extend({
           zoneNumber: northingGridLineEndpoint.zoneNumber,
           zoneLetter: northingGridLineEndpoint.zoneLetter,
         });
-        const connectingNorthingLineToGZD = new L.Polyline([connector, extendedNorthingLine], this.lineStyle);
+        const connectingNorthingLineToGZD = new L.Polyline([connector, extendedNorthingLine], this.options.lineStyle);
         this.addLayer(connectingNorthingLineToGZD);
       }
       return;
@@ -784,7 +787,7 @@ L.MGRS100K = L.LayerGroup.extend({
         zoneLetter: northingGridLineEndpoint.zoneLetter,
       });
 
-      const connectingNorthingLineToGZD = new L.Polyline([connector, extendedNorthingLine], this.lineStyle);
+      const connectingNorthingLineToGZD = new L.Polyline([connector, extendedNorthingLine], this.options.lineStyle);
       // since some of them will have easting values of like 5799999, just round up
       if ((Math.round(LLtoUTM(connectingNorthingLineToGZD.getLatLngs()[0]).easting / 10) * 10) % this.gridInterval === 0) {
         this.addLayer(connectingNorthingLineToGZD);
@@ -802,14 +805,14 @@ L.MGRS100K = L.LayerGroup.extend({
           easting: 499999,
           zoneNumber: elementUTM.zoneNumber,
           zoneLetter: elementUTM.zoneLetter,
-        })], this.lineStyle);
+        })], this.options.lineStyle);
         // 0.0179 is some dumbass number I came up with IOT adjust the specialLine2 start point in GZD 31V. It's not very accurate but 31V is a stupid fucking GZD and has no land on it anyways. Waste of my fucking time.
         const specialLine2 = new L.Polyline([{ lat: element[0].lat - 0.0179, lng: 0.0000001 }, UTMtoLL({
           northing: elementUTM.northing,
           easting: elementUTM.easting,
           zoneNumber: elementUTM.zoneNumber,
           zoneLetter: elementUTM.zoneLetter,
-        })], this.lineStyle);
+        })], this.options.lineStyle);
         this.addLayer(specialLine);
         this.addLayer(specialLine2);
       }
@@ -819,7 +822,7 @@ L.MGRS100K = L.LayerGroup.extend({
         // This is the western longitude of the previous GZD "31V"
         const westBounds = 3;
         if (element[1].lon > westBounds) {
-          const eastingLine = new L.Polyline([element], this.lineStyle);
+          const eastingLine = new L.Polyline([element], this.options.lineStyle);
           const connectingNorthingLineWest = new L.latLng({ lat: element[0].lat, lng: element[0].lon });
           //! Remove this if statement and use this.connectingLine()
           // If any Polylines are less than 100k meters away from the GZD, we can then start connecting them
@@ -831,7 +834,7 @@ L.MGRS100K = L.LayerGroup.extend({
               zoneNumber: eastingGridLineEndpoint.zoneNumber,
               zoneLetter: eastingGridLineEndpoint.zoneLetter,
             });
-            const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineWest], this.lineStyle);
+            const connectingNorthingLineWestToGZD = new L.Polyline([connectingNorthingLineWest, extendedLineWest], this.options.lineStyle);
             this.addLayer(connectingNorthingLineWestToGZD);
           }
           this.addLayer(eastingLine);
@@ -965,7 +968,7 @@ L.MGRS100K = L.LayerGroup.extend({
       case 12:
         return 7;
       case 11:
-        return 3;
+        return 4;
       case 10:
         return 1.5 + northBuffer;
       case 9:
@@ -990,34 +993,35 @@ L.MGRS100K = L.LayerGroup.extend({
 // TODO: Rename this.empty to something descriptive.
 // TODO: This plugin will get messed up on the southern hemisphere
 // TODO: if the GZD is splitting the screen from top to bottom, this causes massive bugs and tons of layers to draw
-// {lat: 48.00094957553023, lng: -75.22613525390626}, zoom 12, layers = 539
+// { lat: 48.004108177419916, lng: -74.99885559082033 }, zoom 12, layers = 539 (without 100k grids)
 L.MGRS1000Meters = L.LayerGroup.extend({
   options: {
-    gridInterval: 1000,
     showLabels: false,
-    hidden: true,
+    showGrids: false,
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
     gridLetterStyle: 'color: black; font-size:12px;',
-    splitGZD: false,
-    direction: undefined,
+    lineStyle: {
+      color: 'black',
+      weight: 1,
+      opacity: 0.5,
+      interactive: false,
+      clickable: false, // legacy support
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+    },
   },
 
-  lineStyle: {
-    color: 'black',
-    weight: 1,
-    opacity: 0.5,
-    interactive: false,
-    clickable: false, // legacy support
-    fill: false,
-    noClip: true,
-    smoothFactor: 4,
-    lineCap: 'butt',
-    lineJoin: 'miter-clip',
-  },
 
   initialize(options) {
+    // Set class options (no need for user to edit this)
+    this.gridInterval = 1000;
+    this.splitGZD = false;
+    this.direction = undefined;
     // Call the parent's constructor from the child (like using super()) by accessing the parent class prototype
     L.LayerGroup.prototype.initialize.call(this);
     // Merge the provided options with the default options of the class.
@@ -1032,12 +1036,11 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
   onRemove(map) {
     this._map = map;
-    console.log('removing 1000m plugin');
     this._map.off(`viewreset ${this.options.redraw}`, this._map);
   },
 
   hideGrids() {
-    this.options.hidden = true;
+    this.options.showGrids = false;
     this.regenerate();
   },
 
@@ -1047,7 +1050,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   },
 
   showGrids() {
-    this.options.hidden = false;
+    this.options.showGrids = true;
     this.regenerate();
   },
 
@@ -1066,18 +1069,18 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       this.empty = [];
 
       if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
-      // Call the GZD class and get the visible grid zone designators on the map
-        gz.viz.forEach((visibleGrid) => {
-        // This will tell us what grid squares are visible on the map
+        // Call the GZD class and get the visible grid zone designators on the map
+        generateGZDGrids.viz.forEach((visibleGrid) => {
+          // This will tell us what grid squares are visible on the map
           this.empty.push(visibleGrid);
         });
 
         if (this.empty.length <= 1) {
         // If there is no other GZD visible on the map, then just run it
-          this.generateGrids(this.options.splitGZD = false);
+          this.generateGrids(this.splitGZD = false);
         } else {
-          this.generateGrids(this.options.splitGZD = true, this.options.direction = 'right');
-          this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
+          this.generateGrids(this.splitGZD = true, this.direction = 'right');
+          this.generateGrids(this.splitGZD = true, this.direction = 'left');
         }
       }
     }
@@ -1086,7 +1089,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   // Gets the minimum easting and northing of each 1000 meter grid line
   getMinimumBounds() {
     let nw;
-    switch (this.options.direction) {
+    switch (this.direction) {
       case undefined: {
         nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
         break;
@@ -1106,8 +1109,8 @@ L.MGRS1000Meters = L.LayerGroup.extend({
 
     return {
     // rounds up to nearest multiple of x
-      easting: Math.floor(nw.easting / this.options.gridInterval) * this.options.gridInterval,
-      northing: Math.floor(nw.northing / this.options.gridInterval) * this.options.gridInterval,
+      easting: Math.floor(nw.easting / this.gridInterval) * this.gridInterval,
+      northing: Math.floor(nw.northing / this.gridInterval) * this.gridInterval,
       zoneNumber: nw.zoneNumber,
       zoneLetter: nw.zoneLetter,
     };
@@ -1117,7 +1120,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   getLineCounts() {
     let east;
     let west;
-    switch (this.options.direction) {
+    switch (this.direction) {
       case undefined: {
       // This will fix a bug where the GZD boundary is barely out of view
       // it adjusts the value so it grabs the furthest east/west boundary without going outside of the GZD
@@ -1144,18 +1147,18 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     const ne = LLtoUTM({ lat: this._bounds.getNorth(), lon: east });
     const sw = LLtoUTM({ lat: this._bounds.getSouth(), lon: west });
     return {
-      easting: Math.ceil((ne.easting - nw.easting) / this.options.gridInterval),
-      northing: Math.ceil((nw.northing - sw.northing) / this.options.gridInterval),
+      easting: Math.ceil((ne.easting - nw.easting) / this.gridInterval),
+      northing: Math.ceil((nw.northing - sw.northing) / this.gridInterval),
     };
   },
 
   // Where the magic happens
   generateGrids(splitGZD = false, direction = undefined) {
-    this.options.splitGZD = splitGZD;
-    this.options.direction = direction;
+    this.splitGZD = splitGZD;
+    this.direction = direction;
 
     // Do not run this function if the grids hidden open is enabled
-    if (this.options.hidden) {
+    if (!this.options.showGrids) {
       return;
     }
 
@@ -1167,7 +1170,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     //* * Easting Lines **//
     // Adding +1 on gridCounts.easting to fix error with connecting grid lines not showing up
     for (let i = 0; i <= gridCounts.easting + 1; i += 1) {
-      const adjustedEasting = minimumBounds.easting + (this.options.gridInterval * i);
+      const adjustedEasting = minimumBounds.easting + (this.gridInterval * i);
       const { northing } = minimumBounds;
 
       const northLine = UTMtoLL({
@@ -1178,7 +1181,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
       });
 
       const southLine = UTMtoLL({
-        northing: northing - (gridCounts.northing * this.options.gridInterval),
+        northing: northing - (gridCounts.northing * this.gridInterval),
         easting: adjustedEasting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter,
@@ -1191,14 +1194,14 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-      const eastingLine = new L.Polyline([southLine, northLine], this.lineStyle);
+      const eastingLine = new L.Polyline([southLine, northLine], this.options.lineStyle);
 
       // Slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
       // Used for any grid line that converges to the GZD boundaries
       const slope = (southLine.lat - northLine.lat) / (southLine.lon - northLine.lon);
 
       // This will ensure that the northing lines do not go past their GZD boundaries
-      switch (this.options.direction) {
+      switch (this.direction) {
         case undefined:
           if (this.options.showLabels) {
             gridLabels.push(this.generateEastingLabel(labelCoords, adjustedEasting.toString().slice(1, -3)));
@@ -1231,17 +1234,17 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     //* * Northing Lines **//
     for (let i = 0; i <= gridCounts.northing; i += 1) {
       const { easting } = minimumBounds;
-      const adjustedNorthing = minimumBounds.northing - (this.options.gridInterval * i);
+      const adjustedNorthing = minimumBounds.northing - (this.gridInterval * i);
 
       let endEastingLineForNorthings;
       let beginEastingLineForNorthings;
       // If we need to get the northern bounds and we are in the southern hemisphere, grab the north, else grab the south
       const northernHemisphereBounds = this._map.getCenter().lat <= 0 ? this._bounds.getNorth() : this._bounds.getSouth();
 
-      switch (this.options.direction) {
+      switch (this.direction) {
         case undefined: {
           beginEastingLineForNorthings = easting;
-          endEastingLineForNorthings = easting + (gridCounts.easting * this.options.gridInterval);
+          endEastingLineForNorthings = easting + (gridCounts.easting * this.gridInterval);
           break;
         }
         case 'left': {
@@ -1251,7 +1254,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         }
         case 'right': {
           beginEastingLineForNorthings = LLtoUTM({ lat: northernHemisphereBounds, lon: this.empty[1].left + 0.00001 }).easting;
-          endEastingLineForNorthings = easting + (gridCounts.easting * this.options.gridInterval);
+          endEastingLineForNorthings = easting + (gridCounts.easting * this.gridInterval);
           break;
         }
         default: {
@@ -1281,10 +1284,10 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter,
       });
 
-      const northingLine = new L.Polyline([westLine, eastLine], this.lineStyle);
+      const northingLine = new L.Polyline([westLine, eastLine], this.options.lineStyle);
 
       // This will ensure that the northing lines do not go past their GZD boundaries
-      switch (this.options.direction) {
+      switch (this.direction) {
         case undefined:
         // Putting the grid label options in the switch statement prevents them from duplicating if split GZDs are on screen
           if (this.options.showLabels) {
@@ -1371,9 +1374,23 @@ L.gzd = function (options) {
   return new L.GZD(options);
 };
 
-const gz = new L.gzd({
+const generateGZDGrids = new L.gzd({
+  // Example of initial options for GZD grids
   showLabels: false,
   showGrids: true,
+  maxZoom: 18,
+  minZoom: 4,
+  redraw: 'moveend',
+  lineStyle: {
+    color: 'red',
+    weight: 5,
+    opacity: 0.5,
+    smoothFactor: 1,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip',
+    noClip: true,
+    interactive: false,
+  },
 });
 
 // 100K Meter Grids
@@ -1382,8 +1399,24 @@ L.mgrs100k = function (options) {
 };
 
 const generate100kGrids = new L.mgrs100k({
-  showLabels: false,
+  // Example of initial options for 100K grids
+  showLabels: true,
   showGrids: true,
+  maxZoom: 18,
+  minZoom: 6,
+  redraw: 'moveend',
+  gridLetterStyle: 'color: #216fff; font-size:12px;',
+  lineStyle: {
+    color: 'black',
+    weight: 2,
+    opacity: 0.75,
+    interactive: false,
+    fill: false,
+    noClip: true,
+    smoothFactor: 4,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip',
+  },
 });
 
 // 1000 Meter Grids
@@ -1392,12 +1425,28 @@ L.mgrs1000meters = function (options) {
 };
 
 const generate1000meterGrids = new L.mgrs1000meters({
+  // Example of initial options for 1000 meter grids
   showLabels: false,
-  hidden: true,
+  showGrids: true,
+  redraw: 'move',
+  maxZoom: 18,
+  minZoom: 12,
+  gridLetterStyle: 'color: black; font-size:12px;',
+  lineStyle: {
+    color: 'black',
+    weight: 1,
+    opacity: 0.5,
+    interactive: false,
+    fill: false,
+    noClip: true,
+    smoothFactor: 4,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip',
+  },
 });
 
 // Add each grid plugin to the map
-gz.addTo(map);
+generateGZDGrids.addTo(map);
 generate100kGrids.addTo(map);
 generate1000meterGrids.addTo(map);
 
@@ -1433,6 +1482,8 @@ map.whenReady(() => {
       switch1000MLabels.setAttribute('disabled', true);
       switch1000MGrids.setAttribute('disabled', true);
     } else {
+      generate1000meterGrids.options.showGrids ? switch1000MGrids.checked = true : switch1000MGrids.checked = false;
+      generate1000meterGrids.options.showLabels ? switch1000MLabels.checked = true : switch1000MLabels.checked = false;
       switch1000MLabels.removeAttribute('disabled');
       switch1000MGrids.removeAttribute('disabled');
     }
@@ -1447,12 +1498,12 @@ map.whenReady(() => {
       switch100KGrids.removeAttribute('disabled');
     }
     // GZD - zoom level 3
-    if (map.getZoom() < gz.options.minZoom) {
+    if (map.getZoom() < generateGZDGrids.options.minZoom) {
       switchGZDLabels.setAttribute('disabled', true);
       switchGZDGrids.setAttribute('disabled', true);
     } else {
-      gz.options.showGrids ? switchGZDGrids.checked = true : switchGZDGrids.checked = false;
-      gz.options.showLabels ? switchGZDLabels.checked = true : switchGZDLabels.checked = false;
+      generateGZDGrids.options.showGrids ? switchGZDGrids.checked = true : switchGZDGrids.checked = false;
+      generateGZDGrids.options.showLabels ? switchGZDLabels.checked = true : switchGZDLabels.checked = false;
       switchGZDLabels.removeAttribute('disabled');
       switchGZDGrids.removeAttribute('disabled');
     }
@@ -1518,10 +1569,10 @@ switchGZDLabels.addEventListener('change', (event) => {
   const checkbox = event.target;
   if (checkbox.checked) {
     switchGZDLabels.toggleAttribute('checked');
-    gz.showLabels();
+    generateGZDGrids.showLabels();
   } else {
     switchGZDLabels.toggleAttribute('checked');
-    gz.hideLabels();
+    generateGZDGrids.hideLabels();
   }
 });
 
@@ -1530,10 +1581,10 @@ switchGZDGrids.addEventListener('change', (event) => {
   const checkbox = event.target;
   if (checkbox.checked) {
     switchGZDGrids.toggleAttribute('checked');
-    gz.hideGrids();
+    generateGZDGrids.hideGrids();
   } else {
     switchGZDGrids.toggleAttribute('checked');
-    gz.showGrids();
+    generateGZDGrids.showGrids();
   }
 });
 

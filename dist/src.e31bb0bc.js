@@ -15708,19 +15708,20 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
     showGrids: false,
     maxZoom: 18,
     minZoom: 4,
-    redraw: 'moveend'
-  },
-  // default line style for 100K grids
-  lineStyle: {
-    color: 'red',
-    weight: 5,
-    opacity: 0.5,
-    smoothFactor: 1,
-    lineCap: 'butt',
-    lineJoin: 'miter-clip',
-    noClip: true,
-    // Keep interactive false, else the symbols cannot be dropped on polylines
-    interactive: false
+    redraw: 'moveend',
+    // default line style for 100K grids
+    lineStyle: {
+      color: 'red',
+      weight: 5,
+      opacity: 0.5,
+      smoothFactor: 1,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip',
+      noClip: true,
+      interactive: false,
+      clickable: false // legacy support
+
+    }
   },
   initialize: function initialize(options) {
     this._map = map; // Call the parent’s constructor
@@ -15907,7 +15908,7 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
     // We do not need bottomLeft and topLeft on the gzdBox, since they just overlap anyways
 
     var gzdBox = [topLeft, topRight, bottomRight];
-    var gzdPolylineBox = new _leaflet.default.Polyline(gzdBox, this.lineStyle);
+    var gzdPolylineBox = new _leaflet.default.Polyline(gzdBox, this.options.lineStyle);
     var gzdPolylineBounds = gzdPolylineBox.getBounds();
     var gzdIdSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); // Once the polylines are added to the map we can begin centering the Grid Zone Designator
 
@@ -15956,19 +15957,21 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     maxZoom: 18,
     minZoom: 6,
     redraw: 'moveend',
-    gridLetterStyle: 'color: #216fff; font-size:12px;'
-  },
-  // default line style for 100K grids
-  lineStyle: {
-    color: 'black',
-    weight: 2,
-    // opacity: 0.5,
-    interactive: false,
-    fill: false,
-    noClip: true,
-    smoothFactor: 4,
-    lineCap: 'butt',
-    lineJoin: 'miter-clip'
+    gridLetterStyle: 'color: #216fff; font-size:12px;',
+    // default line style for 100K grids
+    lineStyle: {
+      color: 'black',
+      weight: 2,
+      opacity: 1,
+      interactive: false,
+      clickable: false,
+      // legacy support
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip'
+    }
   },
   initialize: function initialize(options) {
     this._map = map; // Call the parent's constructor from the child (like using super()) by accessing the parent class prototype
@@ -16038,7 +16041,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       this.east = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getEast();
       this.west = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getWest(); // GZ is the variable name for the GZD class I instantiated earlier
 
-      gz.viz.forEach(function (visibleGrid) {
+      generateGZDGrids.viz.forEach(function (visibleGrid) {
         // This will tell us what grid squares are visible on the map
         _this2.empty.push(visibleGrid);
       }); // This just creates a neater object where I can parse the data easier
@@ -16229,7 +16232,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       for (var index = 0; index < len; index += 1) {
         var element = [northingGridsArray[index], northingGridsArray[index + 1]];
-        var northingLine = new _leaflet.default.Polyline([element], _this4.lineStyle); // Create a special grid for oddball grid zones like Norway and Svalbard
+        var northingLine = new _leaflet.default.Polyline([element], _this4.options.lineStyle); // Create a special grid for oddball grid zones like Norway and Svalbard
 
         _this4.handleSpecialZones(element); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
 
@@ -16314,7 +16317,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       for (var index = 0; index < len; index += 1) {
         var element = [eastingGridsArray[index], eastingGridsArray[index + 1]];
-        var eastingLine = new _leaflet.default.Polyline([element], _this4.lineStyle);
+        var eastingLine = new _leaflet.default.Polyline([element], _this4.options.lineStyle);
 
         _this4.handleSpecialZones(element); // Since element is an array of objects, check if the 2nd element is available in the array IOT generate a complete grid
 
@@ -16422,7 +16425,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         zoneNumber: eastingGridLineEndpoint.zoneNumber,
         zoneLetter: eastingGridLineEndpoint.zoneLetter
       });
-      var connectingEastingLineToGZD = new _leaflet.default.Polyline([connector, extendedEastingLine], this.lineStyle); // since some of them will have northing values of like 5799999, just round up
+      var connectingEastingLineToGZD = new _leaflet.default.Polyline([connector, extendedEastingLine], this.options.lineStyle); // since some of them will have northing values of like 5799999, just round up
 
       if (Math.round((0, _mgrs.LLtoUTM)(connectingEastingLineToGZD.getLatLngs()[0]).northing / 10) * 10 % this.gridInterval === 0) {
         this.addLayer(connectingEastingLineToGZD);
@@ -16447,7 +16450,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           zoneNumber: northingGridLineEndpoint.zoneNumber,
           zoneLetter: northingGridLineEndpoint.zoneLetter
         });
-        var connectingNorthingLineToGZD = new _leaflet.default.Polyline([connector, extendedNorthingLine], this.lineStyle);
+        var connectingNorthingLineToGZD = new _leaflet.default.Polyline([connector, extendedNorthingLine], this.options.lineStyle);
         this.addLayer(connectingNorthingLineToGZD);
       }
 
@@ -16467,7 +16470,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           zoneLetter: _northingGridLineEndpoint.zoneLetter
         });
 
-        var _connectingNorthingLineToGZD = new _leaflet.default.Polyline([connector, _extendedNorthingLine], this.lineStyle);
+        var _connectingNorthingLineToGZD = new _leaflet.default.Polyline([connector, _extendedNorthingLine], this.options.lineStyle);
 
         this.addLayer(_connectingNorthingLineToGZD);
       }
@@ -16494,7 +16497,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         zoneLetter: _northingGridLineEndpoint2.zoneLetter
       });
 
-      var _connectingNorthingLineToGZD2 = new _leaflet.default.Polyline([connector, _extendedNorthingLine2], this.lineStyle); // since some of them will have easting values of like 5799999, just round up
+      var _connectingNorthingLineToGZD2 = new _leaflet.default.Polyline([connector, _extendedNorthingLine2], this.options.lineStyle); // since some of them will have easting values of like 5799999, just round up
 
 
       if (Math.round((0, _mgrs.LLtoUTM)(_connectingNorthingLineToGZD2.getLatLngs()[0]).easting / 10) * 10 % this.gridInterval === 0) {
@@ -16515,7 +16518,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           easting: 499999,
           zoneNumber: elementUTM.zoneNumber,
           zoneLetter: elementUTM.zoneLetter
-        })], this.lineStyle); // 0.0179 is some dumbass number I came up with IOT adjust the specialLine2 start point in GZD 31V. It's not very accurate but 31V is a stupid fucking GZD and has no land on it anyways. Waste of my fucking time.
+        })], this.options.lineStyle); // 0.0179 is some dumbass number I came up with IOT adjust the specialLine2 start point in GZD 31V. It's not very accurate but 31V is a stupid fucking GZD and has no land on it anyways. Waste of my fucking time.
 
         var specialLine2 = new _leaflet.default.Polyline([{
           lat: element[0].lat - 0.0179,
@@ -16525,7 +16528,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
           easting: elementUTM.easting,
           zoneNumber: elementUTM.zoneNumber,
           zoneLetter: elementUTM.zoneLetter
-        })], this.lineStyle);
+        })], this.options.lineStyle);
         this.addLayer(specialLine);
         this.addLayer(specialLine2);
       }
@@ -16537,7 +16540,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         var westBounds = 3;
 
         if (element[1].lon > westBounds) {
-          var eastingLine = new _leaflet.default.Polyline([element], this.lineStyle);
+          var eastingLine = new _leaflet.default.Polyline([element], this.options.lineStyle);
           var connectingNorthingLineWest = new _leaflet.default.latLng({
             lat: element[0].lat,
             lng: element[0].lon
@@ -16558,7 +16561,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
               zoneNumber: eastingGridLineEndpoint.zoneNumber,
               zoneLetter: eastingGridLineEndpoint.zoneLetter
             });
-            var connectingNorthingLineWestToGZD = new _leaflet.default.Polyline([connectingNorthingLineWest, extendedLineWest], this.lineStyle);
+            var connectingNorthingLineWestToGZD = new _leaflet.default.Polyline([connectingNorthingLineWest, extendedLineWest], this.options.lineStyle);
             this.addLayer(connectingNorthingLineWestToGZD);
           }
 
@@ -16715,7 +16718,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         return 7;
 
       case 11:
-        return 3;
+        return 4;
 
       case 10:
         return 1.5 + northBuffer;
@@ -16744,35 +16747,36 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 // TODO: Rename this.empty to something descriptive.
 // TODO: This plugin will get messed up on the southern hemisphere
 // TODO: if the GZD is splitting the screen from top to bottom, this causes massive bugs and tons of layers to draw
-// {lat: 48.00094957553023, lng: -75.22613525390626}, zoom 12, layers = 539
+// { lat: 48.004108177419916, lng: -74.99885559082033 }, zoom 12, layers = 539 (without 100k grids)
 
 _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   options: {
-    gridInterval: 1000,
     showLabels: false,
-    hidden: true,
+    showGrids: false,
     redraw: 'move',
     maxZoom: 18,
     minZoom: 12,
     gridLetterStyle: 'color: black; font-size:12px;',
-    splitGZD: false,
-    direction: undefined
-  },
-  lineStyle: {
-    color: 'black',
-    weight: 1,
-    opacity: 0.5,
-    interactive: false,
-    clickable: false,
-    // legacy support
-    fill: false,
-    noClip: true,
-    smoothFactor: 4,
-    lineCap: 'butt',
-    lineJoin: 'miter-clip'
+    lineStyle: {
+      color: 'black',
+      weight: 1,
+      opacity: 0.5,
+      interactive: false,
+      clickable: false,
+      // legacy support
+      fill: false,
+      noClip: true,
+      smoothFactor: 4,
+      lineCap: 'butt',
+      lineJoin: 'miter-clip'
+    }
   },
   initialize: function initialize(options) {
-    // Call the parent's constructor from the child (like using super()) by accessing the parent class prototype
+    // Set class options (no need for user to edit this)
+    this.gridInterval = 1000;
+    this.splitGZD = false;
+    this.direction = undefined; // Call the parent's constructor from the child (like using super()) by accessing the parent class prototype
+
     _leaflet.default.LayerGroup.prototype.initialize.call(this); // Merge the provided options with the default options of the class.
 
 
@@ -16786,12 +16790,11 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   },
   onRemove: function onRemove(map) {
     this._map = map;
-    console.log('removing 1000m plugin');
 
     this._map.off("viewreset ".concat(this.options.redraw), this._map);
   },
   hideGrids: function hideGrids() {
-    this.options.hidden = true;
+    this.options.showGrids = false;
     this.regenerate();
   },
   hideLabels: function hideLabels() {
@@ -16799,7 +16802,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     this.regenerate();
   },
   showGrids: function showGrids() {
-    this.options.hidden = false;
+    this.options.showGrids = true;
     this.regenerate();
   },
   showLabels: function showLabels() {
@@ -16820,17 +16823,17 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
       if (currentZoom >= this.options.minZoom && currentZoom <= this.options.maxZoom) {
         // Call the GZD class and get the visible grid zone designators on the map
-        gz.viz.forEach(function (visibleGrid) {
+        generateGZDGrids.viz.forEach(function (visibleGrid) {
           // This will tell us what grid squares are visible on the map
           _this5.empty.push(visibleGrid);
         });
 
         if (this.empty.length <= 1) {
           // If there is no other GZD visible on the map, then just run it
-          this.generateGrids(this.options.splitGZD = false);
+          this.generateGrids(this.splitGZD = false);
         } else {
-          this.generateGrids(this.options.splitGZD = true, this.options.direction = 'right');
-          this.generateGrids(this.options.splitGZD = true, this.options.direction = 'left');
+          this.generateGrids(this.splitGZD = true, this.direction = 'right');
+          this.generateGrids(this.splitGZD = true, this.direction = 'left');
         }
       }
     }
@@ -16841,7 +16844,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   getMinimumBounds: function getMinimumBounds() {
     var nw;
 
-    switch (this.options.direction) {
+    switch (this.direction) {
       case undefined:
         {
           nw = (0, _mgrs.LLtoUTM)({
@@ -16877,8 +16880,8 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
     return {
       // rounds up to nearest multiple of x
-      easting: Math.floor(nw.easting / this.options.gridInterval) * this.options.gridInterval,
-      northing: Math.floor(nw.northing / this.options.gridInterval) * this.options.gridInterval,
+      easting: Math.floor(nw.easting / this.gridInterval) * this.gridInterval,
+      northing: Math.floor(nw.northing / this.gridInterval) * this.gridInterval,
       zoneNumber: nw.zoneNumber,
       zoneLetter: nw.zoneLetter
     };
@@ -16888,7 +16891,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     var east;
     var west;
 
-    switch (this.options.direction) {
+    switch (this.direction) {
       case undefined:
         {
           // This will fix a bug where the GZD boundary is barely out of view
@@ -16931,18 +16934,18 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       lon: west
     });
     return {
-      easting: Math.ceil((ne.easting - nw.easting) / this.options.gridInterval),
-      northing: Math.ceil((nw.northing - sw.northing) / this.options.gridInterval)
+      easting: Math.ceil((ne.easting - nw.easting) / this.gridInterval),
+      northing: Math.ceil((nw.northing - sw.northing) / this.gridInterval)
     };
   },
   // Where the magic happens
   generateGrids: function generateGrids() {
     var splitGZD = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
     var direction = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
-    this.options.splitGZD = splitGZD;
-    this.options.direction = direction; // Do not run this function if the grids hidden open is enabled
+    this.splitGZD = splitGZD;
+    this.direction = direction; // Do not run this function if the grids hidden open is enabled
 
-    if (this.options.hidden) {
+    if (!this.options.showGrids) {
       return;
     }
 
@@ -16953,7 +16956,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     // Adding +1 on gridCounts.easting to fix error with connecting grid lines not showing up
 
     for (var i = 0; i <= gridCounts.easting + 1; i += 1) {
-      var adjustedEasting = minimumBounds.easting + this.options.gridInterval * i;
+      var adjustedEasting = minimumBounds.easting + this.gridInterval * i;
       var northing = minimumBounds.northing;
       var northLine = (0, _mgrs.UTMtoLL)({
         northing: northing,
@@ -16962,7 +16965,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter
       });
       var southLine = (0, _mgrs.UTMtoLL)({
-        northing: northing - gridCounts.northing * this.options.gridInterval,
+        northing: northing - gridCounts.northing * this.gridInterval,
         easting: adjustedEasting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
@@ -16976,12 +16979,12 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var eastingLine = new _leaflet.default.Polyline([southLine, northLine], this.lineStyle); // Slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
+      var eastingLine = new _leaflet.default.Polyline([southLine, northLine], this.options.lineStyle); // Slope is some funky math I copied from https://github.com/trailbehind/leaflet-grids
       // Used for any grid line that converges to the GZD boundaries
 
       var slope = (southLine.lat - northLine.lat) / (southLine.lon - northLine.lon); // This will ensure that the northing lines do not go past their GZD boundaries
 
-      switch (this.options.direction) {
+      switch (this.direction) {
         case undefined:
           if (this.options.showLabels) {
             gridLabels.push(this.generateEastingLabel(labelCoords, adjustedEasting.toString().slice(1, -3)));
@@ -17029,17 +17032,17 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
     for (var _i = 0; _i <= gridCounts.northing; _i += 1) {
       var easting = minimumBounds.easting;
-      var adjustedNorthing = minimumBounds.northing - this.options.gridInterval * _i;
+      var adjustedNorthing = minimumBounds.northing - this.gridInterval * _i;
       var endEastingLineForNorthings = void 0;
       var beginEastingLineForNorthings = void 0; // If we need to get the northern bounds and we are in the southern hemisphere, grab the north, else grab the south
 
       var northernHemisphereBounds = this._map.getCenter().lat <= 0 ? this._bounds.getNorth() : this._bounds.getSouth();
 
-      switch (this.options.direction) {
+      switch (this.direction) {
         case undefined:
           {
             beginEastingLineForNorthings = easting;
-            endEastingLineForNorthings = easting + gridCounts.easting * this.options.gridInterval;
+            endEastingLineForNorthings = easting + gridCounts.easting * this.gridInterval;
             break;
           }
 
@@ -17059,7 +17062,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
               lat: northernHemisphereBounds,
               lon: this.empty[1].left + 0.00001
             }).easting;
-            endEastingLineForNorthings = easting + gridCounts.easting * this.options.gridInterval;
+            endEastingLineForNorthings = easting + gridCounts.easting * this.gridInterval;
             break;
           }
 
@@ -17092,9 +17095,9 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         zoneLetter: minimumBounds.zoneLetter
       });
 
-      var northingLine = new _leaflet.default.Polyline([westLine, eastLine], this.lineStyle); // This will ensure that the northing lines do not go past their GZD boundaries
+      var northingLine = new _leaflet.default.Polyline([westLine, eastLine], this.options.lineStyle); // This will ensure that the northing lines do not go past their GZD boundaries
 
-      switch (this.options.direction) {
+      switch (this.direction) {
         case undefined:
           // Putting the grid label options in the switch statement prevents them from duplicating if split GZDs are on screen
           if (this.options.showLabels) {
@@ -17205,9 +17208,23 @@ _leaflet.default.gzd = function (options) {
   return new _leaflet.default.GZD(options);
 };
 
-var gz = new _leaflet.default.gzd({
+var generateGZDGrids = new _leaflet.default.gzd({
+  // Example of initial options for GZD grids
   showLabels: false,
-  showGrids: true
+  showGrids: true,
+  maxZoom: 18,
+  minZoom: 4,
+  redraw: 'moveend',
+  lineStyle: {
+    color: 'red',
+    weight: 5,
+    opacity: 0.5,
+    smoothFactor: 1,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip',
+    noClip: true,
+    interactive: false
+  }
 }); // 100K Meter Grids
 
 _leaflet.default.mgrs100k = function (options) {
@@ -17215,8 +17232,24 @@ _leaflet.default.mgrs100k = function (options) {
 };
 
 var generate100kGrids = new _leaflet.default.mgrs100k({
-  showLabels: false,
-  showGrids: true
+  // Example of initial options for 100K grids
+  showLabels: true,
+  showGrids: true,
+  maxZoom: 18,
+  minZoom: 6,
+  redraw: 'moveend',
+  gridLetterStyle: 'color: #216fff; font-size:12px;',
+  lineStyle: {
+    color: 'black',
+    weight: 2,
+    opacity: 0.75,
+    interactive: false,
+    fill: false,
+    noClip: true,
+    smoothFactor: 4,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip'
+  }
 }); // 1000 Meter Grids
 
 _leaflet.default.mgrs1000meters = function (options) {
@@ -17224,11 +17257,27 @@ _leaflet.default.mgrs1000meters = function (options) {
 };
 
 var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
+  // Example of initial options for 1000 meter grids
   showLabels: false,
-  hidden: true
+  showGrids: true,
+  redraw: 'move',
+  maxZoom: 18,
+  minZoom: 12,
+  gridLetterStyle: 'color: black; font-size:12px;',
+  lineStyle: {
+    color: 'black',
+    weight: 1,
+    opacity: 0.5,
+    interactive: false,
+    fill: false,
+    noClip: true,
+    smoothFactor: 4,
+    lineCap: 'butt',
+    lineJoin: 'miter-clip'
+  }
 }); // Add each grid plugin to the map
 
-gz.addTo(map);
+generateGZDGrids.addTo(map);
 generate100kGrids.addTo(map);
 generate1000meterGrids.addTo(map); // *********************************************************************************** //
 // * DOM Elements - (Example Info Box)                                               * //
@@ -17258,6 +17307,8 @@ map.whenReady(function () {
       switch1000MLabels.setAttribute('disabled', true);
       switch1000MGrids.setAttribute('disabled', true);
     } else {
+      generate1000meterGrids.options.showGrids ? switch1000MGrids.checked = true : switch1000MGrids.checked = false;
+      generate1000meterGrids.options.showLabels ? switch1000MLabels.checked = true : switch1000MLabels.checked = false;
       switch1000MLabels.removeAttribute('disabled');
       switch1000MGrids.removeAttribute('disabled');
     } // 100k grids - zoom level 6
@@ -17274,12 +17325,12 @@ map.whenReady(function () {
     } // GZD - zoom level 3
 
 
-    if (map.getZoom() < gz.options.minZoom) {
+    if (map.getZoom() < generateGZDGrids.options.minZoom) {
       switchGZDLabels.setAttribute('disabled', true);
       switchGZDGrids.setAttribute('disabled', true);
     } else {
-      gz.options.showGrids ? switchGZDGrids.checked = true : switchGZDGrids.checked = false;
-      gz.options.showLabels ? switchGZDLabels.checked = true : switchGZDLabels.checked = false;
+      generateGZDGrids.options.showGrids ? switchGZDGrids.checked = true : switchGZDGrids.checked = false;
+      generateGZDGrids.options.showLabels ? switchGZDLabels.checked = true : switchGZDLabels.checked = false;
       switchGZDLabels.removeAttribute('disabled');
       switchGZDGrids.removeAttribute('disabled');
     }
@@ -17345,10 +17396,10 @@ switchGZDLabels.addEventListener('change', function (event) {
 
   if (checkbox.checked) {
     switchGZDLabels.toggleAttribute('checked');
-    gz.showLabels();
+    generateGZDGrids.showLabels();
   } else {
     switchGZDLabels.toggleAttribute('checked');
-    gz.hideLabels();
+    generateGZDGrids.hideLabels();
   }
 }); // Toggle GZD grids
 
@@ -17357,10 +17408,10 @@ switchGZDGrids.addEventListener('change', function (event) {
 
   if (checkbox.checked) {
     switchGZDGrids.toggleAttribute('checked');
-    gz.hideGrids();
+    generateGZDGrids.hideGrids();
   } else {
     switchGZDGrids.toggleAttribute('checked');
-    gz.showGrids();
+    generateGZDGrids.showGrids();
   }
 }); // *********************************************************************************** //
 // * Event Listeners (Example Info Boxes)                                            * //
