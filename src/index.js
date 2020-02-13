@@ -37,7 +37,7 @@ const quito = [0.17578097424708533, -77.84912109375];
 // *********************************************************************************** //
 // * Set initial map view                                                            * //
 // *********************************************************************************** //
-const map = L.map('map').setView({ lat: 48.00094957553023, lng: -75.22613525390626 }, 12);
+const map = L.map('map').setView({ lat: 48.004108177419916, lng: -74.99885559082033 }, 12);
 // Place map in window for debugging purposes
 window.map = map;
 
@@ -947,24 +947,23 @@ L.MGRS100K = L.LayerGroup.extend({
     const northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.4 : 0;
     const zoom = this._map.getZoom();
 
-    //! change to this.options.maxZoom
-    if (zoom >= 18) {
-      return 400;
+    if (zoom >= this.options.maxZoom) {
+      return 480;
     }
 
     switch (zoom) {
       case 17:
-        return 200;
+        return 240;
       case 16:
-        return 100;
+        return 120;
       case 15:
-        return 50;
+        return 60;
       case 14:
-        return 25;
+        return 30;
       case 13:
-        return 12;
+        return 15;
       case 12:
-        return 6;
+        return 7;
       case 11:
         return 3;
       case 10:
@@ -1384,7 +1383,7 @@ L.mgrs100k = function (options) {
 
 const generate100kGrids = new L.mgrs100k({
   showLabels: false,
-  showGrids: false,
+  showGrids: true,
 });
 
 // 1000 Meter Grids
@@ -1442,6 +1441,8 @@ map.whenReady(() => {
       switch100KLabels.setAttribute('disabled', true);
       switch100KGrids.setAttribute('disabled', true);
     } else {
+      generate100kGrids.options.showGrids ? switch100KGrids.checked = true : switch100KGrids.checked = false;
+      generate100kGrids.options.showLabels ? switch100KLabels.checked = true : switch100KLabels.checked = false;
       switch100KLabels.removeAttribute('disabled');
       switch100KGrids.removeAttribute('disabled');
     }
