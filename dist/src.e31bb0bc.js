@@ -16746,8 +16746,6 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 // *********************************************************************************** //
 // TODO: Rename this.empty to something descriptive.
 // TODO: This plugin will get messed up on the southern hemisphere
-// TODO: if the GZD is splitting the screen from top to bottom, this causes massive bugs and tons of layers to draw
-// { lat: 48.004108177419916, lng: -74.99885559082033 }, zoom 12, layers = 539 (without 100k grids)
 
 _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   options: {
@@ -16832,8 +16830,33 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
           // If there is no other GZD visible on the map, then just run it
           this.generateGrids(this.splitGZD = false);
         } else {
-          this.generateGrids(this.splitGZD = true, this.direction = 'right');
-          this.generateGrids(this.splitGZD = true, this.direction = 'left');
+          // Since we are only checking if the split grid is a easting line (vertical), this will also check if the splitGZD is a northing line (horizontal)
+          //! Potential issues with this on special grid zones (Norway and Svalbard)
+          var len = this.empty.length;
+
+          for (var index = 0; index < len; index += 1) {
+            var element = [this.empty[index], this.empty[index + 1]];
+
+            if (element[1]) {
+              // Check if both the left limits are the same, then the grid is split horizontally
+              // Example - GZD 18T and 18U are on top of each other, therefore their left bounds are the same (-78 degrees longitude)
+              switch (element[0].left) {
+                case element[1].left:
+                  // If the split grids are on top of each other, just run the normal function
+                  this.generateGrids(this.splitGZD = false);
+                  break;
+
+                case element[1].right:
+                  // If the split grids are side by side, run the function in each direction
+                  this.generateGrids(this.splitGZD = true, this.direction = 'right');
+                  this.generateGrids(this.splitGZD = true, this.direction = 'left');
+                  break;
+
+                default:
+                  break;
+              }
+            }
+          }
         }
       }
     }
