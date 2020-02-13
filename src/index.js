@@ -876,7 +876,7 @@ L.MGRS100K = L.LayerGroup.extend({
             icon: new L.DivIcon({
               className: 'leaflet-grid-label',
               iconAnchor: new L.Point(10, 10),
-              html: `<div class="grid-label">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
+              html: `<div class="grid-label-100k">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
             }),
           });
           if (this._map.getBounds().pad(0.1).contains(labelGrids)) {
@@ -899,7 +899,7 @@ L.MGRS100K = L.LayerGroup.extend({
             icon: new L.DivIcon({
               className: 'leaflet-grid-label',
               iconAnchor: new L.Point(10, 10),
-              html: `<div class="grid-label">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
+              html: `<div class="grid-label-100k">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
             }),
           });
           if (this._map.getBounds().pad(0.1).contains(labelGrids)) {
@@ -930,7 +930,7 @@ L.MGRS100K = L.LayerGroup.extend({
                 icon: new L.DivIcon({
                   className: 'leaflet-grid-label',
                   iconAnchor: new L.Point(10, 10),
-                  html: `<div class="grid-label">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
+                  html: `<div class="grid-label-100k">${get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber)}</div>`,
                 }),
               });
               // Only add grid labels that the user can see

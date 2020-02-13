@@ -16610,7 +16610,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
             icon: new _leaflet.default.DivIcon({
               className: 'leaflet-grid-label',
               iconAnchor: new _leaflet.default.Point(10, 10),
-              html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(_labelGridsUTM.easting, _labelGridsUTM.northing, _labelGridsUTM.zoneNumber), "</div>")
+              html: "<div class=\"grid-label-100k\">".concat((0, _mgrs.get100kID)(_labelGridsUTM.easting, _labelGridsUTM.northing, _labelGridsUTM.zoneNumber), "</div>")
             })
           });
 
@@ -16637,7 +16637,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
             icon: new _leaflet.default.DivIcon({
               className: 'leaflet-grid-label',
               iconAnchor: new _leaflet.default.Point(10, 10),
-              html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(_labelGridsUTM2.easting, _labelGridsUTM2.northing, _labelGridsUTM2.zoneNumber), "</div>")
+              html: "<div class=\"grid-label-100k\">".concat((0, _mgrs.get100kID)(_labelGridsUTM2.easting, _labelGridsUTM2.northing, _labelGridsUTM2.zoneNumber), "</div>")
             })
           });
 
@@ -16674,7 +16674,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
                 icon: new _leaflet.default.DivIcon({
                   className: 'leaflet-grid-label',
                   iconAnchor: new _leaflet.default.Point(10, 10),
-                  html: "<div class=\"grid-label\">".concat((0, _mgrs.get100kID)(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber), "</div>")
+                  html: "<div class=\"grid-label-100k\">".concat((0, _mgrs.get100kID)(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber), "</div>")
                 })
               }); // Only add grid labels that the user can see
 

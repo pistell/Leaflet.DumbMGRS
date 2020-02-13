@@ -649,6 +649,30 @@ svg {
   overflow: visible;
 }
 
+.leaflet-grid-label .grid-label-100k {
+  background-color: yellow;
+  font-size: 13px;
+  opacity: 0.6;
+  color: red;
+  position: relative;
+  display: inline;
+  padding: 1.75px;
+  border: 1px black solid;
+  border-radius: 2px;
+}
+.leaflet-grid-label .grid-label-1000m {
+  background-color: yellow;
+  font-size: larger;
+  font-weight: bold;
+  opacity: 0.8;
+  color: black;
+  text-align: center;
+  position: relative;
+  display: inline;
+  padding: 5px;
+  border-radius: 50%;
+}
+
 .mapData {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -757,97 +781,6 @@ svg {
   grid-area: 2/5/3/6;
 }
 
-.leaflet-grid-label .grid-label {
-  background-color: yellow;
-  font-size: 13px;
-  opacity: 0.6;
-  color: red;
-  position: relative;
-  display: inline;
-  padding: 1.75px;
-  border: 1px black solid;
-  border-radius: 2px;
-}
-.leaflet-grid-label .grid-label-1000m {
-  background-color: yellow;
-  font-size: larger;
-  font-weight: bold;
-  opacity: 0.8;
-  color: black;
-  text-align: center;
-  position: relative;
-  display: inline;
-  padding: 5px;
-  border-radius: 50%;
-}
-
-input.sw {
-  opacity: 0;
-  position: absolute;
-  left: -9999px;
-}
-input.sw + label {
-  user-select: none;
-  transition: 0.2s ease;
-  display: inline-block;
-  height: 30px;
-  width: 51px;
-  position: relative;
-  box-shadow: inset 0 0 0px 2px #e4e4e4;
-  border-radius: 60px;
-  /* White toggle */
-}
-input.sw + label:before {
-  content: "";
-  position: absolute;
-  display: block;
-  height: 30px;
-  width: 30px;
-  top: 0;
-  left: 0;
-  border-radius: 15px;
-  background: rgba(76, 217, 100, 0);
-  transition: 0.2s cubic-bezier(0.24, 0, 0.5, 1);
-}
-input.sw + label:after {
-  content: "";
-  position: absolute;
-  display: block;
-  height: 28px;
-  width: 28px;
-  top: 50%;
-  margin-top: -14px;
-  left: 1px;
-  border-radius: 60px;
-  background: #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 0px 0 rgba(0, 0, 0, 0.04), 0 4px 9px rgba(0, 0, 0, 0.13), 0 3px 3px rgba(0, 0, 0, 0.05);
-  transition: 0.35s cubic-bezier(0.54, 1.6, 0.5, 1);
-}
-input.sw + label span {
-  white-space: nowrap;
-  height: 30px;
-  line-height: 30px;
-  margin-left: 51px;
-  padding-left: 16px;
-  font-family: "Roboto";
-}
-input.sw:checked + label:before {
-  width: 51px;
-  background: #4cd964;
-  transition: width 0.2s cubic-bezier(0, 0, 0, 0.1) !important;
-}
-input.sw:checked + label:after {
-  left: 22px;
-}
-input.sw:checked + label {
-  box-shadow: inset 0 0 0px 25px #e4e4e4;
-  transition: box-shadow 2.5s cubic-bezier(0, 1.2, 0.94, 0.95);
-}
-input.sw:disabled + label {
-  background: red;
-  opacity: 0.25;
-}
-
 .toggleSwitches {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -916,6 +849,72 @@ input.sw:disabled + label {
 }
 .toggleSwitches .grids1000Meters .div14 {
   grid-area: 3/8/4/11;
+}
+.toggleSwitches input.sw {
+  opacity: 0;
+  position: absolute;
+  left: -9999px;
+}
+.toggleSwitches input.sw + label {
+  user-select: none;
+  transition: 0.2s ease;
+  display: inline-block;
+  height: 30px;
+  width: 51px;
+  position: relative;
+  box-shadow: inset 0 0 0px 2px #e4e4e4;
+  border-radius: 60px;
+  /* White toggle */
+}
+.toggleSwitches input.sw + label:before {
+  content: "";
+  position: absolute;
+  display: block;
+  height: 30px;
+  width: 30px;
+  top: 0;
+  left: 0;
+  border-radius: 15px;
+  background: rgba(76, 217, 100, 0);
+  transition: 0.2s cubic-bezier(0.24, 0, 0.5, 1);
+}
+.toggleSwitches input.sw + label:after {
+  content: "";
+  position: absolute;
+  display: block;
+  height: 28px;
+  width: 28px;
+  top: 50%;
+  margin-top: -14px;
+  left: 1px;
+  border-radius: 60px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 0px 0 rgba(0, 0, 0, 0.04), 0 4px 9px rgba(0, 0, 0, 0.13), 0 3px 3px rgba(0, 0, 0, 0.05);
+  transition: 0.35s cubic-bezier(0.54, 1.6, 0.5, 1);
+}
+.toggleSwitches input.sw + label span {
+  white-space: nowrap;
+  height: 30px;
+  line-height: 30px;
+  margin-left: 51px;
+  padding-left: 16px;
+  font-family: "Roboto";
+}
+.toggleSwitches input.sw:checked + label:before {
+  width: 51px;
+  background: #4cd964;
+  transition: width 0.2s cubic-bezier(0, 0, 0, 0.1) !important;
+}
+.toggleSwitches input.sw:checked + label:after {
+  left: 22px;
+}
+.toggleSwitches input.sw:checked + label {
+  box-shadow: inset 0 0 0px 25px #e4e4e4;
+  transition: box-shadow 2.5s cubic-bezier(0, 1.2, 0.94, 0.95);
+}
+.toggleSwitches input.sw:disabled + label {
+  background: red;
+  opacity: 0.25;
 }
 
 /*# sourceMappingURL=/src.e31bb0bc.css.map */
