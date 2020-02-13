@@ -15609,7 +15609,7 @@ function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (O
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 // *********************************************************************************** //
-// * Global Vars/Leaflet setup/Predefined coordinates                                * //
+// * Leaflet predefined coordinates (for debugging)                                  * //
 // *********************************************************************************** //
 // This coordinate has 3 visible Grid Zone Designator boundaries at zoom level 7 with no northing GZD
 var ontarioCA = [51.84935276370605, -86.27563476562501]; // ? 262 child elements
@@ -15631,40 +15631,20 @@ var iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements 
 
 var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
 
-var quito = [0.17578097424708533, -77.84912109375];
+var quito = [0.17578097424708533, -77.84912109375]; // *********************************************************************************** //
+// * Set initial map view                                                            * //
+// *********************************************************************************** //
 
-var map = _leaflet.default.map('map').setView(southNY, 7);
+var map = _leaflet.default.map('map').setView({
+  lat: 48.00094957553023,
+  lng: -75.22613525390626
+}, 12); // Place map in window for debugging purposes
 
-var cc = document.querySelector('.cursorCoordinates'); // Just a quicker way to add a marker, used for debugging purposes
 
-function mark(element) {
-  var marker = new _leaflet.default.marker(element);
-  var markerLat = marker.getLatLng().lat;
-  var markerLng = marker.getLatLng().lng;
-  var markerNorthing = (0, _mgrs.LLtoUTM)({
-    lat: markerLat,
-    lon: markerLng
-  }).northing;
-  var markerEasting = (0, _mgrs.LLtoUTM)({
-    lat: markerLat,
-    lon: markerLng
-  }).easting;
-  var markerZoneletter = (0, _mgrs.LLtoUTM)({
-    lat: markerLat,
-    lon: markerLng
-  }).zoneLetter;
-  var markerZoneNumber = (0, _mgrs.LLtoUTM)({
-    lat: markerLat,
-    lon: markerLng
-  }).zoneNumber;
-  var popupContent = "<h3><u>Lat:</u> ".concat(markerLat.toFixed(6), " <u>Lng:</u> ").concat(markerLng.toFixed(6), "</h3>\n                        <h3><u>Northing:</u> ").concat(markerNorthing, "</h3>\n                        <h3><u>Easting:</u> ").concat(markerEasting, "</h3>\n                        <h3><u>Zone Letter:</u> ").concat(markerZoneletter, "</h3>\n                        <h3><u>Zone Number:</u> ").concat(markerZoneNumber, "</h3>");
-  marker.bindPopup(popupContent).openPopup();
-  return marker.addTo(map);
-} // *********************************************************************************** //
+window.map = map; // *********************************************************************************** //
 // * Enable default images in the marker                                             * //
 // *********************************************************************************** //
 // https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-264311098
-
 
 var DefaultIcon = _leaflet.default.icon({
   iconUrl: _markerIcon.default,
@@ -15683,35 +15663,43 @@ _leaflet.default.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 18,
   id: 'osm_map'
 }).addTo(map); // *********************************************************************************** //
-// * Update the MGRS coordinates when the mouse cursor moves (For accuracy checking) * //
+// * Helper functions (for debugging)                                                * //
 // *********************************************************************************** //
+// Just a quicker way to add a marker, used for debugging purposes
+// TODO: Merge gzdObject.js and mgrs.js here
 
 
-map.addEventListener('mousemove', function (event) {
-  // Display cursor coordinates in MGRS
-  cc.querySelector('.mgrsInfo').innerHTML = "".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
-    lat: event.latlng.lat,
-    lon: event.latlng.lng
-  }), 5, true)); // Display cursor coordinates in Latitude/Longitude
-
-  cc.querySelector('.latInfo').innerHTML = "".concat(event.latlng.lat.toFixed(8));
-  cc.querySelector('.lonInfo').innerHTML = "".concat(event.latlng.lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
-
-  cc.querySelector('.eastingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
-    lat: event.latlng.lat,
-    lon: event.latlng.lng
-  }).easting);
-  cc.querySelector('.northingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
-    lat: event.latlng.lat,
-    lon: event.latlng.lng
-  }).northing);
-}); // *********************************************************************************** //
+function mark(element) {
+  var marker = new _leaflet.default.marker(element);
+  var markerLat = marker.getLatLng().lat;
+  var markerLng = marker.getLatLng().lng;
+  var markerNorthing = (0, _mgrs.LLtoUTM)({
+    lat: markerLat,
+    lon: markerLng
+  }).northing;
+  var markerEasting = (0, _mgrs.LLtoUTM)({
+    lat: markerLat,
+    lon: markerLng
+  }).easting;
+  var markerZoneLetter = (0, _mgrs.LLtoUTM)({
+    lat: markerLat,
+    lon: markerLng
+  }).zoneLetter;
+  var markerZoneNumber = (0, _mgrs.LLtoUTM)({
+    lat: markerLat,
+    lon: markerLng
+  }).zoneNumber;
+  var popupContent = "<h3><u>Lat:</u> ".concat(markerLat.toFixed(6), " <u>Lng:</u> ").concat(markerLng.toFixed(6), "</h3>\n                        <h3><u>Northing:</u> ").concat(markerNorthing, "</h3>\n                        <h3><u>Easting:</u> ").concat(markerEasting, "</h3>\n                        <h3><u>Zone Letter:</u> ").concat(markerZoneLetter, "</h3>\n                        <h3><u>Zone Number:</u> ").concat(markerZoneNumber, "</h3>");
+  marker.bindPopup(popupContent).openPopup();
+  return marker.addTo(map);
+} // *********************************************************************************** //
 // * Leaflet.DumbMGRS - Grid Zone Designators                                        * //
 // *********************************************************************************** //
 // TODO: Split the plugin off into its own JS file (with the eastingDict/northingDict)
 // TODO: Tree shake mgrs.js
 // TODO: find any instance of 'map' and replace with this._map
 // TODO: This is mostly done. Just need to clean up some issues, merge gzdObject.js, tree shake mgrs.js, and wrap it up into an official plugin
+
 
 _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
   // Default options
@@ -15735,9 +15723,12 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
     interactive: false
   },
   initialize: function initialize(options) {
-    this._map = map; // Not sure what this does but the plugin will fail without it
+    this._map = map; // Call the parent’s constructor
 
-    _leaflet.default.LayerGroup.prototype.initialize.call(this);
+    _leaflet.default.LayerGroup.prototype.initialize.call(this); // Merge the provided options with the default options of the class.
+
+
+    _leaflet.default.Util.setOptions(this, options);
 
     this.northObj = _gzdObject.northingDict;
     this.eastObj = _gzdObject.eastingDict;
@@ -15950,17 +15941,7 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
       this.addLayer(gzdPolylineBox);
     }
   }
-});
-
-_leaflet.default.gzd = function (options) {
-  return new _leaflet.default.GZD(options);
-};
-
-var gz = new _leaflet.default.gzd({
-  showLabels: false,
-  showGrids: false
-});
-gz.addTo(map); // *********************************************************************************** //
+}); // *********************************************************************************** //
 // * Leaflet.DumbMGRS - 100k Grids                                                   * //
 // *********************************************************************************** //
 // TODO: Rename this.empty to something logical
@@ -15990,9 +15971,12 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     lineJoin: 'miter-clip'
   },
   initialize: function initialize(options) {
-    this._map = map; // Not sure what this does but the plugin will fail without it
+    this._map = map; // Call the parent's constructor from the child (like using super()) by accessing the parent class prototype
 
-    _leaflet.default.LayerGroup.prototype.initialize.call(this); // Get the North/South/East/West visible bounds and add padding
+    _leaflet.default.LayerGroup.prototype.initialize.call(this); // Merge the provided options with the default options of the class.
+
+
+    _leaflet.default.Util.setOptions(this, options); // Get the North/South/East/West visible bounds and add padding
 
 
     this.north = new _leaflet.default.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getNorth();
@@ -16755,21 +16739,13 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
     return this;
   }
-});
-
-_leaflet.default.mgrs100k = function (options) {
-  return new _leaflet.default.MGRS100K(options);
-};
-
-var generate100kGrids = new _leaflet.default.mgrs100k({
-  showLabels: false,
-  showGrids: false
-});
-generate100kGrids.addTo(map); // *********************************************************************************** //
+}); // *********************************************************************************** //
 // * Leaflet.DumbMGRS - 1000 Meter Grids                                             * //
 // *********************************************************************************** //
 // TODO: Rename this.empty to something descriptive.
 // TODO: This plugin will get messed up on the southern hemisphere
+// TODO: if the GZD is splitting the screen from top to bottom, this causes massive bugs and tons of layers to draw
+// {lat: 48.00094957553023, lng: -75.22613525390626}, zoom 12, layers = 539
 
 _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   options: {
@@ -16797,7 +16773,11 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     lineJoin: 'miter-clip'
   },
   initialize: function initialize(options) {
-    _leaflet.default.LayerGroup.prototype.initialize.call(this);
+    // Call the parent's constructor from the child (like using super()) by accessing the parent class prototype
+    _leaflet.default.LayerGroup.prototype.initialize.call(this); // Merge the provided options with the default options of the class.
+
+
+    _leaflet.default.Util.setOptions(this, options);
   },
   onAdd: function onAdd(map) {
     this._map = map;
@@ -16807,6 +16787,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   },
   onRemove: function onRemove(map) {
     this._map = map;
+    console.log('removing 1000m plugin');
 
     this._map.off("viewreset ".concat(this.options.redraw), this._map);
   },
@@ -17215,7 +17196,29 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
     return this;
   }
-});
+}); // *********************************************************************************** //
+// * Leaflet.DumbMGRS - Factory functions                                            * //
+// *********************************************************************************** //
+// Factory functions enable the creation of the plugin to be chained with other function calls
+// Grid Zone Designator (1 million by 1 million meters)
+
+_leaflet.default.gzd = function (options) {
+  return new _leaflet.default.GZD(options);
+};
+
+var gz = new _leaflet.default.gzd({
+  showLabels: false,
+  showGrids: true
+}); // 100K Meter Grids
+
+_leaflet.default.mgrs100k = function (options) {
+  return new _leaflet.default.MGRS100K(options);
+};
+
+var generate100kGrids = new _leaflet.default.mgrs100k({
+  showLabels: false,
+  showGrids: false
+}); // 1000 Meter Grids
 
 _leaflet.default.mgrs1000meters = function (options) {
   return new _leaflet.default.MGRS1000Meters(options);
@@ -17224,92 +17227,170 @@ _leaflet.default.mgrs1000meters = function (options) {
 var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
   showLabels: false,
   hidden: true
-});
+}); // Add each grid plugin to the map
+
+gz.addTo(map);
+generate100kGrids.addTo(map);
 generate1000meterGrids.addTo(map); // *********************************************************************************** //
-// * Event Listeners (Leaflet.DumbMGRS)                                              * //
+// * DOM Elements - (Example Info Box)                                               * //
+// *********************************************************************************** //
+
+var numberOfMarkers = document.querySelector('.numberOfLayers > .div6');
+var numberOfLayers = document.querySelector('.numberOfLayers > .div2');
+var currentMapZoom = document.querySelector('.numberOfLayers > .div4');
+var cursorCoordinates = document.querySelector('.cursorCoordinates'); // *********************************************************************************** //
+// * Leaflet.DumbMGRS - DOM Elements - Switches                                      * //
+// *********************************************************************************** //
+
+var switch1000MLabels = document.querySelector('#grids1000Meters-labels');
+var switch1000MGrids = document.querySelector('#grids1000Meters-grids');
+var switch100KLabels = document.querySelector('#grids100k-labels');
+var switch100KGrids = document.querySelector('#grids100k-grids');
+var switchGZDLabels = document.querySelector('#gzd-labels');
+var switchGZDGrids = document.querySelector('#gzd-grids'); // *********************************************************************************** //
+// * Leaflet.DumbMGRS - Grid Toggle Switches on Zoom Level                           * //
+// *********************************************************************************** //
+// Automatically disabled switches that cannot be used at certain zoom levels
+
+map.whenReady(function () {
+  var switchValidator = function switchValidator() {
+    // 1000 meter grids - zoom level 12
+    if (map.getZoom() < generate1000meterGrids.options.minZoom) {
+      switch1000MLabels.setAttribute('disabled', true);
+      switch1000MGrids.setAttribute('disabled', true);
+    } else {
+      switch1000MLabels.removeAttribute('disabled');
+      switch1000MGrids.removeAttribute('disabled');
+    } // 100k grids - zoom level 6
+
+
+    if (map.getZoom() < generate100kGrids.options.minZoom) {
+      switch100KLabels.setAttribute('disabled', true);
+      switch100KGrids.setAttribute('disabled', true);
+    } else {
+      switch100KLabels.removeAttribute('disabled');
+      switch100KGrids.removeAttribute('disabled');
+    } // GZD - zoom level 3
+
+
+    if (map.getZoom() < gz.options.minZoom) {
+      switchGZDLabels.setAttribute('disabled', true);
+      switchGZDGrids.setAttribute('disabled', true);
+    } else {
+      gz.options.showGrids ? switchGZDGrids.checked = true : switchGZDGrids.checked = false;
+      gz.options.showLabels ? switchGZDLabels.checked = true : switchGZDLabels.checked = false;
+      switchGZDLabels.removeAttribute('disabled');
+      switchGZDGrids.removeAttribute('disabled');
+    }
+  };
+
+  map.on('zoomend', switchValidator);
+  switchValidator();
+}); // *********************************************************************************** //
+// * Leaflet.DumbMGRS - Event Listeners                                              * //
 // *********************************************************************************** //
 // Toggle 1000 meter labels
 
-document.querySelector('#grids1000Meters-labels').addEventListener('change', function (event) {
+switch1000MLabels.addEventListener('change', function (event) {
   var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#grids1000Meters-labels').toggleAttribute('checked');
+    switch1000MLabels.toggleAttribute('checked');
     generate1000meterGrids.showLabels();
   } else {
-    document.querySelector('#grids1000Meters-labels').toggleAttribute('checked');
+    switch1000MLabels.toggleAttribute('checked');
     generate1000meterGrids.hideLabels();
   }
 }); // Toggle 1000 meter grids
 
-document.querySelector('#grids1000Meters-grids').addEventListener('change', function (event) {
+switch1000MGrids.addEventListener('change', function (event) {
   var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
+    switch1000MGrids.toggleAttribute('checked');
     generate1000meterGrids.showGrids();
   } else {
-    document.querySelector('#grids1000Meters-grids').toggleAttribute('checked');
+    switch1000MGrids.toggleAttribute('checked');
     generate1000meterGrids.hideGrids();
   }
 }); // Toggle 100k labels
 
-document.querySelector('#grids100k-labels').addEventListener('change', function (event) {
+switch100KLabels.addEventListener('change', function (event) {
   var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#grids100k-labels').toggleAttribute('checked');
+    switch100KLabels.toggleAttribute('checked');
     generate100kGrids.showLabels();
   } else {
-    document.querySelector('#grids100k-labels').toggleAttribute('checked');
+    switch100KLabels.toggleAttribute('checked');
     generate100kGrids.hideLabels();
   }
 }); // Toggle 100k grids
 
-document.querySelector('#grids100k-grids').addEventListener('change', function (event) {
+switch100KGrids.addEventListener('change', function (event) {
   var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#grids100k-grids').toggleAttribute('checked');
+    switch100KGrids.toggleAttribute('checked');
     generate100kGrids.showGrids();
   } else {
-    document.querySelector('#grids100k-grids').toggleAttribute('checked');
+    switch100KGrids.toggleAttribute('checked');
     generate100kGrids.hideGrids();
   }
 }); // Toggle GZD labels
 
-document.querySelector('#gzd-labels').addEventListener('change', function (event) {
+switchGZDLabels.addEventListener('change', function (event) {
   var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#gzd-labels').toggleAttribute('checked');
+    switchGZDLabels.toggleAttribute('checked');
     gz.showLabels();
   } else {
-    document.querySelector('#gzd-labels').toggleAttribute('checked');
+    switchGZDLabels.toggleAttribute('checked');
     gz.hideLabels();
   }
 }); // Toggle GZD grids
 
-document.querySelector('#gzd-grids').addEventListener('change', function (event) {
+switchGZDGrids.addEventListener('change', function (event) {
   var checkbox = event.target;
 
   if (checkbox.checked) {
-    document.querySelector('#gzd-grids').toggleAttribute('checked');
+    switchGZDGrids.toggleAttribute('checked');
     gz.hideGrids();
   } else {
-    document.querySelector('#gzd-grids').toggleAttribute('checked');
+    switchGZDGrids.toggleAttribute('checked');
     gz.showGrids();
   }
 }); // *********************************************************************************** //
 // * Event Listeners (Example Info Boxes)                                            * //
 // *********************************************************************************** //
-// Update layer count, marker count, and map zoom when the user stops moving the map
+// Update the MGRS coordinates when the mouse cursor moves (For accuracy checking)
+
+map.addEventListener('mousemove', function (event) {
+  // Display cursor coordinates in MGRS
+  cursorCoordinates.querySelector('.mgrsInfo').innerHTML = "".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
+    lat: event.latlng.lat,
+    lon: event.latlng.lng
+  }), 5, true)); // Display cursor coordinates in Latitude/Longitude
+
+  cursorCoordinates.querySelector('.latInfo').innerHTML = "".concat(event.latlng.lat.toFixed(8));
+  cursorCoordinates.querySelector('.lonInfo').innerHTML = "".concat(event.latlng.lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
+
+  cursorCoordinates.querySelector('.eastingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+    lat: event.latlng.lat,
+    lon: event.latlng.lng
+  }).easting);
+  cursorCoordinates.querySelector('.northingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+    lat: event.latlng.lat,
+    lon: event.latlng.lng
+  }).northing);
+}); // Update layer count, marker count, and map zoom when the user stops moving the map
 
 map.addEventListener('moveend', function () {
   setTimeout(function () {
-    document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
-    document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
-    document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
+    numberOfLayers.innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
+    currentMapZoom.innerHTML = "".concat(map.getZoom());
+    numberOfMarkers.innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
   }, 300);
 }, {
   once: true
@@ -17317,66 +17398,35 @@ map.addEventListener('moveend', function () {
 
 document.addEventListener('DOMContentLoaded', function () {
   setTimeout(function () {
-    cc.querySelector('.mgrsInfo').innerHTML = "".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
+    cursorCoordinates.querySelector('.mgrsInfo').innerHTML = "".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
       lat: map.getCenter().lat,
       lon: map.getCenter().lng
     }), 5, true)); // Display cursor coordinates in Latitude/Longitude
 
-    cc.querySelector('.latInfo').innerHTML = "".concat(map.getCenter().lat.toFixed(8));
-    cc.querySelector('.lonInfo').innerHTML = "".concat(map.getCenter().lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
+    cursorCoordinates.querySelector('.latInfo').innerHTML = "".concat(map.getCenter().lat.toFixed(8));
+    cursorCoordinates.querySelector('.lonInfo').innerHTML = "".concat(map.getCenter().lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
 
-    cc.querySelector('.eastingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+    cursorCoordinates.querySelector('.eastingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
       lat: map.getCenter().lat,
       lon: map.getCenter().lng
     }).easting);
-    cc.querySelector('.northingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+    cursorCoordinates.querySelector('.northingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
       lat: map.getCenter().lat,
       lon: map.getCenter().lng
     }).northing);
-    document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
-    document.querySelector('.numberOfLayers > .div4').innerHTML = "".concat(map.getZoom());
-    document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
+    numberOfLayers.innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
+    currentMapZoom.innerHTML = "".concat(map.getZoom());
+    numberOfMarkers.innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
   }, 300);
 }); // Automatically update the layers on toggle
 
 document.querySelectorAll('.sw').forEach(function (toggleSwitch) {
   toggleSwitch.addEventListener('change', function () {
     setTimeout(function () {
-      document.querySelector('.numberOfLayers > .div2').innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
-      document.querySelector('.numberOfLayers > .div6').innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
+      numberOfLayers.innerHTML = "".concat(document.querySelectorAll('.leaflet-zoom-animated > g > path').length);
+      numberOfMarkers.innerHTML = "".concat(document.querySelectorAll('.leaflet-grid-label').length);
     }, 100);
   });
-}); // Automatically disabled switches that cannot be used at certain zoom levels
-
-map.whenReady(function () {
-  var switchValidator = function switchValidator() {
-    if (map.getZoom() < 12) {
-      document.querySelector('#grids1000Meters-labels').setAttribute('disabled', true);
-      document.querySelector('#grids1000Meters-grids').setAttribute('disabled', true);
-    } else {
-      document.querySelector('#grids1000Meters-labels').removeAttribute('disabled');
-      document.querySelector('#grids1000Meters-grids').removeAttribute('disabled');
-    }
-
-    if (map.getZoom() <= 6) {
-      document.querySelector('#grids100k-labels').setAttribute('disabled', true);
-      document.querySelector('#grids100k-grids').setAttribute('disabled', true);
-    } else {
-      document.querySelector('#grids100k-labels').removeAttribute('disabled');
-      document.querySelector('#grids100k-grids').removeAttribute('disabled');
-    }
-
-    if (map.getZoom() <= 3) {
-      document.querySelector('#gzd-labels').setAttribute('disabled', true);
-      document.querySelector('#gzd-grids').setAttribute('disabled', true);
-    } else {
-      document.querySelector('#gzd-labels').removeAttribute('disabled');
-      document.querySelector('#gzd-grids').removeAttribute('disabled');
-    }
-  };
-
-  map.on('zoomend', switchValidator);
-  switchValidator();
 });
 var _default = map;
 exports.default = _default;
@@ -17408,7 +17458,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57289" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50556" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
