@@ -37,7 +37,7 @@ const quito = [0.17578097424708533, -77.84912109375];
 // *********************************************************************************** //
 // * Set initial map view                                                            * //
 // *********************************************************************************** //
-const map = L.map('map').setView({ lat: 56.203457598753765, lng: 0.37319183349609375 }, 12);
+const map = L.map('map').setView(southFL, 7);
 // Place map in window for debugging purposes
 window.map = map;
 
@@ -219,7 +219,6 @@ L.GZD = L.LayerGroup.extend({
       // Define the "id" property in this object so we can store all the values returned from inBoundsUTMNumbers
       inBoundsLatitudeLetters.forEach((e) => {
         const letterKey = e;
-        console.log(inBoundsUTMNumbers.map((j) => j));
         Object.defineProperties(letterKey, {
           id: {
             value: inBoundsUTMNumbers.map((j) => j),
@@ -965,10 +964,10 @@ L.MGRS100K = L.LayerGroup.extend({
     }
   },
 
-
   getPaddingOnZoomLevel(map) {
     this._map = map;
     const northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.4 : 0;
+    const southBuffer = this._map.getBounds().getNorth() <= 0 ? 0.04 : 0;
     const zoom = this._map.getZoom();
 
     if (zoom >= this.options.maxZoom) {
@@ -991,15 +990,15 @@ L.MGRS100K = L.LayerGroup.extend({
       case 11:
         return 4;
       case 10:
-        return 1.5 + northBuffer;
+        return 1.5 + northBuffer + southBuffer;
       case 9:
-        return 0.7 + northBuffer;
+        return 0.7 + northBuffer + southBuffer;
       case 8:
-        return 0.3 + northBuffer;
+        return 0.3 + northBuffer + southBuffer;
       case 7:
-        return 0.15 + northBuffer;
+        return 0.13 + northBuffer + southBuffer;
       case 6:
-        return 0.07 + northBuffer;
+        return 0.02 + northBuffer + southBuffer;
       default:
         break;
     }
@@ -1423,7 +1422,7 @@ L.gzd = function (options) {
 
 const generateGZDGrids = new L.gzd({
   // Example of initial options for GZD grids
-  showLabels: false,
+  showLabels: true,
   showGrids: true,
   maxZoom: 18,
   minZoom: 4,
@@ -1473,7 +1472,7 @@ L.mgrs1000meters = function (options) {
 
 const generate1000meterGrids = new L.mgrs1000meters({
   // Example of initial options for 1000 meter grids
-  showLabels: false,
+  showLabels: true,
   showGrids: true,
   redraw: 'move',
   maxZoom: 18,
@@ -1481,7 +1480,7 @@ const generate1000meterGrids = new L.mgrs1000meters({
   gridLetterStyle: 'color: black; font-size:12px;',
   lineStyle: {
     color: 'black',
-    weight: 6,
+    weight: 1,
     opacity: 0.5,
     interactive: false,
     fill: false,

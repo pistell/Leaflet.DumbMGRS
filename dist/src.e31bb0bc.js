@@ -15635,10 +15635,7 @@ var quito = [0.17578097424708533, -77.84912109375]; // *************************
 // * Set initial map view                                                            * //
 // *********************************************************************************** //
 
-var map = _leaflet.default.map('map').setView({
-  lat: 56.203457598753765,
-  lng: 0.37319183349609375
-}, 12); // Place map in window for debugging purposes
+var map = _leaflet.default.map('map').setView(southFL, 7); // Place map in window for debugging purposes
 
 
 window.map = map; // *********************************************************************************** //
@@ -15848,9 +15845,6 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
 
       inBoundsLatitudeLetters.forEach(function (e) {
         var letterKey = e;
-        console.log(inBoundsUTMNumbers.map(function (j) {
-          return j;
-        }));
         Object.defineProperties(letterKey, {
           id: {
             value: inBoundsUTMNumbers.map(function (j) {
@@ -16736,6 +16730,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   getPaddingOnZoomLevel: function getPaddingOnZoomLevel(map) {
     this._map = map;
     var northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.4 : 0;
+    var southBuffer = this._map.getBounds().getNorth() <= 0 ? 0.04 : 0;
 
     var zoom = this._map.getZoom();
 
@@ -16766,19 +16761,19 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         return 4;
 
       case 10:
-        return 1.5 + northBuffer;
+        return 1.5 + northBuffer + southBuffer;
 
       case 9:
-        return 0.7 + northBuffer;
+        return 0.7 + northBuffer + southBuffer;
 
       case 8:
-        return 0.3 + northBuffer;
+        return 0.3 + northBuffer + southBuffer;
 
       case 7:
-        return 0.15 + northBuffer;
+        return 0.13 + northBuffer + southBuffer;
 
       case 6:
-        return 0.07 + northBuffer;
+        return 0.02 + northBuffer + southBuffer;
 
       default:
         break;
@@ -17288,7 +17283,7 @@ _leaflet.default.gzd = function (options) {
 
 var generateGZDGrids = new _leaflet.default.gzd({
   // Example of initial options for GZD grids
-  showLabels: false,
+  showLabels: true,
   showGrids: true,
   maxZoom: 18,
   minZoom: 4,
@@ -17336,7 +17331,7 @@ _leaflet.default.mgrs1000meters = function (options) {
 
 var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
   // Example of initial options for 1000 meter grids
-  showLabels: false,
+  showLabels: true,
   showGrids: true,
   redraw: 'move',
   maxZoom: 18,
@@ -17344,7 +17339,7 @@ var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
   gridLetterStyle: 'color: black; font-size:12px;',
   lineStyle: {
     color: 'black',
-    weight: 6,
+    weight: 1,
     opacity: 0.5,
     interactive: false,
     fill: false,
