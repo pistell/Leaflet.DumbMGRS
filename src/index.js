@@ -10,10 +10,10 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 // LLtoUTM and UTMtoLL aren't exported in the original mgrs.js, fork it and import them
 // https://github.com/proj4js/mgrs/issues/10
-import {
-  forward, getLetterDesignator, inverse, toPoint, get100kSetForZone, get100kID, LLtoUTM, UTMtoLL, decode, encode, UTMtoMGRS,
-} from './mgrs';
-import { northingDict, eastingDict } from './gzdObject';
+// import {
+//   forward, getLetterDesignator, inverse, toPoint, get100kSetForZone, get100kID, LLtoUTM, UTMtoLL, decode, encode, UTMtoMGRS,
+// } from './mgrs';
+// import { northingDict, eastingDict } from './gzdObject';
 
 
 // *********************************************************************************** //
@@ -68,34 +68,708 @@ L.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 
 // *********************************************************************************** //
-// * Helper functions (for debugging)                                                * //
+// * Leaflet.DumbMGRS - Forked version of mgrs.js (https://github.com/proj4js/mgrs)  * //
 // *********************************************************************************** //
-// Just a quicker way to add a marker, used for debugging purposes
-// TODO: Merge gzdObject.js and mgrs.js here
-function mark(element) {
-  const marker = new L.marker(element);
-  const markerLat = marker.getLatLng().lat;
-  const markerLng = marker.getLatLng().lng;
-  const markerNorthing = LLtoUTM({ lat: markerLat, lon: markerLng }).northing;
-  const markerEasting = LLtoUTM({ lat: markerLat, lon: markerLng }).easting;
-  const markerZoneLetter = LLtoUTM({ lat: markerLat, lon: markerLng }).zoneLetter;
-  const markerZoneNumber = LLtoUTM({ lat: markerLat, lon: markerLng }).zoneNumber;
-  const popupContent = `<h3><u>Lat:</u> ${markerLat.toFixed(6)} <u>Lng:</u> ${markerLng.toFixed(6)}</h3>
-                        <h3><u>Northing:</u> ${markerNorthing}</h3>
-                        <h3><u>Easting:</u> ${markerEasting}</h3>
-                        <h3><u>Zone Letter:</u> ${markerZoneLetter}</h3>
-                        <h3><u>Zone Number:</u> ${markerZoneNumber}</h3>`;
-  marker.bindPopup(popupContent).openPopup();
-  return marker.addTo(map);
+// UTM zones are grouped, and assigned to one of a group of 6 sets
+const NUM_100K_SETS = 6;
+// The column letters (for easting) of the lower left value, per set
+const SET_ORIGIN_COLUMN_LETTERS = 'AJSAJS';
+// The row letters (for northing) of the lower left value, per set
+const SET_ORIGIN_ROW_LETTERS = 'AFAFAF';
+
+const A = 65; // A
+const I = 73; // I
+const O = 79; // O
+const V = 86; // V
+const Z = 90; // Z
+
+// Conversion from degrees to radians
+function degToRad(deg) {
+  return (deg * (Math.PI / 180));
+}
+
+// Conversion from radians to degrees
+function radToDeg(rad) {
+  return (180 * (rad / Math.PI));
+}
+
+// Calculates the MGRS letter designator for the given latitude
+function getLetterDesignator(latitude) {
+  if (latitude <= 84 && latitude >= 72) {
+    // the X band is 12 degrees high
+    return 'X';
+  } if (latitude < 72 && latitude >= -80) {
+    // Latitude bands are lettered C through X, excluding I and O
+    const bandLetters = 'CDEFGHJKLMNPQRSTUVWX';
+    const bandHeight = 8;
+    const minLatitude = -80;
+    const index = Math.floor((latitude - minLatitude) / bandHeight);
+    return bandLetters[index];
+  } if (latitude > 84 || latitude < -80) {
+    // This is here as an error flag to show that the Latitude is
+    // outside MGRS limits
+    return 'Z';
+  }
+}
+
+// Get the two-letter MGRS 100k designator given information
+// translated from the UTM northing, easting and zone number.
+function getLetter100kID(column, row, parm) {
+  // colOrigin and rowOrigin are the letters at the origin of the set
+  const index = parm - 1;
+  const colOrigin = SET_ORIGIN_COLUMN_LETTERS.charCodeAt(index);
+  const rowOrigin = SET_ORIGIN_ROW_LETTERS.charCodeAt(index);
+
+  // colInt and rowInt are the letters to build to return
+  let colInt = colOrigin + column - 1;
+  let rowInt = rowOrigin + row;
+  let rollover = false;
+
+  if (colInt > Z) {
+    colInt = colInt - Z + A - 1;
+    rollover = true;
+  }
+
+  if (colInt === I || (colOrigin < I && colInt > I) || ((colInt > I || colOrigin < I) && rollover)) {
+    colInt += 1;
+  }
+
+  if (colInt === O || (colOrigin < O && colInt > O) || ((colInt > O || colOrigin < O) && rollover)) {
+    colInt += 1;
+
+    if (colInt === I) {
+      colInt += 1;
+    }
+  }
+
+  if (colInt > Z) {
+    colInt = colInt - Z + A - 1;
+  }
+
+  if (rowInt > V) {
+    rowInt = rowInt - V + A - 1;
+    rollover = true;
+  } else {
+    rollover = false;
+  }
+
+  if (((rowInt === I) || ((rowOrigin < I) && (rowInt > I))) || (((rowInt > I) || (rowOrigin < I)) && rollover)) {
+    rowInt += 1;
+  }
+
+  if (((rowInt === O) || ((rowOrigin < O) && (rowInt > O))) || (((rowInt > O) || (rowOrigin < O)) && rollover)) {
+    rowInt += 1;
+
+    if (rowInt === I) {
+      rowInt += 1;
+    }
+  }
+
+  if (rowInt > V) {
+    rowInt = rowInt - V + A - 1;
+  }
+
+  const twoLetter = String.fromCharCode(colInt) + String.fromCharCode(rowInt);
+  return twoLetter;
+}
+
+// Given a UTM zone number, figure out the MGRS 100K set it is in
+function get100kSetForZone(i) {
+  let setParm = i % NUM_100K_SETS;
+  if (setParm === 0) {
+    setParm = NUM_100K_SETS;
+  }
+  return setParm;
+}
+
+// Get the two letter 100k designator for a given UTM easting, northing and zone number value
+function get100kID(easting, northing, zoneNumber) {
+  const setParm = get100kSetForZone(zoneNumber);
+  const setColumn = Math.floor(easting / 100000);
+  const setRow = Math.floor(northing / 100000) % 20;
+  return getLetter100kID(setColumn, setRow, setParm);
+}
+
+
+// Converts a set of Longitude and Latitude co-ordinates to UTM using the WGS84 ellipsoid
+function LLtoUTM(ll) {
+  const Lat = ll.lat;
+  //! added || ll.lng to comply with Leaflet
+  const Long = ll.lon || ll.lng;
+  const a = 6378137; // ellip.radius;
+  const eccSquared = 0.00669438; // ellip.eccsq;
+  const k0 = 0.9996;
+  const LatRad = degToRad(Lat);
+  const LongRad = degToRad(Long);
+  let ZoneNumber;
+  // (int)
+  ZoneNumber = Math.floor((Long + 180) / 6) + 1;
+
+  // Make sure the longitude 180 is in Zone 60
+  if (Long === 180) {
+    ZoneNumber = 60;
+  }
+
+  // Special zone for Norway
+  if (Lat >= 56 && Lat < 64 && Long >= 3 && Long < 12) {
+    ZoneNumber = 32;
+  }
+
+  // Special zones for Svalbard
+  if (Lat >= 72 && Lat < 84) {
+    if (Long >= 0 && Long < 9) {
+      ZoneNumber = 31;
+    } else if (Long >= 9 && Long < 21) {
+      ZoneNumber = 33;
+    } else if (Long >= 21 && Long < 33) {
+      ZoneNumber = 35;
+    } else if (Long >= 33 && Long < 42) {
+      ZoneNumber = 37;
+    }
+  }
+
+  const LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3;
+  // +3 puts origin in middle of zone
+  const LongOriginRad = degToRad(LongOrigin);
+
+  const eccPrimeSquared = (eccSquared) / (1 - eccSquared);
+
+  const N = a / Math.sqrt(1 - eccSquared * Math.sin(LatRad) * Math.sin(LatRad));
+  const T = Math.tan(LatRad) * Math.tan(LatRad);
+  const C = eccPrimeSquared * Math.cos(LatRad) * Math.cos(LatRad);
+  const A = Math.cos(LatRad) * (LongRad - LongOriginRad);
+
+  const M = a * ((1 - eccSquared / 4 - 3 * eccSquared * eccSquared / 64 - 5 * eccSquared * eccSquared * eccSquared / 256) * LatRad - (3 * eccSquared / 8 + 3 * eccSquared * eccSquared / 32 + 45 * eccSquared * eccSquared * eccSquared / 1024) * Math.sin(2 * LatRad) + (15 * eccSquared * eccSquared / 256 + 45 * eccSquared * eccSquared * eccSquared / 1024) * Math.sin(4 * LatRad) - (35 * eccSquared * eccSquared * eccSquared / 3072) * Math.sin(6 * LatRad));
+
+  const UTMEasting = (k0 * N * (A + (1 - T + C) * A * A * A / 6 + (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared) * A * A * A * A * A / 120) + 500000);
+
+  let UTMNorthing = (k0 * (M + N * Math.tan(LatRad) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24 + (61 - 58 * T + T * T + 600 * C - 330 * eccPrimeSquared) * A * A * A * A * A * A / 720)));
+  if (Lat < 0) {
+    UTMNorthing += 10000000; // 10000000 meter offset for
+    // southern hemisphere
+  }
+
+  return {
+    northing: Math.trunc(UTMNorthing),
+    easting: Math.trunc(UTMEasting),
+    zoneNumber: ZoneNumber,
+    zoneLetter: getLetterDesignator(Lat),
+  };
+}
+
+// Converts UTM coords to lat/long, using the WGS84 ellipsoid. This is a convenience
+// class where the Zone can be specified as a single string eg."60N" which
+// is then broken down into the ZoneNumber and ZoneLetter
+function UTMtoLL(utm) {
+  const UTMNorthing = utm.northing;
+  const UTMEasting = utm.easting;
+  const {
+    zoneLetter,
+    zoneNumber,
+  } = utm;
+  // check the ZoneNumber is valid
+  if (zoneNumber < 0 || zoneNumber > 60) {
+    return null;
+  }
+
+  const k0 = 0.9996;
+  const a = 6378137; // ellip.radius;
+  const eccSquared = 0.00669438; // ellip.eccsq;
+  const e1 = (1 - Math.sqrt(1 - eccSquared)) / (1 + Math.sqrt(1 - eccSquared));
+
+  // remove 500,000 meter offset for longitude
+  const x = UTMEasting - 500000;
+  let y = UTMNorthing;
+
+  // We must know somehow if we are in the Northern or Southern
+  // hemisphere, this is the only time we use the letter So even
+  // if the Zone letter isn't exactly correct it should indicate
+  // the hemisphere correctly
+  if (zoneLetter < 'N') {
+    y -= 10000000; // remove 10,000,000 meter offset used
+    // for southern hemisphere
+  }
+
+  // There are 60 zones with zone 1 being at West -180 to -174
+  const LongOrigin = (zoneNumber - 1) * 6 - 180 + 3; // +3 puts origin
+  // in middle of
+  // zone
+
+  const eccPrimeSquared = (eccSquared) / (1 - eccSquared);
+
+  const M = y / k0;
+  const mu = M / (a * (1 - eccSquared / 4 - 3 * eccSquared * eccSquared / 64 - 5 * eccSquared * eccSquared * eccSquared / 256));
+
+  const phi1Rad = mu + (3 * e1 / 2 - 27 * e1 * e1 * e1 / 32) * Math.sin(2 * mu) + (21 * e1 * e1 / 16 - 55 * e1 * e1 * e1 * e1 / 32) * Math.sin(4 * mu) + (151 * e1 * e1 * e1 / 96) * Math.sin(6 * mu);
+  // double phi1 = ProjMath.radToDeg(phi1Rad);
+
+  const N1 = a / Math.sqrt(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad));
+  const T1 = Math.tan(phi1Rad) * Math.tan(phi1Rad);
+  const C1 = eccPrimeSquared * Math.cos(phi1Rad) * Math.cos(phi1Rad);
+  const R1 = a * (1 - eccSquared) / Math.pow(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad), 1.5);
+  const D = x / (N1 * k0);
+
+  let lat = phi1Rad - (N1 * Math.tan(phi1Rad) / R1) * (D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) * D * D * D * D / 24 + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D / 720);
+  lat = radToDeg(lat);
+
+  let lon = (D - (1 + 2 * T1 + C1) * D * D * D / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * eccPrimeSquared + 24 * T1 * T1) * D * D * D * D * D / 120) / Math.cos(phi1Rad);
+  lon = LongOrigin + radToDeg(lon);
+
+  let result;
+  if (typeof utm.accuracy === 'number') {
+    const topRight = UTMtoLL({
+      northing: utm.northing + utm.accuracy,
+      easting: utm.easting + utm.accuracy,
+      zoneLetter: utm.zoneLetter,
+      zoneNumber: utm.zoneNumber,
+    });
+    result = {
+      top: topRight.lat,
+      right: topRight.lon,
+      bottom: lat,
+      left: lon,
+    };
+  } else {
+    result = {
+      lat,
+      lon,
+    };
+  }
+  return result;
+}
+
+// Modified version of encode(),
+// If prettyPrint is set to true, it prints out the MGRS grids in USNG format (basically adds spaces between GZD, 100k, and northing/easting)
+// example: UTMtoMGRS(LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }), 5, true)
+function UTMtoMGRS(utm, accuracy, prettyPrint = false) {
+  // prepend with leading zeroes
+  const southEasting = `00000${utm.easting}`;
+  const southNorthing = `00000${utm.northing}`;
+
+  if (prettyPrint) {
+    // If true this will display MGRS coords like this: '18T TK 62050 42686'
+    return `${utm.zoneNumber}${utm.zoneLetter} ${get100kID(utm.easting, utm.northing, utm.zoneNumber)} ${southEasting.substr(southEasting.length - 5, accuracy)} ${southNorthing.substr(southNorthing.length - 5, accuracy)}`;
+  }
+
+  // If false this will display MGRS coords like this: '18TTK6205042686'
+  return utm.zoneNumber + utm.zoneLetter + get100kID(utm.easting, utm.northing, utm.zoneNumber) + southEasting.substr(southEasting.length - 5, accuracy) + southNorthing.substr(southNorthing.length - 5, accuracy);
 }
 
 
 // *********************************************************************************** //
+// * Leaflet.DumbMGRS - Easting and Northing Grid Zone Designator boundaries         * //
+// *********************************************************************************** //
+// letter = a band of latitude
+const northingDict = {
+  X: {
+    letter: 'X',
+    top: 84,
+    bottom: 72,
+  },
+  W: {
+    letter: 'W',
+    top: 72,
+    bottom: 64,
+  },
+  V: {
+    letter: 'V',
+    top: 64,
+    bottom: 56,
+  },
+  U: {
+    letter: 'U',
+    top: 56,
+    bottom: 48,
+  },
+  T: {
+    letter: 'T',
+    top: 48,
+    bottom: 40,
+  },
+  S: {
+    letter: 'S',
+    top: 40,
+    bottom: 32,
+  },
+  R: {
+    letter: 'R',
+    top: 32,
+    bottom: 24,
+  },
+  Q: {
+    letter: 'Q',
+    top: 24,
+    bottom: 16,
+  },
+  P: {
+    letter: 'P',
+    top: 16,
+    bottom: 8,
+  },
+  N: {
+    letter: 'N',
+    top: 8,
+    bottom: 0,
+  },
+  M: {
+    letter: 'M',
+    top: 0,
+    bottom: -8,
+  },
+  L: {
+    letter: 'L',
+    top: -8,
+    bottom: -16,
+  },
+  K: {
+    letter: 'K',
+    top: -16,
+    bottom: -24,
+  },
+  J: {
+    letter: 'J',
+    top: -24,
+    bottom: -32,
+  },
+  H: {
+    letter: 'H',
+    top: -32,
+    bottom: -40,
+  },
+  G: {
+    letter: 'G',
+    top: -40,
+    bottom: -48,
+  },
+  F: {
+    letter: 'F',
+    top: -48,
+    bottom: -56,
+  },
+  E: {
+    letter: 'E',
+    top: -56,
+    bottom: -64,
+  },
+  D: {
+    letter: 'D',
+    top: -64,
+    bottom: -72,
+  },
+  C: {
+    letter: 'C',
+    top: -72,
+    bottom: -80,
+  },
+};
+
+// id = UTM zone
+const eastingDict = {
+  1: {
+    id: '1',
+    left: -180,
+    right: -174,
+  },
+  2: {
+    id: '2',
+    left: -174,
+    right: -168,
+  },
+  3: {
+    id: '3',
+    left: -168,
+    right: -162,
+  },
+  4: {
+    id: '4',
+    left: -162,
+    right: -156,
+  },
+  5: {
+    id: '5',
+    left: -156,
+    right: -150,
+  },
+  6: {
+    id: '6',
+    left: -150,
+    right: -144,
+  },
+  7: {
+    id: '7',
+    left: -144,
+    right: -138,
+  },
+  8: {
+    id: '8',
+    left: -138,
+    right: -132,
+  },
+  9: {
+    id: '9',
+    left: -132,
+    right: -126,
+  },
+  10: {
+    id: '10',
+    left: -126,
+    right: -120,
+  },
+  11: {
+    id: '11',
+    left: -120,
+    right: -114,
+  },
+  12: {
+    id: '12',
+    left: -114,
+    right: -108,
+  },
+  13: {
+    id: '13',
+    left: -108,
+    right: -102,
+  },
+  14: {
+    id: '14',
+    left: -102,
+    right: -96,
+  },
+  15: {
+    id: '15',
+    left: -96,
+    right: -90,
+  },
+  16: {
+    id: '16',
+    left: -90,
+    right: -84,
+  },
+  17: {
+    id: '17',
+    left: -84,
+    right: -78,
+  },
+  18: {
+    id: '18',
+    left: -78,
+    right: -72,
+  },
+  19: {
+    id: '19',
+    left: -72,
+    right: -66,
+  },
+  20: {
+    id: '20',
+    left: -66,
+    right: -60,
+  },
+  21: {
+    id: '21',
+    left: -60,
+    right: -54,
+  },
+  22: {
+    id: '22',
+    left: -54,
+    right: -48,
+  },
+  23: {
+    id: '23',
+    left: -48,
+    right: -42,
+  },
+  24: {
+    id: '24',
+    left: -42,
+    right: -36,
+  },
+  25: {
+    id: '25',
+    left: -36,
+    right: -30,
+  },
+  26: {
+    id: '26',
+    left: -30,
+    right: -24,
+  },
+  27: {
+    id: '27',
+    left: -24,
+    right: -18,
+  },
+  28: {
+    id: '28',
+    left: -18,
+    right: -12,
+  },
+  29: {
+    id: '29',
+    left: -12,
+    right: -6,
+  },
+  30: {
+    id: '30',
+    left: -6,
+    right: 0,
+  },
+  31: {
+    id: '31',
+    left: 0,
+    right: 6,
+  },
+  32: {
+    id: '32',
+    left: 6,
+    right: 12,
+  },
+  33: {
+    id: '33',
+    left: 12,
+    right: 18,
+  },
+  34: {
+    id: '34',
+    left: 18,
+    right: 24,
+  },
+  35: {
+    id: '35',
+    left: 24,
+    right: 30,
+  },
+  36: {
+    id: '36',
+    left: 30,
+    right: 36,
+  },
+  37: {
+    id: '37',
+    left: 36,
+    right: 42,
+  },
+  38: {
+    id: '38',
+    left: 42,
+    right: 48,
+  },
+  39: {
+    id: '39',
+    left: 48,
+    right: 54,
+  },
+  40: {
+    id: '40',
+    left: 54,
+    right: 60,
+  },
+  41: {
+    id: '41',
+    left: 60,
+    right: 66,
+  },
+  42: {
+    id: '42',
+    left: 66,
+    right: 72,
+  },
+  43: {
+    id: '43',
+    left: 72,
+    right: 78,
+  },
+  44: {
+    id: '44',
+    left: 78,
+    right: 84,
+  },
+  45: {
+    id: '45',
+    left: 84,
+    right: 90,
+  },
+  46: {
+    id: '46',
+    left: 90,
+    right: 96,
+  },
+  47: {
+    id: '47',
+    left: 96,
+    right: 102,
+  },
+  48: {
+    id: '48',
+    left: 102,
+    right: 108,
+  },
+  49: {
+    id: '49',
+    left: 108,
+    right: 114,
+  },
+  50: {
+    id: '50',
+    left: 114,
+    right: 120,
+  },
+  51: {
+    id: '51',
+    left: 120,
+    right: 126,
+  },
+  52: {
+    id: '52',
+    left: 126,
+    right: 132,
+  },
+  53: {
+    id: '53',
+    left: 132,
+    right: 138,
+  },
+  54: {
+    id: '54',
+    left: 138,
+    right: 144,
+  },
+  55: {
+    id: '55',
+    left: 144,
+    right: 150,
+  },
+  56: {
+    id: '56',
+    left: 150,
+    right: 156,
+  },
+  57: {
+    id: '57',
+    left: 156,
+    right: 162,
+  },
+  58: {
+    id: '58',
+    left: 162,
+    right: 168,
+  },
+  59: {
+    id: '59',
+    left: 168,
+    right: 174,
+  },
+  60: {
+    id: '60',
+    left: 174,
+    right: 180,
+  },
+};
+
+// *********************************************************************************** //
 // * Leaflet.DumbMGRS - Grid Zone Designators                                        * //
 // *********************************************************************************** //
-// TODO: Split the plugin off into its own JS file (with the eastingDict/northingDict)
-// TODO: Tree shake mgrs.js
-// TODO: find any instance of 'map' and replace with this._map
 // TODO: This is mostly done. Just need to clean up some issues, merge gzdObject.js, tree shake mgrs.js, and wrap it up into an official plugin
 L.GZD = L.LayerGroup.extend({
   // Default options
@@ -351,7 +1025,6 @@ L.GZD = L.LayerGroup.extend({
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
 // TODO: Finish configuring the special zones exceptions
-// zoom level 7,8,9, 10, 12, 13 , 14 , 15 , 16 , 17 , 18 could use more padding
 L.MGRS100K = L.LayerGroup.extend({
   // Default options
   options: {
@@ -730,8 +1403,8 @@ L.MGRS100K = L.LayerGroup.extend({
     }
 
     // Get the northEast and southWest corner of the map
-    const nePoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
-    const swPoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+    const nePoint = new L.point(this._map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+    const swPoint = new L.point(this._map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
     const cornerBounds = new L.bounds(nePoint, swPoint);
     // Clip the points that are outside of the visible map boundaries
     const clippedLines = L.LineUtil.clipSegment(this._map.latLngToLayerPoint(pt1), this._map.latLngToLayerPoint(pt2), cornerBounds);
@@ -771,8 +1444,8 @@ L.MGRS100K = L.LayerGroup.extend({
       // since some of them will have northing values of like 5799999, just round up
       if ((Math.round(LLtoUTM(connectingEastingLineToGZD.getLatLngs()[0]).northing / 10) * 10) % this.gridInterval === 0) {
         // Get the northEast and southWest corner of the map
-        const nePoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
-        const swPoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+        const nePoint = new L.point(this._map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+        const swPoint = new L.point(this._map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
         const cornerBounds = new L.bounds(nePoint, swPoint);
         // Clip the points that are outside of the visible map boundaries
         const clippedLines = L.LineUtil.clipSegment(this._map.latLngToLayerPoint(connector), this._map.latLngToLayerPoint(extendedEastingLine), cornerBounds);
@@ -827,8 +1500,8 @@ L.MGRS100K = L.LayerGroup.extend({
       // since some of them will have easting values of like 5799999, just round up
       if ((Math.round(LLtoUTM(connectingNorthingLineToGZD.getLatLngs()[0]).easting / 10) * 10) % this.gridInterval === 0) {
         // Get the northEast and southWest corner of the map
-        const nePoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
-        const swPoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+        const nePoint = new L.point(this._map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+        const swPoint = new L.point(this._map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
         const cornerBounds = new L.bounds(nePoint, swPoint);
         // Clip the points that are outside of the visible map boundaries
         const clippedLines = L.LineUtil.clipSegment(this._map.latLngToLayerPoint(connector), this._map.latLngToLayerPoint(extendedNorthingLine), cornerBounds);
@@ -1519,6 +2192,27 @@ const generate1000meterGrids = new L.mgrs1000meters({
 generateGZDGrids.addTo(map);
 generate100kGrids.addTo(map);
 generate1000meterGrids.addTo(map);
+
+// *********************************************************************************** //
+// * Helper functions (for debugging)                                                * //
+// *********************************************************************************** //
+// Just a quicker way to add a marker, used for debugging purposes
+function mark(element) {
+  const marker = new L.marker(element);
+  const markerLat = marker.getLatLng().lat;
+  const markerLng = marker.getLatLng().lng;
+  const markerNorthing = LLtoUTM({ lat: markerLat, lon: markerLng }).northing;
+  const markerEasting = LLtoUTM({ lat: markerLat, lon: markerLng }).easting;
+  const markerZoneLetter = LLtoUTM({ lat: markerLat, lon: markerLng }).zoneLetter;
+  const markerZoneNumber = LLtoUTM({ lat: markerLat, lon: markerLng }).zoneNumber;
+  const popupContent = `<h3><u>Lat:</u> ${markerLat.toFixed(6)} <u>Lng:</u> ${markerLng.toFixed(6)}</h3>
+                        <h3><u>Northing:</u> ${markerNorthing}</h3>
+                        <h3><u>Easting:</u> ${markerEasting}</h3>
+                        <h3><u>Zone Letter:</u> ${markerZoneLetter}</h3>
+                        <h3><u>Zone Number:</u> ${markerZoneNumber}</h3>`;
+  marker.bindPopup(popupContent).openPopup();
+  return marker.addTo(map);
+}
 
 
 // *********************************************************************************** //

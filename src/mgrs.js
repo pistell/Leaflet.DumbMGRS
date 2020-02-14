@@ -222,7 +222,7 @@ function UTMtoLL(utm) {
     zoneLetter,
     zoneNumber,
   } = utm;
-    // check the ZoneNummber is valid
+    // check the ZoneNumber is valid
   if (zoneNumber < 0 || zoneNumber > 60) {
     return null;
   }

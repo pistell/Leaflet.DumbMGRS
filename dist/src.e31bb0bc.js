@@ -14300,112 +14300,96 @@ window.L = exports;
 
 },{}],"../node_modules/leaflet/dist/images/marker-shadow.png":[function(require,module,exports) {
 module.exports="/marker-shadow.4ea910b7.png";
-},{}],"../node_modules/@babel/runtime/helpers/arrayWithHoles.js":[function(require,module,exports) {
-function _arrayWithHoles(arr) {
-  if (Array.isArray(arr)) return arr;
-}
-
-module.exports = _arrayWithHoles;
-},{}],"../node_modules/@babel/runtime/helpers/iterableToArrayLimit.js":[function(require,module,exports) {
-function _iterableToArrayLimit(arr, i) {
-  if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
-    return;
-  }
-
-  var _arr = [];
-  var _n = true;
-  var _d = false;
-  var _e = undefined;
-
-  try {
-    for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
-      _arr.push(_s.value);
-
-      if (i && _arr.length === i) break;
-    }
-  } catch (err) {
-    _d = true;
-    _e = err;
-  } finally {
-    try {
-      if (!_n && _i["return"] != null) _i["return"]();
-    } finally {
-      if (_d) throw _e;
-    }
-  }
-
-  return _arr;
-}
-
-module.exports = _iterableToArrayLimit;
-},{}],"../node_modules/@babel/runtime/helpers/nonIterableRest.js":[function(require,module,exports) {
-function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance");
-}
-
-module.exports = _nonIterableRest;
-},{}],"../node_modules/@babel/runtime/helpers/slicedToArray.js":[function(require,module,exports) {
-var arrayWithHoles = require("./arrayWithHoles");
-
-var iterableToArrayLimit = require("./iterableToArrayLimit");
-
-var nonIterableRest = require("./nonIterableRest");
-
-function _slicedToArray(arr, i) {
-  return arrayWithHoles(arr) || iterableToArrayLimit(arr, i) || nonIterableRest();
-}
-
-module.exports = _slicedToArray;
-},{"./arrayWithHoles":"../node_modules/@babel/runtime/helpers/arrayWithHoles.js","./iterableToArrayLimit":"../node_modules/@babel/runtime/helpers/iterableToArrayLimit.js","./nonIterableRest":"../node_modules/@babel/runtime/helpers/nonIterableRest.js"}],"mgrs.js":[function(require,module,exports) {
+},{}],"index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.forward = forward;
-exports.getLetterDesignator = getLetterDesignator;
-exports.inverse = inverse;
-exports.toPoint = toPoint;
-exports.get100kSetForZone = get100kSetForZone;
-exports.get100kID = get100kID;
-exports.LLtoUTM = LLtoUTM;
-exports.UTMtoLL = UTMtoLL;
-exports.decode = decode;
-exports.encode = encode;
-exports.UTMtoMGRS = UTMtoMGRS;
+exports.default = void 0;
 
-var _slicedToArray2 = _interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
+require("./styles.scss");
+
+var _leaflet = _interopRequireDefault(require("leaflet"));
+
+var _markerIcon = _interopRequireDefault(require("leaflet/dist/images/marker-icon.png"));
+
+var _markerShadow = _interopRequireDefault(require("leaflet/dist/images/marker-shadow.png"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// This is just a slightly modified version of mgrs.js.
-// Added function UTMtoMGRS, and exported LLtoUTM and UTMtoLL since they weren't before
-// Modified LLtoUTM, and created UTMtoMGRS
-// James Pistell 2020
-// For Leaflet.DumbMGRS
-// https://github.com/pistell/Leaflet.DumbMGRS
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-/**
-   * UTM zones are grouped, and assigned to one of a group of 6
-   * sets.
-   *
-   * {int} @private
-   */
-var NUM_100K_SETS = 6;
-/**
-   * The column letters (for easting) of the lower left value, per
-   * set.
-   *
-   * {string} @private
-   */
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
-var SET_ORIGIN_COLUMN_LETTERS = 'AJSAJS';
-/**
-   * The row letters (for northing) of the lower left value, per
-   * set.
-   *
-   * {string} @private
-   */
+// LLtoUTM and UTMtoLL aren't exported in the original mgrs.js, fork it and import them
+// https://github.com/proj4js/mgrs/issues/10
+// import {
+//   forward, getLetterDesignator, inverse, toPoint, get100kSetForZone, get100kID, LLtoUTM, UTMtoLL, decode, encode, UTMtoMGRS,
+// } from './mgrs';
+// import { northingDict, eastingDict } from './gzdObject';
+// *********************************************************************************** //
+// * Leaflet predefined coordinates (for debugging)                                  * //
+// *********************************************************************************** //
+// This coordinate has 3 visible Grid Zone Designator boundaries at zoom level 7 with no northing GZD
+var ontarioCA = [51.84935276370605, -86.27563476562501]; // ? 262 child elements
+// This coordinate has 6 visible Grid Zone Designator boundaries at zoom level 7
+
+var southNY = [42.285437007491545, -75.04211425781251]; // ? 800 child elements
+// This coordinate has 4 visible Grid Zone Designator boundaries within view
+
+var southPA = [40.001780202770966, -78.0005693435669]; // ? 616 child elements
+// For some reason the Florida map view generates a ton of child elements
+
+var southFL = [27.381523191705053, -82.82592773437501]; // ? 2235 child elements
+
+var honduras = [14.83861155338482, -87.45117187500001]; // ? 1272 child elements
+
+var norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
+
+var iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
+
+var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
+
+var quito = [0.17578097424708533, -77.84912109375]; // *********************************************************************************** //
+// * Set initial map view                                                            * //
+// *********************************************************************************** //
+
+var map = _leaflet.default.map('map').setView(southFL, 7); // Place map in window for debugging purposes
+
+
+window.map = map; // *********************************************************************************** //
+// * Enable default images in the marker                                             * //
+// *********************************************************************************** //
+// https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-264311098
+
+var DefaultIcon = _leaflet.default.icon({
+  iconUrl: _markerIcon.default,
+  shadowUrl: _markerShadow.default,
+  // icon is 25x41 pixels, so adjust anchor point
+  iconAnchor: [12.5, 41],
+  popupAnchor: [0, -41]
+}); // Set the default marker icon to the constants provided above
+
+
+_leaflet.default.Marker.prototype.options.icon = DefaultIcon; // *********************************************************************************** //
+// * Add the Leaflet map to the page                                                 * //
+// *********************************************************************************** //
+
+_leaflet.default.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  id: 'osm_map'
+}).addTo(map); // *********************************************************************************** //
+// * Leaflet.DumbMGRS - Forked version of mgrs.js (https://github.com/proj4js/mgrs)  * //
+// *********************************************************************************** //
+// UTM zones are grouped, and assigned to one of a group of 6 sets
+
+
+var NUM_100K_SETS = 6; // The column letters (for easting) of the lower left value, per set
+
+var SET_ORIGIN_COLUMN_LETTERS = 'AJSAJS'; // The row letters (for northing) of the lower left value, per set
 
 var SET_ORIGIN_ROW_LETTERS = 'AFAFAF';
 var A = 65; // A
@@ -14417,118 +14401,118 @@ var O = 79; // O
 var V = 86; // V
 
 var Z = 90; // Z
-
-/**
-   * Convert lat/lon to MGRS.
-   *
-   * @param {[number, number]} ll Array with longitude and latitude on a
-   *     WGS84 ellipsoid.
-   * @param {number} [accuracy=5] Accuracy in digits (5 for 1 m, 4 for 10 m, 3 for
-   *      100 m, 2 for 1 km, 1 for 10 km or 0 for 100 km). Optional, default is 5.
-   * @return {string} the MGRS string for the given location and accuracy.
-   */
-
-function forward(ll, accuracy) {
-  accuracy = typeof accuracy === 'number' ? accuracy : 5; // default accuracy 1m
-
-  if (!Array.isArray(ll)) {
-    throw new TypeError('forward did not receive an array');
-  }
-
-  if (typeof ll[0] === 'string' || typeof ll[1] === 'string') {
-    throw new TypeError('forward received an array of strings, but it only accepts an array of numbers.');
-  }
-
-  var _ll = (0, _slicedToArray2.default)(ll, 2),
-      lon = _ll[0],
-      lat = _ll[1];
-
-  if (lon < -180 || lon > 180) {
-    throw new TypeError("forward received an invalid longitude of ".concat(lon));
-  }
-
-  if (lat < -90 || lat > 90) {
-    throw new TypeError("forward received an invalid latitude of ".concat(lat));
-  }
-
-  if (lat < -80 || lat > 84) {
-    throw new TypeError("forward received a latitude of ".concat(lat, ", but this library does not support conversions of points in polar regions below 80\xB0S and above 84\xB0N"));
-  }
-
-  return encode(LLtoUTM({
-    lat: lat,
-    lon: lon
-  }), accuracy);
-}
-/**
-   * Convert MGRS to lat/lon bounding box.
-   *
-   * @param {string} mgrs MGRS string.
-   * @return {[number,number,number,number]} An array with left (longitude),
-   *    bottom (latitude), right
-   *    (longitude) and top (latitude) values in WGS84, representing the
-   *    bounding box for the provided MGRS reference.
-   */
-
-
-function inverse(mgrs) {
-  var bbox = UTMtoLL(decode(mgrs.toUpperCase()));
-
-  if (bbox.lat && bbox.lon) {
-    return [bbox.lon, bbox.lat, bbox.lon, bbox.lat];
-  }
-
-  return [bbox.left, bbox.bottom, bbox.right, bbox.top];
-}
-
-function toPoint(mgrs) {
-  if (mgrs === '') {
-    throw new TypeError('toPoint received a blank string');
-  }
-
-  var bbox = UTMtoLL(decode(mgrs.toUpperCase()));
-
-  if (bbox.lat && bbox.lon) {
-    return [bbox.lon, bbox.lat];
-  }
-
-  return [(bbox.left + bbox.right) / 2, (bbox.top + bbox.bottom) / 2];
-}
-/**
-   * Conversion from degrees to radians.
-   *
-   * @private
-   * @param {number} deg the angle in degrees.
-   * @return {number} the angle in radians.
-   */
-
+// Conversion from degrees to radians
 
 function degToRad(deg) {
   return deg * (Math.PI / 180);
-}
-/**
-   * Conversion from radians to degrees.
-   *
-   * @private
-   * @param {number} rad the angle in radians.
-   * @return {number} the angle in degrees.
-   */
+} // Conversion from radians to degrees
 
 
 function radToDeg(rad) {
   return 180 * (rad / Math.PI);
-}
-/**
-   * Converts a set of Longitude and Latitude co-ordinates to UTM
-   * using the WGS84 ellipsoid.
-   *
-   * @private
-   * @param {object} ll Object literal with lat and lon properties
-   *     representing the WGS84 coordinate to be converted.
-   * @return {object} Object literal containing the UTM value with easting,
-   *     northing, zoneNumber and zoneLetter properties, and an optional
-   *     accuracy property in digits. Returns null if the conversion failed.
-   */
+} // Calculates the MGRS letter designator for the given latitude
+
+
+function getLetterDesignator(latitude) {
+  if (latitude <= 84 && latitude >= 72) {
+    // the X band is 12 degrees high
+    return 'X';
+  }
+
+  if (latitude < 72 && latitude >= -80) {
+    // Latitude bands are lettered C through X, excluding I and O
+    var bandLetters = 'CDEFGHJKLMNPQRSTUVWX';
+    var bandHeight = 8;
+    var minLatitude = -80;
+    var index = Math.floor((latitude - minLatitude) / bandHeight);
+    return bandLetters[index];
+  }
+
+  if (latitude > 84 || latitude < -80) {
+    // This is here as an error flag to show that the Latitude is
+    // outside MGRS limits
+    return 'Z';
+  }
+} // Get the two-letter MGRS 100k designator given information
+// translated from the UTM northing, easting and zone number.
+
+
+function getLetter100kID(column, row, parm) {
+  // colOrigin and rowOrigin are the letters at the origin of the set
+  var index = parm - 1;
+  var colOrigin = SET_ORIGIN_COLUMN_LETTERS.charCodeAt(index);
+  var rowOrigin = SET_ORIGIN_ROW_LETTERS.charCodeAt(index); // colInt and rowInt are the letters to build to return
+
+  var colInt = colOrigin + column - 1;
+  var rowInt = rowOrigin + row;
+  var rollover = false;
+
+  if (colInt > Z) {
+    colInt = colInt - Z + A - 1;
+    rollover = true;
+  }
+
+  if (colInt === I || colOrigin < I && colInt > I || (colInt > I || colOrigin < I) && rollover) {
+    colInt += 1;
+  }
+
+  if (colInt === O || colOrigin < O && colInt > O || (colInt > O || colOrigin < O) && rollover) {
+    colInt += 1;
+
+    if (colInt === I) {
+      colInt += 1;
+    }
+  }
+
+  if (colInt > Z) {
+    colInt = colInt - Z + A - 1;
+  }
+
+  if (rowInt > V) {
+    rowInt = rowInt - V + A - 1;
+    rollover = true;
+  } else {
+    rollover = false;
+  }
+
+  if (rowInt === I || rowOrigin < I && rowInt > I || (rowInt > I || rowOrigin < I) && rollover) {
+    rowInt += 1;
+  }
+
+  if (rowInt === O || rowOrigin < O && rowInt > O || (rowInt > O || rowOrigin < O) && rollover) {
+    rowInt += 1;
+
+    if (rowInt === I) {
+      rowInt += 1;
+    }
+  }
+
+  if (rowInt > V) {
+    rowInt = rowInt - V + A - 1;
+  }
+
+  var twoLetter = String.fromCharCode(colInt) + String.fromCharCode(rowInt);
+  return twoLetter;
+} // Given a UTM zone number, figure out the MGRS 100K set it is in
+
+
+function get100kSetForZone(i) {
+  var setParm = i % NUM_100K_SETS;
+
+  if (setParm === 0) {
+    setParm = NUM_100K_SETS;
+  }
+
+  return setParm;
+} // Get the two letter 100k designator for a given UTM easting, northing and zone number value
+
+
+function get100kID(easting, northing, zoneNumber) {
+  var setParm = get100kSetForZone(zoneNumber);
+  var setColumn = Math.floor(easting / 100000);
+  var setRow = Math.floor(northing / 100000) % 20;
+  return getLetter100kID(setColumn, setRow, setParm);
+} // Converts a set of Longitude and Latitude co-ordinates to UTM using the WGS84 ellipsoid
 
 
 function LLtoUTM(ll) {
@@ -14568,9 +14552,7 @@ function LLtoUTM(ll) {
     }
   }
 
-  var LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3; // +3 puts origin
-  // in middle of
-  // zone
+  var LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3; // +3 puts origin in middle of zone
 
   var LongOriginRad = degToRad(LongOrigin);
   var eccPrimeSquared = eccSquared / (1 - eccSquared);
@@ -14593,29 +14575,16 @@ function LLtoUTM(ll) {
     zoneNumber: ZoneNumber,
     zoneLetter: getLetterDesignator(Lat)
   };
-}
-/**
-   * Converts UTM coords to lat/long, using the WGS84 ellipsoid. This is a convenience
-   * class where the Zone can be specified as a single string eg."60N" which
-   * is then broken down into the ZoneNumber and ZoneLetter.
-   *
-   * @private
-   * @param {object} utm An object literal with northing, easting, zoneNumber
-   *     and zoneLetter properties. If an optional accuracy property is
-   *     provided (in meters), a bounding box will be returned instead of
-   *     latitude and longitude.
-   * @return {object} An object literal containing either lat and lon values
-   *     (if no accuracy was provided), or top, right, bottom and left values
-   *     for the bounding box calculated according to the provided accuracy.
-   *     Returns null if the conversion failed.
-   */
+} // Converts UTM coords to lat/long, using the WGS84 ellipsoid. This is a convenience
+// class where the Zone can be specified as a single string eg."60N" which
+// is then broken down into the ZoneNumber and ZoneLetter
 
 
 function UTMtoLL(utm) {
   var UTMNorthing = utm.northing;
   var UTMEasting = utm.easting;
   var zoneLetter = utm.zoneLetter,
-      zoneNumber = utm.zoneNumber; // check the ZoneNummber is valid
+      zoneNumber = utm.zoneNumber; // check the ZoneNumber is valid
 
   if (zoneNumber < 0 || zoneNumber > 60) {
     return null;
@@ -14681,498 +14650,30 @@ function UTMtoLL(utm) {
   }
 
   return result;
-}
-/**
-   * Calculates the MGRS letter designator for the given latitude.
-   *
-   * @private (Not intended for public API, only exported for testing.)
-   * @param {number} latitude The latitude in WGS84 to get the letter designator
-   *     for.
-   * @return {string} The letter designator.
-   */
-
-
-function getLetterDesignator(latitude) {
-  if (latitude <= 84 && latitude >= 72) {
-    // the X band is 12 degrees high
-    return 'X';
-  }
-
-  if (latitude < 72 && latitude >= -80) {
-    // Latitude bands are lettered C through X, excluding I and O
-    var bandLetters = 'CDEFGHJKLMNPQRSTUVWX';
-    var bandHeight = 8;
-    var minLatitude = -80;
-    var index = Math.floor((latitude - minLatitude) / bandHeight);
-    return bandLetters[index];
-  }
-
-  if (latitude > 84 || latitude < -80) {
-    // This is here as an error flag to show that the Latitude is
-    // outside MGRS limits
-    return 'Z';
-  }
-}
-/**
-   * Encodes a UTM location as MGRS string.
-   *
-   * @private
-   * @param {object} utm An object literal with easting, northing,
-   *     zoneLetter, zoneNumber
-   * @param {number} accuracy Accuracy in digits (0-5).
-   * @return {string} MGRS string for the given UTM location.
-   */
-
-
-function encode(utm, accuracy) {
-  // prepend with leading zeroes
-  var seasting = "00000".concat(utm.easting);
-  var snorthing = "00000".concat(utm.northing);
-  return utm.zoneNumber + utm.zoneLetter + get100kID(utm.easting, utm.northing, utm.zoneNumber) + seasting.substr(seasting.length - 5, accuracy) + snorthing.substr(snorthing.length - 5, accuracy);
-} //! modified version of encode(),
-//! if prettyPrint is set to true, it prints out the MGRS grids in USNG format (basically adds spaces between GZD, 100k, and northing/easting)
-//! example: UTMtoMGRS(LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }), 5, true)
+} // Modified version of encode(),
+// If prettyPrint is set to true, it prints out the MGRS grids in USNG format (basically adds spaces between GZD, 100k, and northing/easting)
+// example: UTMtoMGRS(LLtoUTM({ lat: event.latlng.lat, lon: event.latlng.lng }), 5, true)
 
 
 function UTMtoMGRS(utm, accuracy) {
   var prettyPrint = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
   // prepend with leading zeroes
-  var seasting = "00000".concat(utm.easting);
-  var snorthing = "00000".concat(utm.northing);
+  var southEasting = "00000".concat(utm.easting);
+  var southNorthing = "00000".concat(utm.northing);
 
   if (prettyPrint) {
     // If true this will display MGRS coords like this: '18T TK 62050 42686'
-    return "".concat(utm.zoneNumber).concat(utm.zoneLetter, " ").concat(get100kID(utm.easting, utm.northing, utm.zoneNumber), " ").concat(seasting.substr(seasting.length - 5, accuracy), " ").concat(snorthing.substr(snorthing.length - 5, accuracy));
+    return "".concat(utm.zoneNumber).concat(utm.zoneLetter, " ").concat(get100kID(utm.easting, utm.northing, utm.zoneNumber), " ").concat(southEasting.substr(southEasting.length - 5, accuracy), " ").concat(southNorthing.substr(southNorthing.length - 5, accuracy));
   } // If false this will display MGRS coords like this: '18TTK6205042686'
 
 
-  return utm.zoneNumber + utm.zoneLetter + get100kID(utm.easting, utm.northing, utm.zoneNumber) + seasting.substr(seasting.length - 5, accuracy) + snorthing.substr(snorthing.length - 5, accuracy);
-}
-/**
-   * Get the two letter 100k designator for a given UTM easting,
-   * northing and zone number value.
-   *
-   * @private
-   * @param {number} easting
-   * @param {number} northing
-   * @param {number} zoneNumber
-   * @return {string} the two letter 100k designator for the given UTM location.
-   */
-
-
-function get100kID(easting, northing, zoneNumber) {
-  var setParm = get100kSetForZone(zoneNumber);
-  var setColumn = Math.floor(easting / 100000);
-  var setRow = Math.floor(northing / 100000) % 20;
-  return getLetter100kID(setColumn, setRow, setParm);
-}
-/**
-   * Given a UTM zone number, figure out the MGRS 100K set it is in.
-   *
-   * @private
-   * @param {number} i An UTM zone number.
-   * @return {number} the 100k set the UTM zone is in.
-   */
-
-
-function get100kSetForZone(i) {
-  var setParm = i % NUM_100K_SETS;
-
-  if (setParm === 0) {
-    setParm = NUM_100K_SETS;
-  }
-
-  return setParm;
-}
-/**
-   * Get the two-letter MGRS 100k designator given information
-   * translated from the UTM northing, easting and zone number.
-   *
-   * @private
-   * @param {number} column the column index as it relates to the MGRS
-   *        100k set spreadsheet, created from the UTM easting.
-   *        Values are 1-8.
-   * @param {number} row the row index as it relates to the MGRS 100k set
-   *        spreadsheet, created from the UTM northing value. Values
-   *        are from 0-19.
-   * @param {number} parm the set block, as it relates to the MGRS 100k set
-   *        spreadsheet, created from the UTM zone. Values are from
-   *        1-60.
-   * @return {string} two letter MGRS 100k code.
-   */
-
-
-function getLetter100kID(column, row, parm) {
-  // colOrigin and rowOrigin are the letters at the origin of the set
-  var index = parm - 1;
-  var colOrigin = SET_ORIGIN_COLUMN_LETTERS.charCodeAt(index);
-  var rowOrigin = SET_ORIGIN_ROW_LETTERS.charCodeAt(index); // colInt and rowInt are the letters to build to return
-
-  var colInt = colOrigin + column - 1;
-  var rowInt = rowOrigin + row;
-  var rollover = false;
-
-  if (colInt > Z) {
-    colInt = colInt - Z + A - 1;
-    rollover = true;
-  }
-
-  if (colInt === I || colOrigin < I && colInt > I || (colInt > I || colOrigin < I) && rollover) {
-    colInt++;
-  }
-
-  if (colInt === O || colOrigin < O && colInt > O || (colInt > O || colOrigin < O) && rollover) {
-    colInt++;
-
-    if (colInt === I) {
-      colInt++;
-    }
-  }
-
-  if (colInt > Z) {
-    colInt = colInt - Z + A - 1;
-  }
-
-  if (rowInt > V) {
-    rowInt = rowInt - V + A - 1;
-    rollover = true;
-  } else {
-    rollover = false;
-  }
-
-  if (rowInt === I || rowOrigin < I && rowInt > I || (rowInt > I || rowOrigin < I) && rollover) {
-    rowInt++;
-  }
-
-  if (rowInt === O || rowOrigin < O && rowInt > O || (rowInt > O || rowOrigin < O) && rollover) {
-    rowInt++;
-
-    if (rowInt === I) {
-      rowInt++;
-    }
-  }
-
-  if (rowInt > V) {
-    rowInt = rowInt - V + A - 1;
-  }
-
-  var twoLetter = String.fromCharCode(colInt) + String.fromCharCode(rowInt);
-  return twoLetter;
-}
-/**
-   * Decode the UTM parameters from a MGRS string.
-   *
-   * @private
-   * @param {string} mgrsString an UPPERCASE coordinate string is expected.
-   * @return {object} An object literal with easting, northing, zoneLetter,
-   *     zoneNumber and accuracy (in meters) properties.
-   */
-
-
-function decode(mgrsString) {
-  if (mgrsString && mgrsString.length === 0) {
-    throw new TypeError('MGRSPoint coverting from nothing');
-  } // remove any spaces in MGRS String
-
-
-  mgrsString = mgrsString.replace(/ /g, '');
-  var _mgrsString = mgrsString,
-      length = _mgrsString.length;
-  var hunK = null;
-  var sb = '';
-  var testChar;
-  var i = 0; // get Zone number
-
-  while (!/[A-Z]/.test(testChar = mgrsString.charAt(i))) {
-    if (i >= 2) {
-      throw new Error("MGRSPoint bad conversion from: ".concat(mgrsString));
-    }
-
-    sb += testChar;
-    i++;
-  }
-
-  var zoneNumber = parseInt(sb, 10);
-
-  if (i === 0 || i + 3 > length) {
-    // A good MGRS string has to be 4-5 digits long,
-    // ##AAA/#AAA at least.
-    throw new Error("MGRSPoint bad conversion from ".concat(mgrsString));
-  }
-
-  var zoneLetter = mgrsString.charAt(i++); // Should we check the zone letter here? Why not.
-
-  if (zoneLetter <= 'A' || zoneLetter === 'B' || zoneLetter === 'Y' || zoneLetter >= 'Z' || zoneLetter === 'I' || zoneLetter === 'O') {
-    throw new Error("MGRSPoint zone letter ".concat(zoneLetter, " not handled: ").concat(mgrsString));
-  }
-
-  hunK = mgrsString.substring(i, i += 2);
-  var set = get100kSetForZone(zoneNumber); // console.log(mgrsString.substring(i, i += 2), set)
-
-  var east100k = getEastingFromChar(hunK.charAt(0), set);
-  var north100k = getNorthingFromChar(hunK.charAt(1), set); // We have a bug where the northing may be 2000000 too low.
-  // How
-  // do we know when to roll over?
-
-  while (north100k < getMinNorthing(zoneLetter)) {
-    north100k += 2000000;
-  } // calculate the char index for easting/northing separator
-
-
-  var remainder = length - i;
-
-  if (remainder % 2 !== 0) {
-    throw new Error("MGRSPoint has to have an even number\nof digits after the zone letter and two 100km letters - front\nhalf for easting meters, second half for\nnorthing meters ".concat(mgrsString));
-  }
-
-  var sep = remainder / 2;
-  var sepEasting = 0;
-  var sepNorthing = 0;
-  var accuracyBonus;
-  var sepEastingString;
-  var sepNorthingString;
-
-  if (sep > 0) {
-    accuracyBonus = 100000 / Math.pow(10, sep);
-    sepEastingString = mgrsString.substring(i, i + sep);
-    sepEasting = parseFloat(sepEastingString) * accuracyBonus;
-    sepNorthingString = mgrsString.substring(i + sep);
-    sepNorthing = parseFloat(sepNorthingString) * accuracyBonus;
-  }
-
-  var easting = sepEasting + east100k;
-  var northing = sepNorthing + north100k; // console.log(this);
-  // console.table({
-  //   east100k,
-  //   north100k,
-  //   easting,
-  //   northing,
-  // });
-
-  return {
-    easting: easting,
-    northing: northing,
-    zoneLetter: zoneLetter,
-    zoneNumber: zoneNumber,
-    accuracy: accuracyBonus
-  };
-}
-/**
-   * Given the first letter from a two-letter MGRS 100k zone, and given the
-   * MGRS table set for the zone number, figure out the easting value that
-   * should be added to the other, secondary easting value.
-   *
-   * @private
-   * @param {string} e The first letter from a two-letter MGRS 100´k zone.
-   * @param {number} set The MGRS table set for the zone number.
-   * @return {number} The easting value for the given letter and set.
-   */
-
-
-function getEastingFromChar(e, set) {
-  // colOrigin is the letter at the origin of the set for the
-  // column
-  var curCol = SET_ORIGIN_COLUMN_LETTERS.charCodeAt(set - 1);
-  var eastingValue = 100000;
-  var rewindMarker = false;
-
-  while (curCol !== e.charCodeAt(0)) {
-    curCol++;
-
-    if (curCol === I) {
-      curCol++;
-    }
-
-    if (curCol === O) {
-      curCol++;
-    }
-
-    if (curCol > Z) {
-      if (rewindMarker) {
-        throw new Error("Bad character: ".concat(e));
-      }
-
-      curCol = A;
-      rewindMarker = true;
-    }
-
-    eastingValue += 100000;
-  }
-
-  return eastingValue;
-}
-/**
-   * Given the second letter from a two-letter MGRS 100k zone, and given the
-   * MGRS table set for the zone number, figure out the northing value that
-   * should be added to the other, secondary northing value. You have to
-   * remember that Northings are determined from the equator, and the vertical
-   * cycle of letters mean a 2000000 additional northing meters. This happens
-   * approx. every 18 degrees of latitude. This method does *NOT* count any
-   * additional northings. You have to figure out how many 2000000 meters need
-   * to be added for the zone letter of the MGRS coordinate.
-   *
-   * @private
-   * @param {string} n Second letter of the MGRS 100k zone
-   * @param {number} set The MGRS table set number, which is dependent on the
-   *     UTM zone number.
-   * @return {number} The northing value for the given letter and set.
-   */
-
-
-function getNorthingFromChar(n, set) {
-  if (n > 'V') {
-    throw new TypeError("MGRSPoint given invalid Northing ".concat(n));
-  } // rowOrigin is the letter at the origin of the set for the
-  // column
-
-
-  var curRow = SET_ORIGIN_ROW_LETTERS.charCodeAt(set - 1);
-  var northingValue = 0;
-  var rewindMarker = false;
-
-  while (curRow !== n.charCodeAt(0)) {
-    curRow++;
-
-    if (curRow === I) {
-      curRow++;
-    }
-
-    if (curRow === O) {
-      curRow++;
-    } // fixing a bug making whole application hang in this loop
-    // when 'n' is a wrong character
-
-
-    if (curRow > V) {
-      if (rewindMarker) {
-        // making sure that this loop ends
-        throw new Error("Bad character: ".concat(n));
-      }
-
-      curRow = A;
-      rewindMarker = true;
-    }
-
-    northingValue += 100000;
-  }
-
-  return northingValue;
-}
-/**
-   * The function getMinNorthing returns the minimum northing value of a MGRS
-   * zone.
-   *
-   * Ported from Geotrans' c Lattitude_Band_Value structure table.
-   *
-   * @private
-   * @param {string} zoneLetter The MGRS zone to get the min northing for.
-   * @return {number}
-   */
-
-
-function getMinNorthing(zoneLetter) {
-  var northing;
-
-  switch (zoneLetter) {
-    case 'C':
-      northing = 1100000;
-      break;
-
-    case 'D':
-      northing = 2000000;
-      break;
-
-    case 'E':
-      northing = 2800000;
-      break;
-
-    case 'F':
-      northing = 3700000;
-      break;
-
-    case 'G':
-      northing = 4600000;
-      break;
-
-    case 'H':
-      northing = 5500000;
-      break;
-
-    case 'J':
-      northing = 6400000;
-      break;
-
-    case 'K':
-      northing = 7300000;
-      break;
-
-    case 'L':
-      northing = 8200000;
-      break;
-
-    case 'M':
-      northing = 9100000;
-      break;
-
-    case 'N':
-      northing = 0;
-      break;
-
-    case 'P':
-      northing = 800000;
-      break;
-
-    case 'Q':
-      northing = 1700000;
-      break;
-
-    case 'R':
-      northing = 2600000;
-      break;
-
-    case 'S':
-      northing = 3500000;
-      break;
-
-    case 'T':
-      northing = 4400000;
-      break;
-
-    case 'U':
-      northing = 5300000;
-      break;
-
-    case 'V':
-      northing = 6200000;
-      break;
-
-    case 'W':
-      northing = 7000000;
-      break;
-
-    case 'X':
-      northing = 7900000;
-      break;
-
-    default:
-      northing = -1;
-  }
-
-  if (northing >= 0) {
-    return northing;
-  }
-
-  throw new TypeError("Invalid zone letter: ".concat(zoneLetter));
-}
-},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js"}],"gzdObject.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.eastingDict = exports.northingDict = void 0;
-// * GRID ZONE DESIGNATOR OBJECT * //
+  return utm.zoneNumber + utm.zoneLetter + get100kID(utm.easting, utm.northing, utm.zoneNumber) + southEasting.substr(southEasting.length - 5, accuracy) + southNorthing.substr(southNorthing.length - 5, accuracy);
+} // *********************************************************************************** //
+// * Leaflet.DumbMGRS - Easting and Northing Grid Zone Designator boundaries         * //
+// *********************************************************************************** //
 // letter = a band of latitude
+
+
 var northingDict = {
   X: {
     letter: 'X',
@@ -15276,7 +14777,6 @@ var northingDict = {
   }
 }; // id = UTM zone
 
-exports.northingDict = northingDict;
 var eastingDict = {
   1: {
     id: '1',
@@ -15578,125 +15078,10 @@ var eastingDict = {
     left: 174,
     right: 180
   }
-};
-exports.eastingDict = eastingDict;
-},{}],"index.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
-
-require("./styles.scss");
-
-var _leaflet = _interopRequireDefault(require("leaflet"));
-
-var _markerIcon = _interopRequireDefault(require("leaflet/dist/images/marker-icon.png"));
-
-var _markerShadow = _interopRequireDefault(require("leaflet/dist/images/marker-shadow.png"));
-
-var _mgrs = require("./mgrs");
-
-var _gzdObject = require("./gzdObject");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-// *********************************************************************************** //
-// * Leaflet predefined coordinates (for debugging)                                  * //
-// *********************************************************************************** //
-// This coordinate has 3 visible Grid Zone Designator boundaries at zoom level 7 with no northing GZD
-var ontarioCA = [51.84935276370605, -86.27563476562501]; // ? 262 child elements
-// This coordinate has 6 visible Grid Zone Designator boundaries at zoom level 7
-
-var southNY = [42.285437007491545, -75.04211425781251]; // ? 800 child elements
-// This coordinate has 4 visible Grid Zone Designator boundaries within view
-
-var southPA = [40.001780202770966, -78.0005693435669]; // ? 616 child elements
-// For some reason the Florida map view generates a ton of child elements
-
-var southFL = [27.381523191705053, -82.82592773437501]; // ? 2235 child elements
-
-var honduras = [14.83861155338482, -87.45117187500001]; // ? 1272 child elements
-
-var norway = [64.27322328178597, 5.603027343750001]; // ? 352 child elements
-
-var iceland = [64.94216049820734, -19.797363281250004]; // ? 140 child elements on 18JAN, 132 elements on 21JAN
-
-var northOfSvalbard = [83.02621885344846, 15.402832031250002]; // use zoom 6
-
-var quito = [0.17578097424708533, -77.84912109375]; // *********************************************************************************** //
-// * Set initial map view                                                            * //
-// *********************************************************************************** //
-
-var map = _leaflet.default.map('map').setView(southFL, 7); // Place map in window for debugging purposes
-
-
-window.map = map; // *********************************************************************************** //
-// * Enable default images in the marker                                             * //
-// *********************************************************************************** //
-// https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-264311098
-
-var DefaultIcon = _leaflet.default.icon({
-  iconUrl: _markerIcon.default,
-  shadowUrl: _markerShadow.default,
-  // icon is 25x41 pixels, so adjust anchor point
-  iconAnchor: [12.5, 41],
-  popupAnchor: [0, -41]
-}); // Set the default marker icon to the constants provided above
-
-
-_leaflet.default.Marker.prototype.options.icon = DefaultIcon; // *********************************************************************************** //
-// * Add the Leaflet map to the page                                                 * //
-// *********************************************************************************** //
-
-_leaflet.default.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 18,
-  id: 'osm_map'
-}).addTo(map); // *********************************************************************************** //
-// * Helper functions (for debugging)                                                * //
-// *********************************************************************************** //
-// Just a quicker way to add a marker, used for debugging purposes
-// TODO: Merge gzdObject.js and mgrs.js here
-
-
-function mark(element) {
-  var marker = new _leaflet.default.marker(element);
-  var markerLat = marker.getLatLng().lat;
-  var markerLng = marker.getLatLng().lng;
-  var markerNorthing = (0, _mgrs.LLtoUTM)({
-    lat: markerLat,
-    lon: markerLng
-  }).northing;
-  var markerEasting = (0, _mgrs.LLtoUTM)({
-    lat: markerLat,
-    lon: markerLng
-  }).easting;
-  var markerZoneLetter = (0, _mgrs.LLtoUTM)({
-    lat: markerLat,
-    lon: markerLng
-  }).zoneLetter;
-  var markerZoneNumber = (0, _mgrs.LLtoUTM)({
-    lat: markerLat,
-    lon: markerLng
-  }).zoneNumber;
-  var popupContent = "<h3><u>Lat:</u> ".concat(markerLat.toFixed(6), " <u>Lng:</u> ").concat(markerLng.toFixed(6), "</h3>\n                        <h3><u>Northing:</u> ").concat(markerNorthing, "</h3>\n                        <h3><u>Easting:</u> ").concat(markerEasting, "</h3>\n                        <h3><u>Zone Letter:</u> ").concat(markerZoneLetter, "</h3>\n                        <h3><u>Zone Number:</u> ").concat(markerZoneNumber, "</h3>");
-  marker.bindPopup(popupContent).openPopup();
-  return marker.addTo(map);
-} // *********************************************************************************** //
+}; // *********************************************************************************** //
 // * Leaflet.DumbMGRS - Grid Zone Designators                                        * //
 // *********************************************************************************** //
-// TODO: Split the plugin off into its own JS file (with the eastingDict/northingDict)
-// TODO: Tree shake mgrs.js
-// TODO: find any instance of 'map' and replace with this._map
 // TODO: This is mostly done. Just need to clean up some issues, merge gzdObject.js, tree shake mgrs.js, and wrap it up into an official plugin
-
 
 _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
   // Default options
@@ -15728,8 +15113,8 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
 
     _leaflet.default.Util.setOptions(this, options);
 
-    this.northObj = _gzdObject.northingDict;
-    this.eastObj = _gzdObject.eastingDict;
+    this.northObj = northingDict;
+    this.eastObj = eastingDict;
     this.viz = [];
   },
   onAdd: function onAdd(map) {
@@ -15986,7 +15371,6 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
 // TODO: Finish configuring the special zones exceptions
-// zoom level 7,8,9, 10, 12, 13 , 14 , 15 , 16 , 17 , 18 could use more padding
 
 _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   // Default options
@@ -16132,19 +15516,19 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
     Object.values(this.data).forEach(function (x) {
       // Get the corners of the visible grids and convert them from latlon to UTM
-      var sw = (0, _mgrs.LLtoUTM)({
+      var sw = LLtoUTM({
         lat: x.bottom + buffer,
         lon: x.left + buffer
       });
-      var se = (0, _mgrs.LLtoUTM)({
+      var se = LLtoUTM({
         lat: x.bottom + buffer,
         lon: x.right - buffer
       });
-      var ne = (0, _mgrs.LLtoUTM)({
+      var ne = LLtoUTM({
         lat: x.top - buffer,
         lon: x.right - buffer
       });
-      var nw = (0, _mgrs.LLtoUTM)({
+      var nw = LLtoUTM({
         lat: x.top - buffer,
         lon: x.left + buffer
       });
@@ -16250,7 +15634,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       bottomRow.forEach(function (k) {
         if (k) {
-          var northingGrids = (0, _mgrs.UTMtoLL)({
+          var northingGrids = UTMtoLL({
             northing: k[1].northing,
             easting: k[0].easting,
             zoneNumber: k[0].zoneNumber,
@@ -16339,7 +15723,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
       bottomRow.forEach(function (k) {
         if (k) {
-          var eastingGrids = (0, _mgrs.UTMtoLL)({
+          var eastingGrids = UTMtoLL({
             northing: k[0].northing,
             easting: k[1].easting,
             zoneNumber: k[0].zoneNumber,
@@ -16429,8 +15813,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     } // Get the northEast and southWest corner of the map
 
 
-    var nePoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
-    var swPoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+    var nePoint = new _leaflet.default.point(this._map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+    var swPoint = new _leaflet.default.point(this._map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
     var cornerBounds = new _leaflet.default.bounds(nePoint, swPoint); // Clip the points that are outside of the visible map boundaries
 
     var clippedLines = _leaflet.default.LineUtil.clipSegment(this._map.latLngToLayerPoint(pt1), this._map.latLngToLayerPoint(pt2), cornerBounds);
@@ -16441,7 +15825,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       if (pt2.lat > this.south) {
         // ensures that the grid lines are valid northings
         // since some of them will have northing values of like 5799999, just round up
-        if (Math.round((0, _mgrs.LLtoUTM)(pt1).northing / 10) * 10 % this.gridInterval === 0) {
+        if (Math.round(LLtoUTM(pt1).northing / 10) * 10 % this.gridInterval === 0) {
           this.addLayer(newLine);
         }
       }
@@ -16462,11 +15846,11 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     });
 
     if (connectorDistance <= this.gridInterval * northBuffer) {
-      var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
+      var eastingGridLineEndpoint = LLtoUTM({
         lat: data[count][direction],
         lon: connector.lng
       });
-      var extendedEastingLine = (0, _mgrs.UTMtoLL)({
+      var extendedEastingLine = UTMtoLL({
         northing: eastingGridLineEndpoint.northing,
         // round the easting so it lines up with the bottom grid.
         easting: Math.round(eastingGridLineEndpoint.easting / this.gridInterval) * this.gridInterval,
@@ -16475,10 +15859,10 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       });
       var connectingEastingLineToGZD = new _leaflet.default.Polyline([connector, extendedEastingLine], this.options.lineStyle); // since some of them will have northing values of like 5799999, just round up
 
-      if (Math.round((0, _mgrs.LLtoUTM)(connectingEastingLineToGZD.getLatLngs()[0]).northing / 10) * 10 % this.gridInterval === 0) {
+      if (Math.round(LLtoUTM(connectingEastingLineToGZD.getLatLngs()[0]).northing / 10) * 10 % this.gridInterval === 0) {
         // Get the northEast and southWest corner of the map
-        var nePoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
-        var swPoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+        var nePoint = new _leaflet.default.point(this._map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+        var swPoint = new _leaflet.default.point(this._map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
         var cornerBounds = new _leaflet.default.bounds(nePoint, swPoint); // Clip the points that are outside of the visible map boundaries
 
         var clippedLines = _leaflet.default.LineUtil.clipSegment(this._map.latLngToLayerPoint(connector), this._map.latLngToLayerPoint(extendedEastingLine), cornerBounds);
@@ -16498,11 +15882,11 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         lat: connector.lat,
         lon: this.data[0].left - 0.0001
       }) <= this.gridInterval * southBuffer) {
-        var northingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
+        var northingGridLineEndpoint = LLtoUTM({
           lat: connector.lat,
           lon: this.data[0].left - 0.0001
         });
-        var extendedNorthingLine = (0, _mgrs.UTMtoLL)({
+        var extendedNorthingLine = UTMtoLL({
           northing: Math.round(northingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
           easting: northingGridLineEndpoint.easting,
           zoneNumber: northingGridLineEndpoint.zoneNumber,
@@ -16516,12 +15900,12 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         lat: connector.lat,
         lon: this.data[0].right + 0.0001
       }) <= this.gridInterval * southBuffer) {
-        var _northingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
+        var _northingGridLineEndpoint = LLtoUTM({
           lat: connector.lat,
           lon: this.data[0].right + 0.0001
         });
 
-        var _extendedNorthingLine = (0, _mgrs.UTMtoLL)({
+        var _extendedNorthingLine = UTMtoLL({
           northing: Math.round(_northingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
           easting: _northingGridLineEndpoint.easting,
           zoneNumber: _northingGridLineEndpoint.zoneNumber,
@@ -16543,12 +15927,12 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     });
 
     if (connectorDistance <= this.gridInterval * southBuffer) {
-      var _northingGridLineEndpoint2 = (0, _mgrs.LLtoUTM)({
+      var _northingGridLineEndpoint2 = LLtoUTM({
         lat: connector.lat,
         lon: data[count][direction]
       });
 
-      var _extendedNorthingLine2 = (0, _mgrs.UTMtoLL)({
+      var _extendedNorthingLine2 = UTMtoLL({
         northing: Math.round(_northingGridLineEndpoint2.northing / this.gridInterval) * this.gridInterval,
         easting: _northingGridLineEndpoint2.easting,
         zoneNumber: _northingGridLineEndpoint2.zoneNumber,
@@ -16558,10 +15942,10 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       var _connectingNorthingLineToGZD2 = new _leaflet.default.Polyline([connector, _extendedNorthingLine2], this.options.lineStyle); // since some of them will have easting values of like 5799999, just round up
 
 
-      if (Math.round((0, _mgrs.LLtoUTM)(_connectingNorthingLineToGZD2.getLatLngs()[0]).easting / 10) * 10 % this.gridInterval === 0) {
+      if (Math.round(LLtoUTM(_connectingNorthingLineToGZD2.getLatLngs()[0]).easting / 10) * 10 % this.gridInterval === 0) {
         // Get the northEast and southWest corner of the map
-        var nePoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
-        var swPoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+        var nePoint = new _leaflet.default.point(this._map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+        var swPoint = new _leaflet.default.point(this._map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
         var cornerBounds = new _leaflet.default.bounds(nePoint, swPoint); // Clip the points that are outside of the visible map boundaries
 
         var clippedLines = _leaflet.default.LineUtil.clipSegment(this._map.latLngToLayerPoint(connector), this._map.latLngToLayerPoint(_extendedNorthingLine2), cornerBounds);
@@ -16574,14 +15958,14 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     }
   },
   handleSpecialZones: function handleSpecialZones(element) {
-    var elementUTM = (0, _mgrs.LLtoUTM)(element[0]); // 31V is that slim GZD between Norway and Britain.
+    var elementUTM = LLtoUTM(element[0]); // 31V is that slim GZD between Norway and Britain.
 
     if (elementUTM.zoneNumber === 31 && elementUTM.zoneLetter === 'V') {
       if (elementUTM.northing % this.gridInterval === 0) {
         var specialLine = new _leaflet.default.Polyline([{
           lat: element[0].lat,
           lng: element[0].lon
-        }, (0, _mgrs.UTMtoLL)({
+        }, UTMtoLL({
           northing: elementUTM.northing,
           easting: 499999,
           zoneNumber: elementUTM.zoneNumber,
@@ -16591,7 +15975,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         var specialLine2 = new _leaflet.default.Polyline([{
           lat: element[0].lat - 0.0179,
           lng: 0.0000001
-        }, (0, _mgrs.UTMtoLL)({
+        }, UTMtoLL({
           northing: elementUTM.northing,
           easting: elementUTM.easting,
           zoneNumber: elementUTM.zoneNumber,
@@ -16619,11 +16003,11 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
             lat: element[0].lat,
             lng: westBounds
           }) <= this.gridInterval) {
-            var eastingGridLineEndpoint = (0, _mgrs.LLtoUTM)({
+            var eastingGridLineEndpoint = LLtoUTM({
               lat: connectingNorthingLineWest.lat,
               lon: westBounds
             });
-            var extendedLineWest = (0, _mgrs.UTMtoLL)({
+            var extendedLineWest = UTMtoLL({
               northing: Math.round(eastingGridLineEndpoint.northing / this.gridInterval) * this.gridInterval,
               easting: eastingGridLineEndpoint.easting,
               zoneNumber: eastingGridLineEndpoint.zoneNumber,
@@ -16645,7 +16029,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     }
 
     if (this.options.showLabels) {
-      var labelGrids = (0, _mgrs.UTMtoLL)({
+      var labelGrids = UTMtoLL({
         northing: northingLabel + this.gridInterval / 2,
         easting: eastingLabel,
         zoneNumber: zoneNumberLabel,
@@ -16661,14 +16045,14 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       }); // These are the labels that are right next to the LEFT of the visible GZD line
 
       if (labelWestOfRightGZD < this.gridInterval && labelWestOfRightGZD > this.gridInterval / 5) {
-        labelGrids = (0, _mgrs.UTMtoLL)({
+        labelGrids = UTMtoLL({
           northing: northingLabel + this.gridInterval / 2,
           easting: eastingLabel + labelWestOfRightGZD / 2,
           zoneNumber: zoneNumberLabel,
           zoneLetter: zoneLetterLabel
         });
 
-        var _labelGridsUTM = (0, _mgrs.LLtoUTM)(labelGrids);
+        var _labelGridsUTM = LLtoUTM(labelGrids);
 
         if (labelGrids.lon < this.data[0].right && labelGrids.lon > this.data[0].left) {
           var grid100kLabel = new _leaflet.default.Marker(labelGrids, {
@@ -16676,7 +16060,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
             icon: new _leaflet.default.DivIcon({
               className: 'leaflet-grid-label',
               iconAnchor: new _leaflet.default.Point(10, 10),
-              html: "<div class=\"grid-label-100k\">".concat((0, _mgrs.get100kID)(_labelGridsUTM.easting, _labelGridsUTM.northing, _labelGridsUTM.zoneNumber), "</div>")
+              html: "<div class=\"grid-label-100k\">".concat(get100kID(_labelGridsUTM.easting, _labelGridsUTM.northing, _labelGridsUTM.zoneNumber), "</div>")
             })
           });
 
@@ -16688,14 +16072,14 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
 
       if (labelEastOfRightGZD < this.gridInterval && labelEastOfRightGZD > this.gridInterval / 5) {
-        labelGrids = (0, _mgrs.UTMtoLL)({
+        labelGrids = UTMtoLL({
           northing: northingLabel + this.gridInterval / 2,
           easting: eastingLabel - labelEastOfRightGZD / 2,
           zoneNumber: zoneNumberLabel,
           zoneLetter: zoneLetterLabel
         });
 
-        var _labelGridsUTM2 = (0, _mgrs.LLtoUTM)(labelGrids);
+        var _labelGridsUTM2 = LLtoUTM(labelGrids);
 
         if (labelGrids.lon < this.data[0].right && labelGrids.lon > this.data[0].left) {
           var _grid100kLabel = new _leaflet.default.Marker(labelGrids, {
@@ -16703,7 +16087,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
             icon: new _leaflet.default.DivIcon({
               className: 'leaflet-grid-label',
               iconAnchor: new _leaflet.default.Point(10, 10),
-              html: "<div class=\"grid-label-100k\">".concat((0, _mgrs.get100kID)(_labelGridsUTM2.easting, _labelGridsUTM2.northing, _labelGridsUTM2.zoneNumber), "</div>")
+              html: "<div class=\"grid-label-100k\">".concat(get100kID(_labelGridsUTM2.easting, _labelGridsUTM2.northing, _labelGridsUTM2.zoneNumber), "</div>")
             })
           });
 
@@ -16714,13 +16098,13 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       } // These are the labels that are in between of the visible GZD lines
 
 
-      labelGrids = (0, _mgrs.UTMtoLL)({
+      labelGrids = UTMtoLL({
         northing: northingLabel + this.gridInterval / 2,
         easting: eastingLabel + this.gridInterval / 2,
         zoneNumber: zoneNumberLabel,
         zoneLetter: zoneLetterLabel
       });
-      var labelGridsUTM = (0, _mgrs.LLtoUTM)(labelGrids); // This is idiotic but I am going to keep it for now. 4 if statements is embarrassing ffs
+      var labelGridsUTM = LLtoUTM(labelGrids); // This is idiotic but I am going to keep it for now. 4 if statements is embarrassing ffs
       // Basically this finds all grids that are more than 50K meters from the right and left of the visible GZD lines
 
       if (new _leaflet.default.latLng(labelGrids).distanceTo({
@@ -16740,7 +16124,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
                 icon: new _leaflet.default.DivIcon({
                   className: 'leaflet-grid-label',
                   iconAnchor: new _leaflet.default.Point(10, 10),
-                  html: "<div class=\"grid-label-100k\">".concat((0, _mgrs.get100kID)(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber), "</div>")
+                  html: "<div class=\"grid-label-100k\">".concat(get100kID(labelGridsUTM.easting, labelGridsUTM.northing, labelGridsUTM.zoneNumber), "</div>")
                 })
               }); // Only add grid labels that the user can see
 
@@ -16947,7 +16331,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         {
           // Prevents the grids from "shifting" when the bounds are near a western GZD
           west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left + 0.00001;
-          nw = (0, _mgrs.LLtoUTM)({
+          nw = LLtoUTM({
             lat: this._bounds.getNorth(),
             lon: west
           });
@@ -16957,7 +16341,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
       case 'left':
         {
           west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left + 0.00001;
-          nw = (0, _mgrs.LLtoUTM)({
+          nw = LLtoUTM({
             lat: this._bounds.getNorth(),
             lon: west
           });
@@ -16966,7 +16350,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
       case 'right':
         {
-          nw = (0, _mgrs.LLtoUTM)({
+          nw = LLtoUTM({
             lat: this._bounds.getNorth(),
             lon: this.empty[1].left + 0.00001
           });
@@ -17022,15 +16406,15 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         }
     }
 
-    var nw = (0, _mgrs.LLtoUTM)({
+    var nw = LLtoUTM({
       lat: this._bounds.getNorth(),
       lon: west
     });
-    var ne = (0, _mgrs.LLtoUTM)({
+    var ne = LLtoUTM({
       lat: this._bounds.getNorth(),
       lon: east
     });
-    var sw = (0, _mgrs.LLtoUTM)({
+    var sw = LLtoUTM({
       lat: this._bounds.getSouth(),
       lon: west
     });
@@ -17059,20 +16443,20 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
     for (var i = 0; i <= gridCounts.easting + 1; i += 1) {
       var adjustedEasting = minimumBounds.easting + this.gridInterval * i;
       var northing = minimumBounds.northing;
-      var northLine = (0, _mgrs.UTMtoLL)({
+      var northLine = UTMtoLL({
         northing: northing,
         easting: adjustedEasting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var southLine = (0, _mgrs.UTMtoLL)({
+      var southLine = UTMtoLL({
         northing: northing - gridCounts.northing * this.gridInterval,
         easting: adjustedEasting,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var labelCoords = (0, _mgrs.UTMtoLL)({
-        northing: (0, _mgrs.LLtoUTM)({
+      var labelCoords = UTMtoLL({
+        northing: LLtoUTM({
           lat: this._map.getBounds().getSouth(),
           lon: southLine.lon
         }).northing,
@@ -17150,7 +16534,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         case 'left':
           {
             beginEastingLineForNorthings = easting;
-            endEastingLineForNorthings = (0, _mgrs.LLtoUTM)({
+            endEastingLineForNorthings = LLtoUTM({
               lat: northernHemisphereBounds,
               lon: this.empty[0].right - 0.00001
             }).easting;
@@ -17159,7 +16543,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
 
         case 'right':
           {
-            beginEastingLineForNorthings = (0, _mgrs.LLtoUTM)({
+            beginEastingLineForNorthings = LLtoUTM({
               lat: northernHemisphereBounds,
               lon: this.empty[1].left + 0.00001
             }).easting;
@@ -17173,22 +16557,22 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
           }
       }
 
-      var westLine = (0, _mgrs.UTMtoLL)({
+      var westLine = UTMtoLL({
         northing: adjustedNorthing,
         easting: beginEastingLineForNorthings,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       });
-      var eastLine = (0, _mgrs.UTMtoLL)({
+      var eastLine = UTMtoLL({
         northing: adjustedNorthing,
         easting: endEastingLineForNorthings,
         zoneNumber: minimumBounds.zoneNumber,
         zoneLetter: minimumBounds.zoneLetter
       }); // These coordinates are the absolute western edge of the visible map
 
-      var _labelCoords = (0, _mgrs.UTMtoLL)({
+      var _labelCoords = UTMtoLL({
         northing: adjustedNorthing,
-        easting: (0, _mgrs.LLtoUTM)({
+        easting: LLtoUTM({
           lat: westLine.lat,
           lon: this._map.getBounds().getWest()
         }).easting,
@@ -17381,8 +16765,37 @@ var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
 generateGZDGrids.addTo(map);
 generate100kGrids.addTo(map);
 generate1000meterGrids.addTo(map); // *********************************************************************************** //
+// * Helper functions (for debugging)                                                * //
+// *********************************************************************************** //
+// Just a quicker way to add a marker, used for debugging purposes
+
+function mark(element) {
+  var marker = new _leaflet.default.marker(element);
+  var markerLat = marker.getLatLng().lat;
+  var markerLng = marker.getLatLng().lng;
+  var markerNorthing = LLtoUTM({
+    lat: markerLat,
+    lon: markerLng
+  }).northing;
+  var markerEasting = LLtoUTM({
+    lat: markerLat,
+    lon: markerLng
+  }).easting;
+  var markerZoneLetter = LLtoUTM({
+    lat: markerLat,
+    lon: markerLng
+  }).zoneLetter;
+  var markerZoneNumber = LLtoUTM({
+    lat: markerLat,
+    lon: markerLng
+  }).zoneNumber;
+  var popupContent = "<h3><u>Lat:</u> ".concat(markerLat.toFixed(6), " <u>Lng:</u> ").concat(markerLng.toFixed(6), "</h3>\n                        <h3><u>Northing:</u> ").concat(markerNorthing, "</h3>\n                        <h3><u>Easting:</u> ").concat(markerEasting, "</h3>\n                        <h3><u>Zone Letter:</u> ").concat(markerZoneLetter, "</h3>\n                        <h3><u>Zone Number:</u> ").concat(markerZoneNumber, "</h3>");
+  marker.bindPopup(popupContent).openPopup();
+  return marker.addTo(map);
+} // *********************************************************************************** //
 // * DOM Elements - (Example Info Box)                                               * //
 // *********************************************************************************** //
+
 
 var numberOfMarkers = document.querySelector('.numberOfLayers > .div6');
 var numberOfLayers = document.querySelector('.numberOfLayers > .div2');
@@ -17521,7 +16934,7 @@ switchGZDGrids.addEventListener('change', function (event) {
 
 map.addEventListener('mousemove', function (event) {
   // Display cursor coordinates in MGRS
-  cursorCoordinates.querySelector('.mgrsInfo').innerHTML = "".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
+  cursorCoordinates.querySelector('.mgrsInfo').innerHTML = "".concat(UTMtoMGRS(LLtoUTM({
     lat: event.latlng.lat,
     lon: event.latlng.lng
   }), 5, true)); // Display cursor coordinates in Latitude/Longitude
@@ -17529,11 +16942,11 @@ map.addEventListener('mousemove', function (event) {
   cursorCoordinates.querySelector('.latInfo').innerHTML = "".concat(event.latlng.lat.toFixed(8));
   cursorCoordinates.querySelector('.lonInfo').innerHTML = "".concat(event.latlng.lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
 
-  cursorCoordinates.querySelector('.eastingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+  cursorCoordinates.querySelector('.eastingInfo').innerHTML = "".concat(LLtoUTM({
     lat: event.latlng.lat,
     lon: event.latlng.lng
   }).easting);
-  cursorCoordinates.querySelector('.northingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+  cursorCoordinates.querySelector('.northingInfo').innerHTML = "".concat(LLtoUTM({
     lat: event.latlng.lat,
     lon: event.latlng.lng
   }).northing);
@@ -17551,7 +16964,7 @@ map.addEventListener('moveend', function () {
 
 document.addEventListener('DOMContentLoaded', function () {
   setTimeout(function () {
-    cursorCoordinates.querySelector('.mgrsInfo').innerHTML = "".concat((0, _mgrs.UTMtoMGRS)((0, _mgrs.LLtoUTM)({
+    cursorCoordinates.querySelector('.mgrsInfo').innerHTML = "".concat(UTMtoMGRS(LLtoUTM({
       lat: map.getCenter().lat,
       lon: map.getCenter().lng
     }), 5, true)); // Display cursor coordinates in Latitude/Longitude
@@ -17559,11 +16972,11 @@ document.addEventListener('DOMContentLoaded', function () {
     cursorCoordinates.querySelector('.latInfo').innerHTML = "".concat(map.getCenter().lat.toFixed(8));
     cursorCoordinates.querySelector('.lonInfo').innerHTML = "".concat(map.getCenter().lng.toFixed(8)); // Display cursor coordinates in Easting/Northing
 
-    cursorCoordinates.querySelector('.eastingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+    cursorCoordinates.querySelector('.eastingInfo').innerHTML = "".concat(LLtoUTM({
       lat: map.getCenter().lat,
       lon: map.getCenter().lng
     }).easting);
-    cursorCoordinates.querySelector('.northingInfo').innerHTML = "".concat((0, _mgrs.LLtoUTM)({
+    cursorCoordinates.querySelector('.northingInfo').innerHTML = "".concat(LLtoUTM({
       lat: map.getCenter().lat,
       lon: map.getCenter().lng
     }).northing);
@@ -17583,7 +16996,7 @@ document.querySelectorAll('.sw').forEach(function (toggleSwitch) {
 });
 var _default = map;
 exports.default = _default;
-},{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png","./mgrs":"mgrs.js","./gzdObject":"gzdObject.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","./styles.scss":"styles.scss","leaflet":"../node_modules/leaflet/dist/leaflet-src.js","leaflet/dist/images/marker-icon.png":"../node_modules/leaflet/dist/images/marker-icon.png","leaflet/dist/images/marker-shadow.png":"../node_modules/leaflet/dist/images/marker-shadow.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
