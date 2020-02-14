@@ -2,13 +2,11 @@
 
 An MGRS grid overlay plugin for your leaflet application. This plugin will enable you to display the Grid Zone Designators (1 million meters by 1 million meters), the 100K grid zones, and a 1000 meter grid interval 😎
 
-[Demo](https://pistell.github.io/Leaflet.DumbMGRS/dist/index.html)
+[Demo](https://pistell.github.io/Leaflet.DumbMGRS/dist/)
 
 ![screenshot](./src/img/screenshot_27JAN_2.png)
 
 ![screenshot](./src/img/4square.jpg)
-
-## Do not use this in production, this is incomplete
 
 To install, clone the repo
 
@@ -52,6 +50,97 @@ I am trying to generate 3 types of grids
 
 3. A 1000M grid - 1000m by 1000m grid.
 
+## Usage
+
+---
+
+```JavaScript
+    import 'L.DumbMGRS.scss';
+    import {
+      L, map, generateGZDGrids, generate100kGrids, generate1000meterGrids
+    } from './L.DumbMGRS';
+
+    const map = L.map('map',{
+      center: [27.3815, -82.8259],
+      zoom: 7,
+    });
+
+    L.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      id: 'osm_map',
+    }).addTo(map);
+
+    // Grid Zone Designator (1 million by 1 million meters)
+    const generateGZDGrids = new GZD({
+      // Example of initial options for GZD grids
+      showLabels: true,
+      showGrids: true,
+      maxZoom: 18,
+      minZoom: 4,
+      redraw: 'moveend',
+      lineStyle: {
+        color: 'red',
+        weight: 5,
+        opacity: 0.5,
+        smoothFactor: 1,
+        lineCap: 'butt',
+        lineJoin: 'miter-clip',
+        noClip: true,
+        interactive: false,
+      },
+    });
+
+    // 100K Meter Grids
+    const generate100kGrids = new MGRS100K({
+      // Example of initial options for 100K grids
+      showLabels: true,
+      showGrids: true,
+      maxZoom: 18,
+      minZoom: 6,
+      redraw: 'moveend',
+      gridLetterStyle: 'color: #216fff; font-size:12px;',
+      lineStyle: {
+        color: 'black',
+        weight: 2,
+        opacity: 0.75,
+        interactive: false,
+        fill: false,
+        noClip: true,
+        smoothFactor: 4,
+        lineCap: 'butt',
+        lineJoin: 'miter-clip',
+      },
+    });
+
+    // 1000 Meter Grids
+    const generate1000meterGrids = new MGRS1000Meters({
+      // Example of initial options for 1000 meter grids
+      showLabels: true,
+      showGrids: true,
+      redraw: 'move',
+      maxZoom: 18,
+      minZoom: 12,
+      gridLetterStyle: 'color: black; font-size:12px;',
+      lineStyle: {
+        color: 'black',
+        weight: 1,
+        opacity: 0.5,
+        interactive: false,
+        fill: false,
+        noClip: true,
+        smoothFactor: 4,
+        lineCap: 'butt',
+        lineJoin: 'miter-clip',
+      },
+    });
+
+    // Now add them to your map
+    generateGZDGrids.addTo(map);
+    generate100kGrids.addTo(map);
+    generate1000meterGrids.addTo(map);
+
+```
+
 ## Issues
 
 - [x] Need to come up with a method that toggles grid labels on and off
@@ -65,11 +154,3 @@ I am trying to generate 3 types of grids
 - [ ] 100K grids in GZD 31U does not work when the GZDs to the north of it are in visible range
 
 - [ ] 1000m grids are all kinda jacked up in the southern hemisphere.
-
-- [ ] Your gh-pages is all messed up. When you run build-prod is creates relative links to files it cannot reach. Your current workaround is manually editing the links to the JS and CSS files. This is stupid and very low IQ. Low priority task.
-
-## Other Stuff
-
-Readme created with [createapp.dev](https://createapp.dev/)
-
-[Leaflet publishing guide](https://github.com/Leaflet/Leaflet/blob/master/PLUGIN-GUIDE.md)

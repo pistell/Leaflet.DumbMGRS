@@ -1,6 +1,8 @@
 /* eslint-disable no-console */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
+//* * Leaflet.DumbMGRS made by CPT James Pistell, 2020 */
+//* * Complaints, comments, concerns send to jamespistell@gmail.com */
 import L from 'leaflet';
 
 
@@ -711,10 +713,10 @@ const eastingDict = {
   },
 };
 
+
 // *********************************************************************************** //
 // * Leaflet.DumbMGRS - Grid Zone Designators                                        * //
 // *********************************************************************************** //
-// TODO: This is mostly done. Just need to clean up some issues, merge gzdObject.js, tree shake mgrs.js, and wrap it up into an official plugin
 const GZD = L.LayerGroup.extend({
   // Default options
   options: {
