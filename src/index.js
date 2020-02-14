@@ -729,13 +729,20 @@ L.MGRS100K = L.LayerGroup.extend({
       pt2 = new L.latLng(newLat, leftLongitudeLimit);
     }
 
-    const newLine = new L.Polyline([pt1, pt2], options);
-
-    if (pt2.lat > this.south) {
-      // ensures that the grid lines are valid northings
-      // since some of them will have northing values of like 5799999, just round up
-      if ((Math.round(LLtoUTM(pt1).northing / 10) * 10) % this.gridInterval === 0) {
-        this.addLayer(newLine);
+    // Get the northEast and southWest corner of the map
+    const nePoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+    const swPoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+    const cornerBounds = new L.bounds(nePoint, swPoint);
+    // Clip the points that are outside of the visible map boundaries
+    const clippedLines = L.LineUtil.clipSegment(this._map.latLngToLayerPoint(pt1), this._map.latLngToLayerPoint(pt2), cornerBounds);
+    if (clippedLines) {
+      const newLine = new L.Polyline([this._map.layerPointToLatLng(clippedLines[0]), this._map.layerPointToLatLng(clippedLines[1])], options);
+      if (pt2.lat > this.south) {
+        // ensures that the grid lines are valid northings
+        // since some of them will have northing values of like 5799999, just round up
+        if ((Math.round(LLtoUTM(pt1).northing / 10) * 10) % this.gridInterval === 0) {
+          this.addLayer(newLine);
+        }
       }
     }
   },
@@ -763,7 +770,16 @@ L.MGRS100K = L.LayerGroup.extend({
       const connectingEastingLineToGZD = new L.Polyline([connector, extendedEastingLine], this.options.lineStyle);
       // since some of them will have northing values of like 5799999, just round up
       if ((Math.round(LLtoUTM(connectingEastingLineToGZD.getLatLngs()[0]).northing / 10) * 10) % this.gridInterval === 0) {
-        this.addLayer(connectingEastingLineToGZD);
+        // Get the northEast and southWest corner of the map
+        const nePoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+        const swPoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+        const cornerBounds = new L.bounds(nePoint, swPoint);
+        // Clip the points that are outside of the visible map boundaries
+        const clippedLines = L.LineUtil.clipSegment(this._map.latLngToLayerPoint(connector), this._map.latLngToLayerPoint(extendedEastingLine), cornerBounds);
+        if (clippedLines) {
+          const newLine = new L.Polyline([this._map.layerPointToLatLng(clippedLines[0]), this._map.layerPointToLatLng(clippedLines[1])], this.options.lineStyle);
+          this.addLayer(newLine);
+        }
       }
     }
   },
@@ -810,7 +826,16 @@ L.MGRS100K = L.LayerGroup.extend({
       const connectingNorthingLineToGZD = new L.Polyline([connector, extendedNorthingLine], this.options.lineStyle);
       // since some of them will have easting values of like 5799999, just round up
       if ((Math.round(LLtoUTM(connectingNorthingLineToGZD.getLatLngs()[0]).easting / 10) * 10) % this.gridInterval === 0) {
-        this.addLayer(connectingNorthingLineToGZD);
+        // Get the northEast and southWest corner of the map
+        const nePoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+        const swPoint = new L.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+        const cornerBounds = new L.bounds(nePoint, swPoint);
+        // Clip the points that are outside of the visible map boundaries
+        const clippedLines = L.LineUtil.clipSegment(this._map.latLngToLayerPoint(connector), this._map.latLngToLayerPoint(extendedNorthingLine), cornerBounds);
+        if (clippedLines) {
+          const newLine = new L.Polyline([this._map.layerPointToLatLng(clippedLines[0]), this._map.layerPointToLatLng(clippedLines[1])], this.options.lineStyle);
+          this.addLayer(newLine);
+        }
       }
     }
   },
@@ -864,10 +889,8 @@ L.MGRS100K = L.LayerGroup.extend({
   },
 
   genLabels(northingLabel, eastingLabel, zoneNumberLabel, zoneLetterLabel) {
-    // do not fire off labels when the map is zoomed out
-    //! change 6 to this.options.minZoom
-    //! actually does this even need to be here? I think I specified this in the initialize method
-    if (this._map.getZoom() <= 6) {
+    // do not fire off labels when the map is zoomed out (default is zoom level 6)
+    if (this._map.getZoom() <= this.options.minZoom) {
       return;
     }
 
@@ -966,7 +989,7 @@ L.MGRS100K = L.LayerGroup.extend({
 
   getPaddingOnZoomLevel(map) {
     this._map = map;
-    const northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.4 : 0;
+    const northBuffer = this._map.getBounds().getNorth() >= 50 ? 2 : 0;
     const southBuffer = this._map.getBounds().getNorth() <= 0 ? 0.04 : 0;
     const zoom = this._map.getZoom();
 
@@ -998,7 +1021,8 @@ L.MGRS100K = L.LayerGroup.extend({
       case 7:
         return 0.13 + northBuffer + southBuffer;
       case 6:
-        return 0.02 + northBuffer + southBuffer;
+        // return 0.02 + northBuffer + southBuffer;
+        return 1;
       default:
         break;
     }

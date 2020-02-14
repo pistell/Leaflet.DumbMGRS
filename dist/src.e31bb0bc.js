@@ -16426,15 +16426,24 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       var _newLat2 = pt1.lat + (slope * (leftLongitudeLimit - pt1.lng) + lngBuffer);
 
       pt2 = new _leaflet.default.latLng(_newLat2, leftLongitudeLimit);
-    }
+    } // Get the northEast and southWest corner of the map
 
-    var newLine = new _leaflet.default.Polyline([pt1, pt2], options);
 
-    if (pt2.lat > this.south) {
-      // ensures that the grid lines are valid northings
-      // since some of them will have northing values of like 5799999, just round up
-      if (Math.round((0, _mgrs.LLtoUTM)(pt1).northing / 10) * 10 % this.gridInterval === 0) {
-        this.addLayer(newLine);
+    var nePoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+    var swPoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+    var cornerBounds = new _leaflet.default.bounds(nePoint, swPoint); // Clip the points that are outside of the visible map boundaries
+
+    var clippedLines = _leaflet.default.LineUtil.clipSegment(this._map.latLngToLayerPoint(pt1), this._map.latLngToLayerPoint(pt2), cornerBounds);
+
+    if (clippedLines) {
+      var newLine = new _leaflet.default.Polyline([this._map.layerPointToLatLng(clippedLines[0]), this._map.layerPointToLatLng(clippedLines[1])], options);
+
+      if (pt2.lat > this.south) {
+        // ensures that the grid lines are valid northings
+        // since some of them will have northing values of like 5799999, just round up
+        if (Math.round((0, _mgrs.LLtoUTM)(pt1).northing / 10) * 10 % this.gridInterval === 0) {
+          this.addLayer(newLine);
+        }
       }
     }
   },
@@ -16467,7 +16476,17 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
       var connectingEastingLineToGZD = new _leaflet.default.Polyline([connector, extendedEastingLine], this.options.lineStyle); // since some of them will have northing values of like 5799999, just round up
 
       if (Math.round((0, _mgrs.LLtoUTM)(connectingEastingLineToGZD.getLatLngs()[0]).northing / 10) * 10 % this.gridInterval === 0) {
-        this.addLayer(connectingEastingLineToGZD);
+        // Get the northEast and southWest corner of the map
+        var nePoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+        var swPoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+        var cornerBounds = new _leaflet.default.bounds(nePoint, swPoint); // Clip the points that are outside of the visible map boundaries
+
+        var clippedLines = _leaflet.default.LineUtil.clipSegment(this._map.latLngToLayerPoint(connector), this._map.latLngToLayerPoint(extendedEastingLine), cornerBounds);
+
+        if (clippedLines) {
+          var newLine = new _leaflet.default.Polyline([this._map.layerPointToLatLng(clippedLines[0]), this._map.layerPointToLatLng(clippedLines[1])], this.options.lineStyle);
+          this.addLayer(newLine);
+        }
       }
     }
   },
@@ -16540,7 +16559,17 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
 
 
       if (Math.round((0, _mgrs.LLtoUTM)(_connectingNorthingLineToGZD2.getLatLngs()[0]).easting / 10) * 10 % this.gridInterval === 0) {
-        this.addLayer(_connectingNorthingLineToGZD2);
+        // Get the northEast and southWest corner of the map
+        var nePoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getNorthEast()));
+        var swPoint = new _leaflet.default.point(map.latLngToLayerPoint(this._map.getBounds().getSouthWest()));
+        var cornerBounds = new _leaflet.default.bounds(nePoint, swPoint); // Clip the points that are outside of the visible map boundaries
+
+        var clippedLines = _leaflet.default.LineUtil.clipSegment(this._map.latLngToLayerPoint(connector), this._map.latLngToLayerPoint(_extendedNorthingLine2), cornerBounds);
+
+        if (clippedLines) {
+          var newLine = new _leaflet.default.Polyline([this._map.layerPointToLatLng(clippedLines[0]), this._map.layerPointToLatLng(clippedLines[1])], this.options.lineStyle);
+          this.addLayer(newLine);
+        }
       }
     }
   },
@@ -16610,10 +16639,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
     }
   },
   genLabels: function genLabels(northingLabel, eastingLabel, zoneNumberLabel, zoneLetterLabel) {
-    // do not fire off labels when the map is zoomed out
-    //! change 6 to this.options.minZoom
-    //! actually does this even need to be here? I think I specified this in the initialize method
-    if (this._map.getZoom() <= 6) {
+    // do not fire off labels when the map is zoomed out (default is zoom level 6)
+    if (this._map.getZoom() <= this.options.minZoom) {
       return;
     }
 
@@ -16729,7 +16756,7 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   },
   getPaddingOnZoomLevel: function getPaddingOnZoomLevel(map) {
     this._map = map;
-    var northBuffer = this._map.getBounds().getNorth() >= 62 ? 0.4 : 0;
+    var northBuffer = this._map.getBounds().getNorth() >= 50 ? 2 : 0;
     var southBuffer = this._map.getBounds().getNorth() <= 0 ? 0.04 : 0;
 
     var zoom = this._map.getZoom();
@@ -16773,7 +16800,8 @@ _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
         return 0.13 + northBuffer + southBuffer;
 
       case 6:
-        return 0.02 + northBuffer + southBuffer;
+        // return 0.02 + northBuffer + southBuffer;
+        return 1;
 
       default:
         break;
