@@ -37,7 +37,7 @@ const quito = [0.17578097424708533, -77.84912109375];
 // *********************************************************************************** //
 // * Set initial map view                                                            * //
 // *********************************************************************************** //
-const map = L.map('map').setView({ lat: 48.004108177419916, lng: -74.99885559082033 }, 12);
+const map = L.map('map').setView({ lat: 56.203457598753765, lng: 0.37319183349609375 }, 12);
 // Place map in window for debugging purposes
 window.map = map;
 
@@ -119,7 +119,6 @@ L.GZD = L.LayerGroup.extend({
     },
   },
 
-
   initialize(options) {
     this._map = map;
     // Call the parent’s constructor
@@ -171,12 +170,13 @@ L.GZD = L.LayerGroup.extend({
 
     // Do not create GZDs if the map is zoomed out at 4 or below
     if ((currentZoom >= this.options.minZoom) && (currentZoom <= this.options.maxZoom)) {
-    // Combined the northingDict and eastingDict into one object
+      // Combined the northingDict and eastingDict into one object
       const combinedObj = { ...this.northObj, ...this.eastObj };
       // Create an array to store the inBounds values for letter,top, and bottom
       const inBoundsLatitudeLetters = [];
       // Create an array to store the inBounds values for top, right, and id
       const inBoundsUTMNumbers = [];
+      // This stores the current visible GZDs
       this.viz = [];
       const currentVisibleBounds = this._map.getBounds();
 
@@ -191,15 +191,35 @@ L.GZD = L.LayerGroup.extend({
         if (currentVisibleBounds.getNorthEast().lat >= bottom && currentVisibleBounds.getSouthWest().lat <= top) {
           inBoundsLatitudeLetters.push(key);
         }
+
         // Same thing here but it returns the valid inBounds properties for the eastingDict
         if (currentVisibleBounds.getNorthEast().lng >= left && currentVisibleBounds.getSouthWest().lng <= right) {
-          inBoundsUTMNumbers.push({ left, right, id });
+          // Handle special GZDs
+          if (id === '31' && currentVisibleBounds.getSouth() > 56) {
+            // This is fired off when 31V AND 32V are in the visible bounds
+            const adjustedVisibleBounds = new L.latLngBounds(currentVisibleBounds.getNorthEast(), currentVisibleBounds.getSouthWest());
+            if (adjustedVisibleBounds.contains({ lat: currentVisibleBounds.getNorthEast().lat, lng: 3 })) {
+              inBoundsUTMNumbers.push({ left: 0, right: 3, id: '31' });
+              inBoundsUTMNumbers.push({ left: 3, right: 12, id: '32' });
+            }
+            // GZD 31V
+            if (currentVisibleBounds.getWest() > 0 && currentVisibleBounds.getEast() < 3) {
+              inBoundsUTMNumbers.push({ left: 0, right: 3, id: '31' });
+            }
+            // GZD 32V
+            if (currentVisibleBounds.getWest() > 3 && currentVisibleBounds.getEast() < 12) {
+              inBoundsUTMNumbers.push({ left: 3, right: 12, id: '32' });
+            }
+          } else {
+            inBoundsUTMNumbers.push({ left, right, id });
+          }
         }
       });
 
       // Define the "id" property in this object so we can store all the values returned from inBoundsUTMNumbers
       inBoundsLatitudeLetters.forEach((e) => {
         const letterKey = e;
+        console.log(inBoundsUTMNumbers.map((j) => j));
         Object.defineProperties(letterKey, {
           id: {
             value: inBoundsUTMNumbers.map((j) => j),
@@ -225,6 +245,7 @@ L.GZD = L.LayerGroup.extend({
           if (id < 10) {
             id = `0${id}`;
           }
+
           this.buildGZD({
             top,
             bottom,
@@ -322,7 +343,6 @@ L.GZD = L.LayerGroup.extend({
       this.addLayer(gzdPolylineBox);
     }
   },
-
 });
 
 
@@ -332,6 +352,7 @@ L.GZD = L.LayerGroup.extend({
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
 // TODO: Finish configuring the special zones exceptions
+// zoom level 7,8,9, 10, 12, 13 , 14 , 15 , 16 , 17 , 18 could use more padding
 L.MGRS100K = L.LayerGroup.extend({
   // Default options
   options: {
@@ -1014,7 +1035,6 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     },
   },
 
-
   initialize(options) {
     // Set class options (no need for user to edit this)
     this.gridInterval = 1000;
@@ -1078,27 +1098,31 @@ L.MGRS1000Meters = L.LayerGroup.extend({
           this.generateGrids(this.splitGZD = false);
         } else {
           // Since we are only checking if the split grid is a easting line (vertical), this will also check if the splitGZD is a northing line (horizontal)
-          //! Potential issues with this on special grid zones (Norway and Svalbard)
-          const len = this.empty.length;
-          for (let index = 0; index < len; index += 1) {
-            const element = [this.empty[index], this.empty[index + 1]];
-            if (element[1]) {
-              // Check if both the left limits are the same, then the grid is split horizontally
-              // Example - GZD 18T and 18U are on top of each other, therefore their left bounds are the same (-78 degrees longitude)
-              switch (element[0].left) {
-                case element[1].left:
-                  // If the split grids are on top of each other, just run the normal function
-                  this.generateGrids(this.splitGZD = false);
-                  break;
-                case element[1].right:
-                  // If the split grids are side by side, run the function in each direction
-                  this.generateGrids(this.splitGZD = true, this.direction = 'right');
-                  this.generateGrids(this.splitGZD = true, this.direction = 'left');
-                  break;
-                default:
-                  break;
+          //! Issues with this on special grid zones (Norway and Svalbard)
+          switch (this.empty.length) {
+            case 4:
+              // If there are 4 GZDs visible on screen, run both directions
+              this.generateGrids(this.splitGZD = true, this.direction = 'left');
+              this.generateGrids(this.splitGZD = true, this.direction = 'right');
+              break;
+            case 3:
+              break;
+            case 2:
+              if (this.empty[0].right === this.empty[1].left) {
+                // If the GZDs are splitting the screen vertically, run both directions
+                this.generateGrids(this.splitGZD = true, this.direction = 'left');
+                this.generateGrids(this.splitGZD = true, this.direction = 'right');
+              } else {
+                // If the GZDs are splitting the screen horizontally, run one direction
+                this.generateGrids(this.splitGZD = false);
               }
-            }
+              break;
+            case 1:
+              break;
+            case 0:
+              break;
+            default:
+              break;
           }
         }
       }
@@ -1108,17 +1132,21 @@ L.MGRS1000Meters = L.LayerGroup.extend({
   // Gets the minimum easting and northing of each 1000 meter grid line
   getMinimumBounds() {
     let nw;
+    let west;
     switch (this.direction) {
       case undefined: {
-        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
+        // Prevents the grids from "shifting" when the bounds are near a western GZD
+        west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left + 0.00001;
+        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: west });
         break;
       }
       case 'left': {
-        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this._bounds.getWest() });
+        west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left + 0.00001;
+        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: west });
         break;
       }
       case 'right': {
-        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left });
+        nw = LLtoUTM({ lat: this._bounds.getNorth(), lon: this.empty[1].left + 0.00001 });
         break;
       }
       default: {
@@ -1127,7 +1155,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     }
 
     return {
-    // rounds up to nearest multiple of x
+      // rounds up to nearest multiple of x
       easting: Math.floor(nw.easting / this.gridInterval) * this.gridInterval,
       northing: Math.floor(nw.northing / this.gridInterval) * this.gridInterval,
       zoneNumber: nw.zoneNumber,
@@ -1141,10 +1169,10 @@ L.MGRS1000Meters = L.LayerGroup.extend({
     let west;
     switch (this.direction) {
       case undefined: {
-      // This will fix a bug where the GZD boundary is barely out of view
-      // it adjusts the value so it grabs the furthest east/west boundary without going outside of the GZD
+        // This will fix a bug where the GZD boundary is barely out of view
+        // it adjusts the value so it grabs the furthest east/west boundary without going outside of the GZD
         east = this.empty[0].right > this._bounds.getEast() ? this._bounds.getEast() : this.empty[0].right - 0.00001;
-        west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left;
+        west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left + 0.00001;
         break;
       }
       case 'left': {
@@ -1229,7 +1257,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         case 'left':
           if (northLine.lon >= this.empty[0].right) {
             const newLatLeft = southLine.lat + (slope * (this.empty[0].right - southLine.lon));
-            eastingLine.setLatLngs([southLine, { lat: newLatLeft, lng: this.empty[0].right - 0.00001 }]);
+            eastingLine.setLatLngs([southLine, { lat: newLatLeft || southLine.lat, lng: this.empty[0].right - 0.00001 }]);
           }
           if (labelCoords.lon <= this.empty[0].right && this.options.showLabels) {
             gridLabels.push(this.generateEastingLabel(labelCoords, adjustedEasting.toString().slice(1, -3)));
@@ -1238,7 +1266,7 @@ L.MGRS1000Meters = L.LayerGroup.extend({
         case 'right':
           if (northLine.lon <= this.empty[1].left) {
             const newLatRight = southLine.lat + (slope * (this.empty[1].left - southLine.lon));
-            eastingLine.setLatLngs([southLine, { lat: newLatRight, lng: this.empty[1].left }]);
+            eastingLine.setLatLngs([southLine, { lat: newLatRight, lng: this.empty[1].left + 0.00001 }]);
           }
           if (labelCoords.lon >= this.empty[1].left && this.options.showLabels) {
             gridLabels.push(this.generateEastingLabel(labelCoords, adjustedEasting.toString().slice(1, -3)));
@@ -1453,7 +1481,7 @@ const generate1000meterGrids = new L.mgrs1000meters({
   gridLetterStyle: 'color: black; font-size:12px;',
   lineStyle: {
     color: 'black',
-    weight: 1,
+    weight: 6,
     opacity: 0.5,
     interactive: false,
     fill: false,

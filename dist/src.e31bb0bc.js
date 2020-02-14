@@ -15636,8 +15636,8 @@ var quito = [0.17578097424708533, -77.84912109375]; // *************************
 // *********************************************************************************** //
 
 var map = _leaflet.default.map('map').setView({
-  lat: 48.004108177419916,
-  lng: -74.99885559082033
+  lat: 56.203457598753765,
+  lng: 0.37319183349609375
 }, 12); // Place map in window for debugging purposes
 
 
@@ -15779,7 +15779,8 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
 
       var inBoundsLatitudeLetters = []; // Create an array to store the inBounds values for top, right, and id
 
-      var inBoundsUTMNumbers = [];
+      var inBoundsUTMNumbers = []; // This stores the current visible GZDs
+
       this.viz = [];
 
       var currentVisibleBounds = this._map.getBounds();
@@ -15797,16 +15798,59 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
 
 
         if (currentVisibleBounds.getNorthEast().lng >= left && currentVisibleBounds.getSouthWest().lng <= right) {
-          inBoundsUTMNumbers.push({
-            left: left,
-            right: right,
-            id: id
-          });
+          // Handle special GZDs
+          if (id === '31' && currentVisibleBounds.getSouth() > 56) {
+            // This is fired off when 31V AND 32V are in the visible bounds
+            var adjustedVisibleBounds = new _leaflet.default.latLngBounds(currentVisibleBounds.getNorthEast(), currentVisibleBounds.getSouthWest());
+
+            if (adjustedVisibleBounds.contains({
+              lat: currentVisibleBounds.getNorthEast().lat,
+              lng: 3
+            })) {
+              inBoundsUTMNumbers.push({
+                left: 0,
+                right: 3,
+                id: '31'
+              });
+              inBoundsUTMNumbers.push({
+                left: 3,
+                right: 12,
+                id: '32'
+              });
+            } // GZD 31V
+
+
+            if (currentVisibleBounds.getWest() > 0 && currentVisibleBounds.getEast() < 3) {
+              inBoundsUTMNumbers.push({
+                left: 0,
+                right: 3,
+                id: '31'
+              });
+            } // GZD 32V
+
+
+            if (currentVisibleBounds.getWest() > 3 && currentVisibleBounds.getEast() < 12) {
+              inBoundsUTMNumbers.push({
+                left: 3,
+                right: 12,
+                id: '32'
+              });
+            }
+          } else {
+            inBoundsUTMNumbers.push({
+              left: left,
+              right: right,
+              id: id
+            });
+          }
         }
       }); // Define the "id" property in this object so we can store all the values returned from inBoundsUTMNumbers
 
       inBoundsLatitudeLetters.forEach(function (e) {
         var letterKey = e;
+        console.log(inBoundsUTMNumbers.map(function (j) {
+          return j;
+        }));
         Object.defineProperties(letterKey, {
           id: {
             value: inBoundsUTMNumbers.map(function (j) {
@@ -15948,6 +15992,7 @@ _leaflet.default.GZD = _leaflet.default.LayerGroup.extend({
 // TODO: Rename this.empty to something logical
 // TODO: Fix northing grid errors for zone letter X
 // TODO: Finish configuring the special zones exceptions
+// zoom level 7,8,9, 10, 12, 13 , 14 , 15 , 16 , 17 , 18 could use more padding
 
 _leaflet.default.MGRS100K = _leaflet.default.LayerGroup.extend({
   // Default options
@@ -16831,31 +16876,37 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
           this.generateGrids(this.splitGZD = false);
         } else {
           // Since we are only checking if the split grid is a easting line (vertical), this will also check if the splitGZD is a northing line (horizontal)
-          //! Potential issues with this on special grid zones (Norway and Svalbard)
-          var len = this.empty.length;
+          //! Issues with this on special grid zones (Norway and Svalbard)
+          switch (this.empty.length) {
+            case 4:
+              // If there are 4 GZDs visible on screen, run both directions
+              this.generateGrids(this.splitGZD = true, this.direction = 'left');
+              this.generateGrids(this.splitGZD = true, this.direction = 'right');
+              break;
 
-          for (var index = 0; index < len; index += 1) {
-            var element = [this.empty[index], this.empty[index + 1]];
+            case 3:
+              break;
 
-            if (element[1]) {
-              // Check if both the left limits are the same, then the grid is split horizontally
-              // Example - GZD 18T and 18U are on top of each other, therefore their left bounds are the same (-78 degrees longitude)
-              switch (element[0].left) {
-                case element[1].left:
-                  // If the split grids are on top of each other, just run the normal function
-                  this.generateGrids(this.splitGZD = false);
-                  break;
-
-                case element[1].right:
-                  // If the split grids are side by side, run the function in each direction
-                  this.generateGrids(this.splitGZD = true, this.direction = 'right');
-                  this.generateGrids(this.splitGZD = true, this.direction = 'left');
-                  break;
-
-                default:
-                  break;
+            case 2:
+              if (this.empty[0].right === this.empty[1].left) {
+                // If the GZDs are splitting the screen vertically, run both directions
+                this.generateGrids(this.splitGZD = true, this.direction = 'left');
+                this.generateGrids(this.splitGZD = true, this.direction = 'right');
+              } else {
+                // If the GZDs are splitting the screen horizontally, run one direction
+                this.generateGrids(this.splitGZD = false);
               }
-            }
+
+              break;
+
+            case 1:
+              break;
+
+            case 0:
+              break;
+
+            default:
+              break;
           }
         }
       }
@@ -16866,22 +16917,26 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
   // Gets the minimum easting and northing of each 1000 meter grid line
   getMinimumBounds: function getMinimumBounds() {
     var nw;
+    var west;
 
     switch (this.direction) {
       case undefined:
         {
+          // Prevents the grids from "shifting" when the bounds are near a western GZD
+          west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left + 0.00001;
           nw = (0, _mgrs.LLtoUTM)({
             lat: this._bounds.getNorth(),
-            lon: this._bounds.getWest()
+            lon: west
           });
           break;
         }
 
       case 'left':
         {
+          west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left + 0.00001;
           nw = (0, _mgrs.LLtoUTM)({
             lat: this._bounds.getNorth(),
-            lon: this._bounds.getWest()
+            lon: west
           });
           break;
         }
@@ -16890,7 +16945,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
         {
           nw = (0, _mgrs.LLtoUTM)({
             lat: this._bounds.getNorth(),
-            lon: this.empty[1].left
+            lon: this.empty[1].left + 0.00001
           });
           break;
         }
@@ -16920,7 +16975,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
           // This will fix a bug where the GZD boundary is barely out of view
           // it adjusts the value so it grabs the furthest east/west boundary without going outside of the GZD
           east = this.empty[0].right > this._bounds.getEast() ? this._bounds.getEast() : this.empty[0].right - 0.00001;
-          west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left;
+          west = this.empty[0].left < this._bounds.getWest() ? this._bounds.getWest() : this.empty[0].left + 0.00001;
           break;
         }
 
@@ -17019,7 +17074,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
           if (northLine.lon >= this.empty[0].right) {
             var newLatLeft = southLine.lat + slope * (this.empty[0].right - southLine.lon);
             eastingLine.setLatLngs([southLine, {
-              lat: newLatLeft,
+              lat: newLatLeft || southLine.lat,
               lng: this.empty[0].right - 0.00001
             }]);
           }
@@ -17035,7 +17090,7 @@ _leaflet.default.MGRS1000Meters = _leaflet.default.LayerGroup.extend({
             var newLatRight = southLine.lat + slope * (this.empty[1].left - southLine.lon);
             eastingLine.setLatLngs([southLine, {
               lat: newLatRight,
-              lng: this.empty[1].left
+              lng: this.empty[1].left + 0.00001
             }]);
           }
 
@@ -17289,7 +17344,7 @@ var generate1000meterGrids = new _leaflet.default.mgrs1000meters({
   gridLetterStyle: 'color: black; font-size:12px;',
   lineStyle: {
     color: 'black',
-    weight: 1,
+    weight: 6,
     opacity: 0.5,
     interactive: false,
     fill: false,
