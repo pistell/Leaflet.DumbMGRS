@@ -17,7 +17,8 @@
     "leaflet plugin",
     "gis",
     "mgrs",
-    "mgrs overlay"
+    "mgrs overlay",
+    "usng"
   ],
   "author": {
     "name": "James Pistell",
