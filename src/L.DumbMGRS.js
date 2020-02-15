@@ -3,6 +3,7 @@
 /* eslint-disable max-len */
 //* * Leaflet.DumbMGRS made by CPT James Pistell, 2020 */
 //* * Complaints, comments, concerns send to jamespistell@gmail.com */
+//* * This took me 340.33 hours to make. I worked on it from 18NOV19 to 14FEB20 */
 import L from 'leaflet';
 
 
