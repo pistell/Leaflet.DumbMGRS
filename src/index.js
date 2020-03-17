@@ -5,6 +5,8 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import {
   L, map, generateGZDGrids, generate100kGrids, generate1000meterGrids, LLtoUTM, UTMtoMGRS,
 } from './L.DumbMGRS';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import 'leaflet-draw';
 
 
 // *********************************************************************************** //
@@ -31,6 +33,51 @@ L.tileLayer('https://c.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   id: 'osm_map',
 }).addTo(map);
 
+//! Draw
+function clearResults() {
+  const resultsContentArea = document.getElementById('resultsContentArea');
+  resultsContentArea.value = '';
+  map.eachLayer((layer) => {
+    if (!(layer instanceof L.TileLayer)) {
+      map.removeLayer(layer);
+    }
+  });
+}
+
+
+const drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+const drawControl = new L.Control.Draw({
+  edit: {
+    featureGroup: drawnItems,
+
+  },
+});
+
+map.addControl(drawControl);
+
+map.on('draw:created', (e) => {
+  const { layer } = e;
+  drawnItems.addLayer(layer);
+});
+
+map.on('draw:started', () => {
+  clearResults();
+});
+
+//! Control
+// const myTextLabel = L.marker(map.getCenter(), {
+//   interactive: true,
+//   icon: L.divIcon({
+//     className: 'text-labels', // Set class for CSS styling
+//     html: `<svg xmlns="http://www.w3.org/2000/svg" height="100%" width="100%" viewBox="0 0 3 3">
+//     <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle">TEST</text>
+//     </svg>`,
+//   }),
+//   zIndexOffset: 1000, // Make appear above other map features
+// });
+// myTextLabel.addTo(map);
 
 // *********************************************************************************** //
 // * Leaflet.DumbMGRS - Add plugins to the map                                       * //

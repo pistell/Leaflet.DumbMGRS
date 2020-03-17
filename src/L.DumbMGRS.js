@@ -11,7 +11,8 @@ import L from 'leaflet';
 // * Set initial map view                                                            * //
 // *********************************************************************************** //
 const southFL = [27.381523191705053, -82.82592773437501];
-const map = L.map('map').setView(southFL, 7);
+const map = L.map('map').setView(southFL, 5);
+window.map = map;
 
 
 // *********************************************************************************** //
@@ -1003,12 +1004,6 @@ const MGRS100K = L.LayerGroup.extend({
     L.LayerGroup.prototype.initialize.call(this);
     // Merge the provided options with the default options of the class.
     L.Util.setOptions(this, options);
-    // Get the North/South/East/West visible bounds and add padding
-    this.north = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getNorth();
-    this.south = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getSouth();
-    this.east = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getEast();
-    this.west = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getWest();
-    // The eastingArray and northingArray will hold the latlngs for our grids
     this.eastingArray = [];
     this.northingArray = [];
     // dumb name, but this temporarily holds the visible grids so I can iterate over them
@@ -1060,6 +1055,7 @@ const MGRS100K = L.LayerGroup.extend({
       this.empty = [];
       this.eastingArray = [];
       this.northingArray = [];
+      // Get the North/South/East/West visible bounds and add padding
       this.north = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getNorth();
       this.south = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getSouth();
       this.east = new L.latLngBounds(this._map.getBounds()).pad(this.getPaddingOnZoomLevel(this._map)).getEast();
